@@ -10,6 +10,10 @@ require files in `~/.config/mc` or `~/.local/share/mc`. A new profile starts wit
 the light DotName skin; root uses its red variant. All four DotName skins
 use the 256-color palette and do not require `COLORTERM=truecolor`.
 
+Lynx-like motion is enabled by default: with an empty command line, `Right`
+enters the selected directory and `Left` goes to its parent. This can be changed
+with `Lynx-like motion` in the panel options.
+
 | Action | Default shortcut |
 |---|---|
 | Switch between light and dark skins | `Alt+Shift+T` |
