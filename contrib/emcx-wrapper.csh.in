@@ -1,0 +1,23 @@
+if ($?EMCX_TMPDIR) then
+	setenv EMCX_PWD_FILE "`mktemp '$EMCX_TMPDIR/emcx.pwd.XXXXXX'`"
+else if ($?TMPDIR) then
+	setenv EMCX_PWD_FILE "`mktemp '$TMPDIR/emcx.pwd.XXXXXX'`"
+else
+	setenv EMCX_PWD_FILE "`mktemp '/tmp/emcx.pwd.XXXXXX'`"
+endif
+
+set EMCX_STATUS=0
+@bindir@/emcx -P "$EMCX_PWD_FILE" $* || set EMCX_STATUS=$?
+
+if (-r "$EMCX_PWD_FILE") then
+	setenv EMCX_PWD "`cat '$EMCX_PWD_FILE'`"
+	if ("$EMCX_PWD" != "$cwd" && -d "$EMCX_PWD") then
+		cd "$EMCX_PWD" || true
+	endif
+	unsetenv EMCX_PWD
+endif
+
+# invoke the external rm command, avoiding shell alias
+'rm' -f "$EMCX_PWD_FILE"
+unsetenv EMCX_PWD_FILE
+eval "unset EMCX_STATUS; exit $EMCX_STATUS"

@@ -185,7 +185,7 @@ init_sigchld (void)
 
 /* --------------------------------------------------------------------------------------------- */
 /**
- * Check MC_SID to prevent running one mc from another.
+ * Check EMCX_SID to prevent running one mc from another.
  *
  * @return TRUE if no parent mc in our session was found, FALSE otherwise.
  */
@@ -196,7 +196,7 @@ check_sid (void)
     pid_t my_sid, old_sid;
     const char *sid_str;
 
-    sid_str = getenv ("MC_SID");
+    sid_str = getenv ("EMCX_SID");
     if (sid_str == NULL)
         return TRUE;
 

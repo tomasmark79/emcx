@@ -5,9 +5,9 @@ dnl
 dnl 2.64 is required at least for m4_esyscmd_s()
 AC_PREREQ([2.64])
 
-AC_INIT([GNU Midnight Commander], m4_esyscmd_s([./version.sh .]),
-        [https://github.com/MidnightCommander/mc/issues], [mc],
-        [https://midnight-commander.org])
+AC_INIT([Extended Commander], m4_esyscmd_s([./version.sh .]),
+        [https://github.com/tomasmark79/emcx/issues], [emcx],
+        [https://github.com/tomasmark79/emcx])
 
 m4_pattern_forbid(MC_)
 AC_CONFIG_MACRO_DIR([m4])
@@ -498,7 +498,7 @@ AC_SUBST(EXTHELPERSDIR)
 AC_SUBST(EXTFSHELPERSDIR)
 
  dnl Install the clipboard helper alongside MC on every distribution.
-eval MC_CLIPBOARD=\"${bindir}/mc-clipboard\"
+eval MC_CLIPBOARD=\"${bindir}/emcx-clipboard\"
 AC_SUBST(MC_CLIPBOARD)
 
 
@@ -581,7 +581,7 @@ misc/Makefile
 misc/mc.charsets
 misc/mc.menu
 misc/mc-clipboard.menu
-misc/mc-clipboard:misc/mc-clipboard.py
+misc/emcx-clipboard:misc/mc-clipboard.py
 misc/mcedit.menu
 misc/skins/Makefile
 misc/ext.d/Makefile

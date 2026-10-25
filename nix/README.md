@@ -1,20 +1,20 @@
-# Midnight Commander customizations
+# Extended Commander: customizations and tests
 
 This package includes custom trash and clipboard actions, cycling through
 favorite skins, and automatic selection of DotName root skin variants.
 
 ## Layout and versioning
 
-All Modern build and maintenance support lives in this directory:
+All Extended Commander build and maintenance support lives in this directory:
 
-- `package.nix` builds the locked upstream master with `patches/modern.patch`.
+- `package.nix` builds the locked upstream master with `patches/features.patch` and `patches/identity.patch`.
 - `tests.nix` supplies the runner and dependencies for the regression tests in `tests/`.
-- `update-modern-patch.py` exports the application changes from the maintained source tree.
+- `update-patches.py` exports the application changes from the maintained source tree.
 
 The Nix version is derived from the upstream commit date and hash plus the hash
-of `patches/modern.patch`: `unstable-YYYY-MM-DD-UPSTREAM-modern-PATCH`.
+of the functional and identity patches: `unstable-YYYY-MM-DD-UPSTREAM-PATCH`.
 There is no manually maintained version file. The same value is passed to `version.sh`
-through `MC_MODERN_VERSION`, so the binary and package report the same version.
+through `EMCX_VERSION`, so the binary and package report the same version.
 Native builds use Git version information. DotName names identify the skins in
 `misc/skins/`; they are not a separate package or release series. Historical
 changes remain available in Git rather than a separately maintained release folder.
@@ -22,7 +22,7 @@ changes remain available in Git rather than a separately maintained release fold
 ## Defaults without a home configuration
 
 Shortcuts, skins, and F2 menu entries are included in the package. They do not
-require files in `~/.config/mc` or `~/.local/share/mc`. A new profile starts with
+require files in `~/.config/emcx` or `~/.local/share/emcx`. A new profile starts with
 the light DotName skin; root uses its red variant. All four DotName skins
 use the 256-color palette and do not require `COLORTERM=truecolor`.
 
@@ -86,17 +86,17 @@ When a cross-filesystem move is
 interrupted and Keep is selected, the original and the incomplete destination
 are preserved. Filesystem attribute failures must not turn an interrupted copy
 into a successful move and delete the original. This fix is not part of the
-Modern patch set.
+Extended Commander patch set.
 
 ## Repeatable tests
 
 Run this command from the repository directory as a regular user:
 
 ```bash
-nix run .#mc-tests
+nix run .#emcx-tests
 ```
 
-Nix builds upstream MC with the Modern patch set and supplies the test dependencies. It does not
+Nix builds upstream MC with the Extended Commander patch set and supplies the test dependencies. It does not
 activate a system configuration. Run the tests after changing the customizations
 or updating MC. Success ends with `OK`; failures return a nonzero exit status.
 
@@ -110,7 +110,7 @@ The tests cover:
 - Visible hotlist selection in both themes and account types, including keyboard
   navigation and moving focus from the list to the dialog buttons.
 - Clean user and root profiles, `skin=default`, explicit root variants,
-  `MC_SKIN`, and `--skin`.
+  `EMCX_SKIN`, and `--skin`.
 - Switching with `Alt+Shift+T`, preserving the marked file and second panel,
   and saving the base skin name on exit.
 - Reloading the skin list at runtime, comments, duplicates, and restoring the
@@ -151,5 +151,5 @@ or every system build.
 To run a single test:
 
 ```bash
-nix run .#mc-tests -- RuntimeTests.test_themes
+nix run .#emcx-tests -- RuntimeTests.test_themes
 ```

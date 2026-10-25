@@ -60,8 +60,8 @@ uninstall-hook:
 	cd $(DESTDIR)$(cfgdir) && rm -f mc.keymap
 
 # The helper and custom action menus are part of the standard installation.
-bin_SCRIPTS = mc-clipboard
+bin_SCRIPTS = emcx-clipboard
 pkgdata_DATA += mc-clipboard.menu
 dist_pkgdata_DATA += mc-trash.menu
 EXTRA_DIST += mc-clipboard.py mc-clipboard.menu.in
-CLEANFILES += mc-clipboard mc-clipboard.menu
+CLEANFILES += emcx-clipboard mc-clipboard.menu

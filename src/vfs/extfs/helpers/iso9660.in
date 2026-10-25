@@ -85,7 +85,7 @@ xorriso_list() (
         return 1
     fi
 
-    temp_ls=`mktemp "${MC_TMPDIR:-/tmp}"/mc-iso9660.XXXXXX` || return 1
+    temp_ls=`mktemp "${EMCX_TMPDIR:-/tmp}"/mc-iso9660.XXXXXX` || return 1
 
     # $XORRISO must be unquoted here to hook into the testing framework
     $XORRISO -abort_on FATAL -dev stdio:"$1" -find / -exec lsdl 2>/dev/null >"$temp_ls"

@@ -68,9 +68,9 @@ if [ -r "${VERSION_FILE}" ]
     SHOR_MC_VERSION="${PREV_MC_VERSION}"
 fi
 
-# Nix supplies a version derived from the locked upstream and Modern patch.
-if [ -n "${MC_MODERN_VERSION:-}" ]; then
-    CURR_MC_VERSION="${MC_MODERN_VERSION}"
+# Nix supplies a version derived from the locked upstream and Extended Commander patch.
+if [ -n "${EMCX_VERSION:-}" ]; then
+    CURR_MC_VERSION="${EMCX_VERSION}"
     SHOR_MC_VERSION="${CURR_MC_VERSION}"
     mc_print_version
 fi

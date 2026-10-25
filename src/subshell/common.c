@@ -340,13 +340,13 @@ init_subshell_child (const char *pty_name)
     // FIXME? What about when we re-run the subshell?
     MC_UNUSED const int ret_chdir = chdir (mc_config_get_home_dir ());
 
-    // Set MC_SID to prevent running one mc from another
+    // Set EMCX_SID to prevent running one mc from another
     mc_sid = getsid (0);
     if (mc_sid != -1)
     {
         char sid_str[BUF_SMALL];
 
-        g_snprintf (sid_str, sizeof (sid_str), "MC_SID=%ld", (long) mc_sid);
+        g_snprintf (sid_str, sizeof (sid_str), "EMCX_SID=%ld", (long) mc_sid);
         putenv (g_strdup (sid_str));
     }
 

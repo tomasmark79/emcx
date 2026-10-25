@@ -1,0 +1,707 @@
+diff --git a/configure.ac b/configure.ac
+index fc850627a..ef0d49c58 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -5,9 +5,9 @@ dnl
+ dnl 2.64 is required at least for m4_esyscmd_s()
+ AC_PREREQ([2.64])
+ 
+-AC_INIT([GNU Midnight Commander], m4_esyscmd_s([./version.sh .]),
+-        [https://github.com/MidnightCommander/mc/issues], [mc],
+-        [https://midnight-commander.org])
++AC_INIT([Extended Commander], m4_esyscmd_s([./version.sh .]),
++        [https://github.com/tomasmark79/emcx/issues], [emcx],
++        [https://github.com/tomasmark79/emcx])
+ 
+ m4_pattern_forbid(MC_)
+ AC_CONFIG_MACRO_DIR([m4])
+@@ -498,7 +498,7 @@ AC_SUBST(EXTHELPERSDIR)
+ AC_SUBST(EXTFSHELPERSDIR)
+ 
+  dnl Install the clipboard helper alongside MC on every distribution.
+-eval MC_CLIPBOARD=\"${bindir}/mc-clipboard\"
++eval MC_CLIPBOARD=\"${bindir}/emcx-clipboard\"
+ AC_SUBST(MC_CLIPBOARD)
+ 
+ 
+@@ -581,7 +581,7 @@ misc/Makefile
+ misc/mc.charsets
+ misc/mc.menu
+ misc/mc-clipboard.menu
+-misc/mc-clipboard:misc/mc-clipboard.py
++misc/emcx-clipboard:misc/mc-clipboard.py
+ misc/mcedit.menu
+ misc/skins/Makefile
+ misc/ext.d/Makefile
+diff --git a/contrib/Makefile.am b/contrib/Makefile.am
+index 98c8b0656..7e0a36380 100644
+--- a/contrib/Makefile.am
++++ b/contrib/Makefile.am
+@@ -2,19 +2,19 @@
+ noinst_DATA = README.xterm
+ 
+ SCRIPTS_IN = \
+-	mc.csh.in \
+-	mc.fish.in \
+-	mc.sh.in \
+-	mc-wrapper.csh.in \
+-	mc-wrapper.fish.in \
+-	mc-wrapper.sh.in
++	emcx.csh.in \
++	emcx.fish.in \
++	emcx.sh.in \
++	emcx-wrapper.csh.in \
++	emcx-wrapper.fish.in \
++	emcx-wrapper.sh.in
+ SCRIPTS_OUT = \
+-	mc.csh \
+-	mc.fish \
+-	mc.sh \
+-	mc-wrapper.csh \
+-	mc-wrapper.fish \
+-	mc-wrapper.sh
++	emcx.csh \
++	emcx.fish \
++	emcx.sh \
++	emcx-wrapper.csh \
++	emcx-wrapper.fish \
++	emcx-wrapper.sh
+ 
+ pkglibexec_SCRIPTS = $(SCRIPTS_OUT)
+ 
+@@ -29,21 +29,21 @@ EXTRA_DIST = \
+ 	$(SCRIPTS_IN) \
+ 	$(noinst_DATA)
+ 
+-mc.csh: $(top_builddir)/config.status $(srcdir)/mc.csh.in
+-	$(SED) "s%@""pkglibexecdir@%$(pkglibexecdir)%" $(srcdir)/mc.csh.in > mc.csh
++emcx.csh: $(top_builddir)/config.status $(srcdir)/emcx.csh.in
++	$(SED) "s%@""pkglibexecdir@%$(pkglibexecdir)%" $(srcdir)/emcx.csh.in > emcx.csh
+ 
+-mc.fish: $(top_builddir)/config.status $(srcdir)/mc.fish.in
+-	$(SED) "s%@""pkglibexecdir@%$(pkglibexecdir)%" $(srcdir)/mc.fish.in > mc.fish
++emcx.fish: $(top_builddir)/config.status $(srcdir)/emcx.fish.in
++	$(SED) "s%@""pkglibexecdir@%$(pkglibexecdir)%" $(srcdir)/emcx.fish.in > emcx.fish
+ 
+-mc.sh: $(top_builddir)/config.status $(srcdir)/mc.sh.in
+-	$(SED) "s%@""pkglibexecdir@%$(pkglibexecdir)%" $(srcdir)/mc.sh.in > mc.sh
++emcx.sh: $(top_builddir)/config.status $(srcdir)/emcx.sh.in
++	$(SED) "s%@""pkglibexecdir@%$(pkglibexecdir)%" $(srcdir)/emcx.sh.in > emcx.sh
+ 
+-mc-wrapper.csh: $(top_builddir)/config.status $(srcdir)/mc-wrapper.csh.in
+-	$(SED) "s%@""bindir@%$(bindir)%" $(srcdir)/mc-wrapper.csh.in > mc-wrapper.csh
++emcx-wrapper.csh: $(top_builddir)/config.status $(srcdir)/emcx-wrapper.csh.in
++	$(SED) "s%@""bindir@%$(bindir)%" $(srcdir)/emcx-wrapper.csh.in > emcx-wrapper.csh
+ 
+-mc-wrapper.fish: $(top_builddir)/config.status $(srcdir)/mc-wrapper.fish.in
+-	$(SED) "s%@""bindir@%$(bindir)%" $(srcdir)/mc-wrapper.fish.in > mc-wrapper.fish
++emcx-wrapper.fish: $(top_builddir)/config.status $(srcdir)/emcx-wrapper.fish.in
++	$(SED) "s%@""bindir@%$(bindir)%" $(srcdir)/emcx-wrapper.fish.in > emcx-wrapper.fish
+ 
+-mc-wrapper.sh: $(top_builddir)/config.status $(srcdir)/mc-wrapper.sh.in
+-	$(SED) "s%@""bindir@%$(bindir)%" $(srcdir)/mc-wrapper.sh.in > mc-wrapper.sh
++emcx-wrapper.sh: $(top_builddir)/config.status $(srcdir)/emcx-wrapper.sh.in
++	$(SED) "s%@""bindir@%$(bindir)%" $(srcdir)/emcx-wrapper.sh.in > emcx-wrapper.sh
+ 
+diff --git a/contrib/emcx-wrapper.csh.in b/contrib/emcx-wrapper.csh.in
+new file mode 100644
+index 000000000..88674f1ac
+--- /dev/null
++++ b/contrib/emcx-wrapper.csh.in
+@@ -0,0 +1,23 @@
++if ($?EMCX_TMPDIR) then
++	setenv EMCX_PWD_FILE "`mktemp '$EMCX_TMPDIR/emcx.pwd.XXXXXX'`"
++else if ($?TMPDIR) then
++	setenv EMCX_PWD_FILE "`mktemp '$TMPDIR/emcx.pwd.XXXXXX'`"
++else
++	setenv EMCX_PWD_FILE "`mktemp '/tmp/emcx.pwd.XXXXXX'`"
++endif
++
++set EMCX_STATUS=0
++@bindir@/emcx -P "$EMCX_PWD_FILE" $* || set EMCX_STATUS=$?
++
++if (-r "$EMCX_PWD_FILE") then
++	setenv EMCX_PWD "`cat '$EMCX_PWD_FILE'`"
++	if ("$EMCX_PWD" != "$cwd" && -d "$EMCX_PWD") then
++		cd "$EMCX_PWD" || true
++	endif
++	unsetenv EMCX_PWD
++endif
++
++# invoke the external rm command, avoiding shell alias
++'rm' -f "$EMCX_PWD_FILE"
++unsetenv EMCX_PWD_FILE
++eval "unset EMCX_STATUS; exit $EMCX_STATUS"
+diff --git a/contrib/emcx-wrapper.fish.in b/contrib/emcx-wrapper.fish.in
+new file mode 100644
+index 000000000..9af4765bc
+--- /dev/null
++++ b/contrib/emcx-wrapper.fish.in
+@@ -0,0 +1,23 @@
++set --local EMCX_PWD_FILE
++if set -q EMCX_TMPDIR
++	set EMCX_PWD_FILE (mktemp $EMCX_TMPDIR/emcx.pwd.XXXXXX)
++else if set -q TMPDIR
++	set EMCX_PWD_FILE (mktemp $TMPDIR/emcx.pwd.XXXXXX)
++else
++	set EMCX_PWD_FILE (mktemp /tmp/emcx.pwd.XXXXXX)
++end
++
++set --local EMCX_STATUS 0
++@bindir@/emcx -P "$EMCX_PWD_FILE" $argv || set EMCX_STATUS $status
++
++if test -r "$EMCX_PWD_FILE"
++	# This construct preserves internal and trailing '\n' characters.
++	read -l -z EMCX_PWD < (cat $EMCX_PWD_FILE | psub)
++	if test -n $EMCX_PWD && test $EMCX_PWD != $PWD && test -d $EMCX_PWD
++		cd $EMCX_PWD || true
++	end
++end
++
++# invoke the external rm command, avoiding shell alias or function
++command rm -f $EMCX_PWD_FILE
++exit $EMCX_STATUS
+diff --git a/contrib/emcx-wrapper.sh.in b/contrib/emcx-wrapper.sh.in
+new file mode 100644
+index 000000000..941578d18
+--- /dev/null
++++ b/contrib/emcx-wrapper.sh.in
+@@ -0,0 +1,25 @@
++if test -n "$EMCX_TMPDIR"; then
++	EMCX_PWD_FILE="`mktemp "${EMCX_TMPDIR}/emcx.pwd.XXXXXX"`"
++elif test -n "$TMPDIR"; then
++	EMCX_PWD_FILE="`mktemp "${TMPDIR}/emcx.pwd.XXXXXX"`"
++else
++	EMCX_PWD_FILE="`mktemp "/tmp/emcx.pwd.XXXXXX"`"
++fi
++
++EMCX_STATUS=0
++@bindir@/emcx -P "$EMCX_PWD_FILE" "$@" || EMCX_STATUS=$?
++
++if test -r "$EMCX_PWD_FILE"; then
++	# Command substitution removes trailing '\n's, hence the added and later removed '_'.
++	EMCX_PWD="`cat "$EMCX_PWD_FILE"; printf '_'`"
++	EMCX_PWD="${EMCX_PWD%_}"
++	if test -n "$EMCX_PWD" && test "$EMCX_PWD" != "$PWD" && test -d "$EMCX_PWD"; then
++		cd "$EMCX_PWD" || true
++	fi
++	unset EMCX_PWD
++fi
++
++# invoke the external rm command, avoiding shell alias or function
++command rm -f "$EMCX_PWD_FILE"
++unset EMCX_PWD_FILE
++eval "unset EMCX_STATUS; return $EMCX_STATUS"
+diff --git a/contrib/emcx.csh.in b/contrib/emcx.csh.in
+new file mode 100644
+index 000000000..8ca640128
+--- /dev/null
++++ b/contrib/emcx.csh.in
+@@ -0,0 +1 @@
++alias emcx 'source @pkglibexecdir@/emcx-wrapper.csh'
+diff --git a/contrib/emcx.fish.in b/contrib/emcx.fish.in
+new file mode 100644
+index 000000000..9f6c21ed1
+--- /dev/null
++++ b/contrib/emcx.fish.in
+@@ -0,0 +1,3 @@
++function emcx --description 'Visual shell for Unix-like systems - fish wrapper'
++	source @pkglibexecdir@/emcx-wrapper.fish $argv
++end
+diff --git a/contrib/mc.sh.in b/contrib/emcx.sh.in
+similarity index 70%
+rename from contrib/mc.sh.in
+rename to contrib/emcx.sh.in
+index 8b0ead8ed..0178c8081 100644
+--- a/contrib/mc.sh.in
++++ b/contrib/emcx.sh.in
+@@ -1,3 +1,3 @@
+ # Don't define aliases in plain Bourne shell
+ [ -n "${BASH_VERSION}${KSH_VERSION}${ZSH_VERSION}" ] || return 0
+-alias mc='. @pkglibexecdir@/mc-wrapper.sh'
++alias emcx='. @pkglibexecdir@/emcx-wrapper.sh'
+diff --git a/contrib/mc-wrapper.csh.in b/contrib/mc-wrapper.csh.in
+deleted file mode 100644
+index 5acf9a08f..000000000
+--- a/contrib/mc-wrapper.csh.in
++++ /dev/null
+@@ -1,23 +0,0 @@
+-if ($?MC_TMPDIR) then
+-	setenv MC_PWD_FILE "`mktemp '$MC_TMPDIR/mc.pwd.XXXXXX'`"
+-else if ($?TMPDIR) then
+-	setenv MC_PWD_FILE "`mktemp '$TMPDIR/mc.pwd.XXXXXX'`"
+-else
+-	setenv MC_PWD_FILE "`mktemp '/tmp/mc.pwd.XXXXXX'`"
+-endif
+-
+-set MC_STATUS=0
+-@bindir@/mc -P "$MC_PWD_FILE" $* || set MC_STATUS=$?
+-
+-if (-r "$MC_PWD_FILE") then
+-	setenv MC_PWD "`cat '$MC_PWD_FILE'`"
+-	if ("$MC_PWD" != "$cwd" && -d "$MC_PWD") then
+-		cd "$MC_PWD" || true
+-	endif
+-	unsetenv MC_PWD
+-endif
+-
+-# invoke the external rm command, avoiding shell alias
+-'rm' -f "$MC_PWD_FILE"
+-unsetenv MC_PWD_FILE
+-eval "unset MC_STATUS; exit $MC_STATUS"
+diff --git a/contrib/mc-wrapper.fish.in b/contrib/mc-wrapper.fish.in
+deleted file mode 100644
+index d452a49ef..000000000
+--- a/contrib/mc-wrapper.fish.in
++++ /dev/null
+@@ -1,23 +0,0 @@
+-set --local MC_PWD_FILE
+-if set -q MC_TMPDIR
+-	set MC_PWD_FILE (mktemp $MC_TMPDIR/mc.pwd.XXXXXX)
+-else if set -q TMPDIR
+-	set MC_PWD_FILE (mktemp $TMPDIR/mc.pwd.XXXXXX)
+-else
+-	set MC_PWD_FILE (mktemp /tmp/mc.pwd.XXXXXX)
+-end
+-
+-set --local MC_STATUS 0
+-@bindir@/mc -P "$MC_PWD_FILE" $argv || set MC_STATUS $status
+-
+-if test -r "$MC_PWD_FILE"
+-	# This construct preserves internal and trailing '\n' characters.
+-	read -l -z MC_PWD < (cat $MC_PWD_FILE | psub)
+-	if test -n $MC_PWD && test $MC_PWD != $PWD && test -d $MC_PWD
+-		cd $MC_PWD || true
+-	end
+-end
+-
+-# invoke the external rm command, avoiding shell alias or function
+-command rm -f $MC_PWD_FILE
+-exit $MC_STATUS
+diff --git a/contrib/mc-wrapper.sh.in b/contrib/mc-wrapper.sh.in
+deleted file mode 100644
+index 326d539c9..000000000
+--- a/contrib/mc-wrapper.sh.in
++++ /dev/null
+@@ -1,25 +0,0 @@
+-if test -n "$MC_TMPDIR"; then
+-	MC_PWD_FILE="`mktemp "${MC_TMPDIR}/mc.pwd.XXXXXX"`"
+-elif test -n "$TMPDIR"; then
+-	MC_PWD_FILE="`mktemp "${TMPDIR}/mc.pwd.XXXXXX"`"
+-else
+-	MC_PWD_FILE="`mktemp "/tmp/mc.pwd.XXXXXX"`"
+-fi
+-
+-MC_STATUS=0
+-@bindir@/mc -P "$MC_PWD_FILE" "$@" || MC_STATUS=$?
+-
+-if test -r "$MC_PWD_FILE"; then
+-	# Command substitution removes trailing '\n's, hence the added and later removed '_'.
+-	MC_PWD="`cat "$MC_PWD_FILE"; printf '_'`"
+-	MC_PWD="${MC_PWD%_}"
+-	if test -n "$MC_PWD" && test "$MC_PWD" != "$PWD" && test -d "$MC_PWD"; then
+-		cd "$MC_PWD" || true
+-	fi
+-	unset MC_PWD
+-fi
+-
+-# invoke the external rm command, avoiding shell alias or function
+-command rm -f "$MC_PWD_FILE"
+-unset MC_PWD_FILE
+-eval "unset MC_STATUS; return $MC_STATUS"
+diff --git a/contrib/mc.csh.in b/contrib/mc.csh.in
+deleted file mode 100644
+index fc9350138..000000000
+--- a/contrib/mc.csh.in
++++ /dev/null
+@@ -1 +0,0 @@
+-alias mc 'source @pkglibexecdir@/mc-wrapper.csh'
+diff --git a/contrib/mc.fish.in b/contrib/mc.fish.in
+deleted file mode 100644
+index d48ce2a67..000000000
+--- a/contrib/mc.fish.in
++++ /dev/null
+@@ -1,3 +0,0 @@
+-function mc --description 'Visual shell for Unix-like systems - fish wrapper'
+-	source @pkglibexecdir@/mc-wrapper.fish $argv
+-end
+diff --git a/lib/fileloc.h b/lib/fileloc.h
+index 3e3fb34f6..7bdb160f1 100644
+--- a/lib/fileloc.h
++++ b/lib/fileloc.h
+@@ -16,7 +16,7 @@
+ /*** typedefs(not structures) and defined constants **********************************************/
+ 
+ #ifndef MC_USERCONF_DIR
+-#define MC_USERCONF_DIR "mc"
++#define MC_USERCONF_DIR "emcx"
+ #endif
+ 
+ #define TAGS_NAME                       "TAGS"
+diff --git a/lib/skin/common.c b/lib/skin/common.c
+index d72a3b36e..1266038b0 100644
+--- a/lib/skin/common.c
++++ b/lib/skin/common.c
+@@ -73,7 +73,7 @@ mc_skin_get_default_name (void)
+         return g_strdup (mc_global.tty.skin);
+ 
+     // from environment variable
+-    tmp_str = getenv ("MC_SKIN");
++    tmp_str = getenv ("EMCX_SKIN");
+     if (tmp_str != NULL)
+         return g_strdup (tmp_str);
+ 
+diff --git a/lib/vfs/interface.c b/lib/vfs/interface.c
+index cdce3b60f..f6e6131fa 100644
+--- a/lib/vfs/interface.c
++++ b/lib/vfs/interface.c
+@@ -842,7 +842,7 @@ mc_tmpdir (void)
+             return tmpdir;
+     }
+ 
+-    sys_tmp = getenv ("MC_TMPDIR");
++    sys_tmp = getenv ("EMCX_TMPDIR");
+     if (sys_tmp == NULL || !IS_PATH_SEP (sys_tmp[0]))
+     {
+         sys_tmp = getenv ("TMPDIR");
+@@ -850,13 +850,13 @@ mc_tmpdir (void)
+             sys_tmp = TMPDIR_DEFAULT;
+     }
+ 
+-    template = g_build_filename (sys_tmp, "mc-XXXXXX", (char *) NULL);
++    template = g_build_filename (sys_tmp, "emcx-XXXXXX", (char *) NULL);
+     g_strlcpy (buffer, template, sizeof (buffer));
+     g_free (template);
+ 
+     tmpdir = g_mkdtemp (buffer);
+     if (tmpdir != NULL)
+-        g_setenv ("MC_TMPDIR", tmpdir, TRUE);
++        g_setenv ("EMCX_TMPDIR", tmpdir, TRUE);
+     else
+     {
+         fprintf (stderr,
+diff --git a/misc/Makefile.am b/misc/Makefile.am
+index 54109a8a3..9f7787373 100644
+--- a/misc/Makefile.am
++++ b/misc/Makefile.am
+@@ -60,8 +60,8 @@ uninstall-hook:
+ 	cd $(DESTDIR)$(cfgdir) && rm -f mc.keymap
+ 
+ # The helper and custom action menus are part of the standard installation.
+-bin_SCRIPTS = mc-clipboard
++bin_SCRIPTS = emcx-clipboard
+ pkgdata_DATA += mc-clipboard.menu
+ dist_pkgdata_DATA += mc-trash.menu
+ EXTRA_DIST += mc-clipboard.py mc-clipboard.menu.in
+-CLEANFILES += mc-clipboard mc-clipboard.menu
++CLEANFILES += emcx-clipboard mc-clipboard.menu
+diff --git a/src/Makefile.am b/src/Makefile.am
+index 0d2978f04..07757a926 100644
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -35,7 +35,7 @@ endif
+ 
+ AM_CPPFLAGS += -I$(top_srcdir) $(GLIB_CFLAGS)
+ 
+-bin_PROGRAMS = mc
++bin_PROGRAMS = emcx
+ 
+ if USE_INTERNAL_EDIT
+ EDITLIB = editor/libedit.la
+@@ -55,14 +55,14 @@ libinternal_la_LIBADD = \
+ 	viewer/libmcviewer.la \
+ 	$(DIFFLIB) $(EDITLIB) $(SUBSHELLLIB)
+ 
+-mc_LDADD = \
++emcx_LDADD = \
+ 	libinternal.la \
+ 	$(top_builddir)/lib/libmc.la
+ 
+ SRC_mc_conssaver = \
+ 	cons.handler.c consaver/cons.saver.h
+ 
+-mc_SOURCES = \
++emcx_SOURCES = \
+ 	main.c
+ 
+ libinternal_la_SOURCES = \
+@@ -103,19 +103,19 @@ endif
+ # Make relative symlinks, but do the right thing if LN_S is `ln' or `cp'.
+ #
+ install_mcview:
+-	cd $(DESTDIR)$(bindir)/$(binprefix) && rm -f mcview && $(LN_S) mc mcview
++	cd $(DESTDIR)$(bindir)/$(binprefix) && rm -f emcx-view && $(LN_S) emcx emcx-view
+ 
+ install_mcedit:
+-	cd $(DESTDIR)$(bindir)/$(binprefix) && rm -f mcedit && $(LN_S) mc mcedit
++	cd $(DESTDIR)$(bindir)/$(binprefix) && rm -f emcx-edit && $(LN_S) emcx emcx-edit
+ 
+ install_mcdiff:
+-	cd $(DESTDIR)$(bindir)/$(binprefix) && rm -f mcdiff && $(LN_S) mc mcdiff
++	cd $(DESTDIR)$(bindir)/$(binprefix) && rm -f emcx-diff && $(LN_S) emcx emcx-diff
+ 
+ uninstall-hook:
+-	rm -f $(DESTDIR)$(bindir)/$(binprefix)/mcview
++	rm -f $(DESTDIR)$(bindir)/$(binprefix)/emcx-view
+ if USE_INTERNAL_EDIT
+-	rm -f $(DESTDIR)$(bindir)/$(binprefix)/mcedit
++	rm -f $(DESTDIR)$(bindir)/$(binprefix)/emcx-edit
+ endif
+ if USE_DIFF
+-	rm -f $(DESTDIR)$(bindir)/$(binprefix)/mcdiff
++	rm -f $(DESTDIR)$(bindir)/$(binprefix)/emcx-diff
+ endif
+diff --git a/src/args.c b/src/args.c
+index a72fab5de..a745a6448 100644
+--- a/src/args.c
++++ b/src/args.c
+@@ -586,20 +586,20 @@ mc_setup_run_mode (char **argv)
+ 
+     base = x_basename (argv[0]);
+ 
+-    if (strncmp (base, "mcv", 3) == 0 || strcmp (base, "view") == 0)
++    if (strcmp (base, "emcx-view") == 0 || strcmp (base, "view") == 0)
+     {
+         // mcv* or view is link to mc
+         mc_global.mc_run_mode = MC_RUN_VIEWER;
+     }
+ #ifdef USE_INTERNAL_EDIT
+-    else if (strncmp (base, "mce", 3) == 0 || strcmp (base, "vi") == 0)
++    else if (strcmp (base, "emcx-edit") == 0 || strcmp (base, "vi") == 0)
+     {
+         // mce* or vi is link to mc
+         mc_global.mc_run_mode = MC_RUN_EDITOR;
+     }
+ #endif
+ #ifdef USE_DIFF_VIEW
+-    else if (strncmp (base, "mcd", 3) == 0 || strcmp (base, "diff") == 0)
++    else if (strcmp (base, "emcx-diff") == 0 || strcmp (base, "diff") == 0)
+     {
+         // mcd* or diff is link to mc
+         mc_global.mc_run_mode = MC_RUN_DIFFVIEWER;
+diff --git a/src/keymap.c b/src/keymap.c
+index c38b14c6d..8d3116ed7 100644
+--- a/src/keymap.c
++++ b/src/keymap.c
+@@ -877,8 +877,8 @@ load_setup_get_keymap_profile_config (gboolean load_from_file)
+     }
+     g_free (fname);
+ 
+-    // 4) getenv("MC_KEYMAP")
+-    fname = load_setup_get_full_config_name (NULL, g_getenv ("MC_KEYMAP"));
++    // 4) getenv("EMCX_KEYMAP")
++    fname = load_setup_get_full_config_name (NULL, g_getenv ("EMCX_KEYMAP"));
+     if (fname != NULL && strcmp (fname, sysconfig_keymap) != 0 && strcmp (fname, share_keymap) != 0)
+     {
+         load_setup_init_config_from_file (&keymap_config, fname, TRUE);
+diff --git a/src/main.c b/src/main.c
+index 0116b5f0b..d40ec5b3f 100644
+--- a/src/main.c
++++ b/src/main.c
+@@ -185,7 +185,7 @@ init_sigchld (void)
+ 
+ /* --------------------------------------------------------------------------------------------- */
+ /**
+- * Check MC_SID to prevent running one mc from another.
++ * Check EMCX_SID to prevent running one mc from another.
+  *
+  * @return TRUE if no parent mc in our session was found, FALSE otherwise.
+  */
+@@ -196,7 +196,7 @@ check_sid (void)
+     pid_t my_sid, old_sid;
+     const char *sid_str;
+ 
+-    sid_str = getenv ("MC_SID");
++    sid_str = getenv ("EMCX_SID");
+     if (sid_str == NULL)
+         return TRUE;
+ 
+diff --git a/src/subshell/common.c b/src/subshell/common.c
+index d117c206e..064264f3f 100644
+--- a/src/subshell/common.c
++++ b/src/subshell/common.c
+@@ -340,13 +340,13 @@ init_subshell_child (const char *pty_name)
+     // FIXME? What about when we re-run the subshell?
+     MC_UNUSED const int ret_chdir = chdir (mc_config_get_home_dir ());
+ 
+-    // Set MC_SID to prevent running one mc from another
++    // Set EMCX_SID to prevent running one mc from another
+     mc_sid = getsid (0);
+     if (mc_sid != -1)
+     {
+         char sid_str[BUF_SMALL];
+ 
+-        g_snprintf (sid_str, sizeof (sid_str), "MC_SID=%ld", (long) mc_sid);
++        g_snprintf (sid_str, sizeof (sid_str), "EMCX_SID=%ld", (long) mc_sid);
+         putenv (g_strdup (sid_str));
+     }
+ 
+diff --git a/src/vfs/extfs/extfs.c b/src/vfs/extfs/extfs.c
+index e1a62fed7..da88323ba 100644
+--- a/src/vfs/extfs/extfs.c
++++ b/src/vfs/extfs/extfs.c
+@@ -1204,7 +1204,7 @@ extfs_cmd (const char *str_extfs_cmd, const struct extfs_super_t *archive,
+         {
+             g_string_prepend_c (cmd, ' ');
+             g_string_prepend (cmd, quoted_cache_name->str);
+-            g_string_prepend (cmd, "MC_EXTFS_CACHE=");
++            g_string_prepend (cmd, "EMCX_EXTFS_CACHE=");
+             g_string_free (quoted_cache_name, TRUE);
+         }
+     }
+diff --git a/src/vfs/extfs/helpers/deb.in b/src/vfs/extfs/helpers/deb.in
+index 3313ab907..895b9545e 100644
+--- a/src/vfs/extfs/helpers/deb.in
++++ b/src/vfs/extfs/helpers/deb.in
+@@ -168,7 +168,7 @@ sub mcdebfs_run
+ 	{
+ 		use File::Temp qw(mkdtemp);
+ 		my $template = "/tmp/mcdebfs.run.XXXXXX";
+-		$template="$ENV{MC_TMPDIR}/mcdebfs.XXXXXX" if ($ENV{MC_TMPDIR});
++		$template="$ENV{EMCX_TMPDIR}/mcdebfs.XXXXXX" if ($ENV{EMCX_TMPDIR});
+ 		$tmpdir = mkdtemp($template);
+ 		$tmpcmd="$tmpdir/run";
+ 		&mcdebfs_copyout($archive, $filename, $tmpcmd);
+diff --git a/src/vfs/extfs/helpers/iso9660.in b/src/vfs/extfs/helpers/iso9660.in
+index 5a06157cc..462efdf70 100644
+--- a/src/vfs/extfs/helpers/iso9660.in
++++ b/src/vfs/extfs/helpers/iso9660.in
+@@ -85,7 +85,7 @@ xorriso_list() (
+         return 1
+     fi
+ 
+-    temp_ls=`mktemp "${MC_TMPDIR:-/tmp}"/mc-iso9660.XXXXXX` || return 1
++    temp_ls=`mktemp "${EMCX_TMPDIR:-/tmp}"/mc-iso9660.XXXXXX` || return 1
+ 
+     # $XORRISO must be unquoted here to hook into the testing framework
+     $XORRISO -abort_on FATAL -dev stdio:"$1" -find / -exec lsdl 2>/dev/null >"$temp_ls"
+diff --git a/src/vfs/extfs/helpers/u7z b/src/vfs/extfs/helpers/u7z
+index 6bd9663ca..622aa6656 100755
+--- a/src/vfs/extfs/helpers/u7z
++++ b/src/vfs/extfs/helpers/u7z
+@@ -91,7 +91,7 @@ mcu7zip_copyin ()
+ 
+ mcu7zip_mkdir ()
+ {
+-        dir=`mktemp -d "${MC_TMPDIR:-/tmp}/mctmpdir-u7z.XXXXXX"` || exit 1
++        dir=`mktemp -d "${EMCX_TMPDIR:-/tmp}/mctmpdir-u7z.XXXXXX"` || exit 1
+         mkdir -p "$dir"/"$2"
+         $P7ZIP a "$1" "$dir/${2%%/*}" >/dev/null 2>&1
+         rm -rf "$dir"
+diff --git a/src/vfs/extfs/helpers/uar.in b/src/vfs/extfs/helpers/uar.in
+index 269bdb693..ca309ecaa 100644
+--- a/src/vfs/extfs/helpers/uar.in
++++ b/src/vfs/extfs/helpers/uar.in
+@@ -28,7 +28,7 @@ mcarfs_copyout ()
+ 
+ mcarfs_copyin ()
+ {
+-    TMPDIR=`mktemp -d "${MC_TMPDIR:-/tmp}/mctmpdir-uar.XXXXXX"` || exit 1
++    TMPDIR=`mktemp -d "${EMCX_TMPDIR:-/tmp}/mctmpdir-uar.XXXXXX"` || exit 1
+     name=`basename "$2"`
+     (cd "$TMPDIR" && cp -fp "$3" "$name" && $XAR r "$1" "$name")
+     rm -rf "$TMPDIR"
+diff --git a/src/vfs/extfs/helpers/uha.in b/src/vfs/extfs/helpers/uha.in
+index 405f72d49..421a15ec3 100644
+--- a/src/vfs/extfs/helpers/uha.in
++++ b/src/vfs/extfs/helpers/uha.in
+@@ -31,7 +31,7 @@ mchafs_list ()
+ 
+ mchafs_copyout ()
+ {
+-    TMPDIR=`mktemp -d "${MC_TMPDIR:-/tmp}/mctmpdir-uha.XXXXXX"` || exit 1
++    TMPDIR=`mktemp -d "${EMCX_TMPDIR:-/tmp}/mctmpdir-uha.XXXXXX"` || exit 1
+     cd "$TMPDIR"
+ 
+     $HA xyq "$1" "$2" >/dev/null
+diff --git a/src/vfs/extfs/helpers/ulha.in b/src/vfs/extfs/helpers/ulha.in
+index 27ae0a26b..9d34d8c8d 100644
+--- a/src/vfs/extfs/helpers/ulha.in
++++ b/src/vfs/extfs/helpers/ulha.in
+@@ -115,7 +115,7 @@ mc_lha_fs_copyin ()
+ 
+ mc_lha_fs_run()
+ {
+-   TMPDIR=`mktemp -d "${MC_TMPDIR:-/tmp}/mctmpdir-ulha.XXXXXX"` || exit 1
++   TMPDIR=`mktemp -d "${EMCX_TMPDIR:-/tmp}/mctmpdir-ulha.XXXXXX"` || exit 1
+    trap "rm -rf \"$TMPDIR\"; exit 0" 1 2 3 4 15
+    TMPCMD=$TMPDIR/run
+    $LHA_GET "$1" "$2" > "$TMPCMD"  
+diff --git a/src/vfs/extfs/helpers/unar.in b/src/vfs/extfs/helpers/unar.in
+index e81030733..50c2f58bc 100644
+--- a/src/vfs/extfs/helpers/unar.in
++++ b/src/vfs/extfs/helpers/unar.in
+@@ -35,7 +35,7 @@ mc_unar_fs_list()
+ # The 'copyout' command executive to copy displayed files to a destination
+ mc_unar_fs_copyout ()
+ {
+-    TMPDIR=`mktemp -d "${MC_TMPDIR:-/tmp}/mctmpdir-uha.XXXXXX"` || exit 1
++    TMPDIR=`mktemp -d "${EMCX_TMPDIR:-/tmp}/mctmpdir-uha.XXXXXX"` || exit 1
+ 
+     $UNAR_GET  "$1" "$2" -o "$TMPDIR" >/dev/null
+     we=`basename "$1" | sed -E 's|^(.*?)\.\w+$|\1|'`
+diff --git a/src/vfs/extfs/helpers/urar.in b/src/vfs/extfs/helpers/urar.in
+index 4b5c3bdec..7e5639953 100644
+--- a/src/vfs/extfs/helpers/urar.in
++++ b/src/vfs/extfs/helpers/urar.in
+@@ -148,7 +148,7 @@ mcrarfs_mkdir ()
+ # preserve pwd. It is clean, but is it necessary?
+     pwd=`pwd`
+ # Create a directory and create in it a tmp directory with the good name     
+-    dir=`mktemp -d "${MC_TMPDIR:-/tmp}/mctmpdir-urar.XXXXXX"` || exit 1
++    dir=`mktemp -d "${EMCX_TMPDIR:-/tmp}/mctmpdir-urar.XXXXXX"` || exit 1
+     cd "$dir"
+     mkdir -p "$2"  
+ # rar cannot create an empty directory    
+diff --git a/src/vfs/extfs/helpers/uzip.in b/src/vfs/extfs/helpers/uzip.in
+index 68fb531cb..399d3dd71 100644
+--- a/src/vfs/extfs/helpers/uzip.in
++++ b/src/vfs/extfs/helpers/uzip.in
+@@ -105,7 +105,7 @@ sub zipfs_cache_signature {
+ # including archive paths longer than a single page.
+ sub zipfs_cached_realpathname {
+     my ($fname) = @_;
+-    my $cache = $ENV{MC_EXTFS_CACHE};
++    my $cache = $ENV{EMCX_EXTFS_CACHE};
+     return () unless defined $cache && $cache =~ m{^/};
+ 
+     my @parent = lstat(File::Basename::dirname($cache));
+@@ -492,7 +492,7 @@ sub cleandirs {
+ sub mktmpdir {
+ 	use File::Temp qw(mkdtemp);
+ 	my $template = "/tmp/mcuzipfs.XXXXXX";
+-	$template="$ENV{MC_TMPDIR}/mcuzipfs.XXXXXX" if ($ENV{MC_TMPDIR});
++	$template="$ENV{EMCX_TMPDIR}/mcuzipfs.XXXXXX" if ($ENV{EMCX_TMPDIR});
+ 	return mkdtemp($template);
+ }
+ 
+diff --git a/src/vfs/extfs/helpers/uzoo.in b/src/vfs/extfs/helpers/uzoo.in
+index 5f00e7973..b295962df 100644
+--- a/src/vfs/extfs/helpers/uzoo.in
++++ b/src/vfs/extfs/helpers/uzoo.in
+@@ -13,7 +13,7 @@ ZOO=${MC_TEST_EXTFS_LIST_CMD:-zoo}
+ # it to a temporary directory.
+ mklink ()
+ {
+-    TMPDIR=`mktemp -d ${MC_TMPDIR:-/tmp}/mctmpdir-uzoo.XXXXXX` || exit 1
++    TMPDIR=`mktemp -d ${EMCX_TMPDIR:-/tmp}/mctmpdir-uzoo.XXXXXX` || exit 1
+     trap 'cd /; rm -rf "$TMPDIR"' 0 1 2 3 5 13 15
+     ARCHIVE="$TMPDIR/tmp.zoo"
+     ln -sf "$1" "$ARCHIVE"
+diff --git a/version.sh b/version.sh
+index f92d7457b..502e59a77 100755
+--- a/version.sh
++++ b/version.sh
+@@ -68,9 +68,9 @@ if [ -r "${VERSION_FILE}" ]
+     SHOR_MC_VERSION="${PREV_MC_VERSION}"
+ fi
+ 
+-# Nix supplies a version derived from the locked upstream and Modern patch.
+-if [ -n "${MC_MODERN_VERSION:-}" ]; then
+-    CURR_MC_VERSION="${MC_MODERN_VERSION}"
++# Nix supplies a version derived from the locked upstream and Extended Commander patch.
++if [ -n "${EMCX_VERSION:-}" ]; then
++    CURR_MC_VERSION="${EMCX_VERSION}"
+     SHOR_MC_VERSION="${CURR_MC_VERSION}"
+     mc_print_version
+ fi

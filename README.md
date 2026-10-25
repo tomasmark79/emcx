@@ -1,172 +1,163 @@
-# Modern Midnight Commander
+# Extended Commander
 
-An enhanced version of [Midnight Commander](https://github.com/MidnightCommander/mc),
-based on upstream `master`, with convenient file actions and refreshed themes.
-The Nix package fetches upstream through its `mc-upstream` flake input and
-applies the Modern patch set. The `mc-modern` branch also maintains the merged
-source tree for native builds.
-The original documentation remains in `README`.
+*A terminal file manager based on Midnight Commander.*
 
-The standard installation includes GIO trash actions, Wayland clipboard support,
-four DotName skins, automatic red variants for root, and live skin switching.
-These features include default shortcuts and work without a home configuration.
-[Feature details and tests](nix/README.md).
+Extended Commander (`emcx`) builds upstream Midnight Commander `master` with a
+small set of functional and identity patches. It is an independent fork;
+[report emcx issues here](https://github.com/tomasmark79/emcx/issues).
+The original authors, license, and upstream documentation are preserved.
 
-Switch between light and dark skins with `Alt+Shift+T`. On macOS, press and
-release `Esc`, then press `Shift+T` (uppercase `T`). In Apple's Terminal app,
-you can also enable **Terminal → Settings → Profiles → Keyboard → Use Option
-as Meta key** and use `Option+Shift+T`.
+The package includes GIO trash actions, Wayland clipboard support, DotName light
+and dark themes with root variants, live theme switching, Lynx-like navigation,
+and direct ZIP streaming through libzip. Defaults work with a clean profile.
+[Feature details, packaging, and tests](nix/README.md).
 
-## See it in action
+## Commands and configuration
 
-![Modern Midnight Commander demo](2026-10-07%2000-01-04.gif)
+| Command | Purpose |
+|---|---|
+| `emcx` | File manager |
+| `emcx-edit` | Internal editor |
+| `emcx-view` | File viewer |
+| `emcx-diff` | File comparison |
+| `emcx-clipboard` | Wayland clipboard helper |
+| `emcx-migrate-config` | Copy an existing MC profile into separate emcx directories |
 
-![Modern Midnight Commander alongside the desktop file manager](2026-10-07%2000-06-08.gif)
+The Nix package installs no `mc`, `mcedit`, `mcview`, or `mcdiff` executable.
+Commands, data, translations, and manual pages can coexist with upstream MC.
+User configuration, data, and cache use the `emcx` directory under the standard
+XDG locations, such as `~/.config/emcx`, `~/.local/share/emcx`, and `~/.cache/emcx`.
+`EMCX_SKIN`, `EMCX_KEYMAP`, and `EMCX_TMPDIR` provide fork-specific overrides.
+Internal configuration keys and profile formats remain compatible with MC.
+
+To reuse an existing MC profile, first review the proposed copy:
+
+```bash
+emcx-migrate-config
+emcx-migrate-config --apply
+```
+
+Migration copies configuration and data, dereferences linked profiles and skins,
+and updates bare `mc-clipboard` commands in the copied user menu. It does not
+modify the original profile or copy its cache. Existing emcx targets are never
+overwritten. Review custom scripts containing absolute paths separately.
 
 ## Nix and NixOS
 
-With Nix installed, enable `nix-command` and `flakes` in your user configuration
-at `~/.config/nix/nix.conf` (create the directory and file if needed):
-
-```ini
-experimental-features = nix-command flakes
-```
-
-If `experimental-features` is already configured, add these values to the existing
-setting. This takes effect for subsequent Nix commands without a system rebuild.
-Then run:
+Run without installing:
 
 ```bash
-nix run github:tomasmark79/mc
-nix build github:tomasmark79/mc#mc
-nix profile add github:tomasmark79/mc#mc
+nix run github:tomasmark79/emcx
 ```
 
-The first command runs MC, the second builds it and creates a `result` symlink,
-and the third adds it to your user profile. Nix also works on Debian and other
-Linux distributions and macOS. The flake exposes `x86_64-linux`, `aarch64-linux`,
-`x86_64-darwin` (Intel Mac), and `aarch64-darwin` (Apple Silicon) packages;
-binary availability depends on a cache or your own builder.
-The Nix package includes libzip and enables direct ZIP reading for F5 copies.
-The Nix installation has been tested on both Intel and Apple Silicon Macs.
-Thanks to kozel and hendrys for testing on macOS.
+Install into a user profile:
 
-Add this input to your NixOS flake:
+```bash
+nix profile install github:tomasmark79/emcx#emcx
+```
+
+For NixOS, use the package from this flake. Keeping upstream as a separate root
+input lets a configuration update it independently of our patch repository:
 
 ```nix
-mc-modern = {
-  url = "github:tomasmark79/mc/mc-modern";
+inputs.emcx = {
+  url = "github:tomasmark79/emcx";
   inputs.nixpkgs.follows = "nixpkgs";
+  inputs.mc-upstream.follows = "mc-upstream";
+};
+inputs.mc-upstream = {
+  url = "github:MidnightCommander/mc/master";
+  flake = false;
 };
 ```
 
-Then add `mc-modern.packages.${pkgs.stdenv.hostPlatform.system}.mc` to
-`environment.systemPackages`. Make the input available to the module, for
-example through `specialArgs`. The source revision is pinned in `flake.lock`
-and only changes when you update it explicitly.
+Add `emcx.packages.${pkgs.stdenv.hostPlatform.system}.emcx` to
+`environment.systemPackages` in a module receiving the `emcx` input.
+The package supports Linux and macOS; the TUI test runner is Linux-only.
 
-## Building on Debian without Nix
+`flake.lock` records exact source revisions. `nix flake update mc-upstream`
+selects the current upstream master; builds reuse that selection. Update the
+`emcx` input to obtain new customizations. A conflicting upstream change fails
+the build until the patches are updated; it does not silently use an old source.
 
-Example dependencies and source build:
+To keep the shell in the directory visited in emcx, source its shell wrapper.
+For Bash on Linux:
 
 ```bash
-sudo apt-get install git build-essential autoconf automake libtool pkg-config \
-  gettext autopoint libglib2.0-dev libslang2-dev libssh2-1-dev libgpm-dev \
-  libx11-dev libext2fs-dev libaspell-dev libzip-dev python3 libglib2.0-bin \
-  wl-clipboard perl zip unzip
+alias emcx='. "$(dirname "$(readlink -f "$(type -P emcx)")")/../libexec/emcx/emcx-wrapper.sh"'
+```
 
-git clone --branch mc-modern https://github.com/tomasmark79/mc.git
-cd mc
+The wrapper path is resolved on each invocation, so package updates also work
+in an already-open shell using this alias. Direct `nix run` cannot change the
+parent shell's working directory.
+
+## Features in action
+
+These recordings show the customizations before the project was renamed:
+
+![File actions and themes](2026-10-07%2000-01-04.gif)
+
+![Terminal file manager alongside the desktop](2026-10-07%2000-06-08.gif)
+
+Switch themes with `Alt+Shift+T`. On macOS terminals, releasing `Esc` and then
+pressing uppercase `T` is another way to send that shortcut. DotName identifies
+our themes; it is not the application name.
+
+## Native source builds
+
+The checked-in source tree also includes the functional and identity changes.
+On Debian, install the usual MC build dependencies plus libzip before building:
+
+```bash
+sudo apt install build-essential autoconf automake autopoint gettext libtool \
+  pkg-config libglib2.0-dev libslang2-dev libssh2-1-dev libext2fs-dev libzip-dev
+
+git clone --branch main https://github.com/tomasmark79/emcx.git
+cd emcx
 ./autogen.sh
-./configure --prefix="$HOME/.local"
+./configure --prefix="$HOME/.local/opt/emcx"
 make -j"$(nproc)"
 make install
-"$HOME/.local/bin/mc"
+python3 nix/finalize-install.py "$HOME/.local/opt/emcx"
+install -m755 nix/migrate-config.py "$HOME/.local/opt/emcx/bin/emcx-migrate-config"
 ```
 
-ZIP extraction through F5 uses the fast direct-reading path when `configure`
-finds libzip >= 1.0 through pkg-config. Install `libzip-dev` before configuring
-and compiling MC. Without it, the build still succeeds, but ZIP copies use the
-slower external helper and temporary files. Installing the library after MC
-has been built does not enable the fast path: rerun `./configure`, `make`, and
-`make install`. The `zip` and `unzip` tools are still needed for helper operations.
+Use a dedicated prefix as shown, then add its `bin` directory to `PATH`.
+The finalization step renames the installed upstream manuals for emcx.
+Installing libzip after compilation does not enable ZIP streaming: configure
+and rebuild with the library present. The Nix package includes it automatically.
+Native builds use Git version information; Nix builds report the locked upstream
+commit date/hash and a hash of the custom patches, with no manual version file.
 
-After configuring, verify that direct ZIP reading was enabled:
+## Development and validation
 
 ```bash
-grep '^#define HAVE_LIBZIP 1' config.h
+nix build .#emcx
+nix run .#emcx-tests
+nix build .#checks.x86_64-linux.coexistence
+nix flake check --all-systems --no-build --no-update-lock-file
 ```
 
-Installing into `~/.local` requires no root privileges and does not overwrite
-`/usr/bin/mc`. Add `~/.local/bin` to `PATH` to launch this version as `mc`.
-Standard `make install DESTDIR=...` is supported for system packaging.
-This fork does not currently provide prebuilt `.deb` packages or an APT repository.
+Tests use disposable profiles and files, their own tmux servers, and user
+namespaces for root-mode checks. They do not access a NAS or the real desktop
+clipboard. The coexistence check installs emcx and upstream MC into one Nix
+environment, including both sets of manual pages.
 
-Clipboard actions require Linux with a running Wayland session and `wl-copy`; macOS, X11, and
-clipboard forwarding over SSH are not implemented. Trash actions require `gio`.
-MC itself also works without an accessible desktop clipboard. Personal bookmarks
-and history are not included in this repository; an existing MC profile can
-override the fork's defaults.
-
-## Shell integration
-
-After installing MC so that `which mc` finds this fork, add the following to
-`~/.bashrc`:
-
-```bash
-alias mc='source "$(dirname "$(readlink -f "$(which mc)")")/../libexec/mc/mc-wrapper.sh"'
-```
-
-Open a new terminal or run `source ~/.bashrc` to apply the settings.
-The alias sources MC's shell wrapper so your shell stays in the directory you
-were browsing when you exit MC. Resolving the executable's symlink locates the
-wrapper in the same installation, including when MC comes from a Nix profile.
-This path assumes the `libexec/mc` layout used by this fork's Nix package and
-the default source installation. It also requires `which` and `readlink`.
-
-The alias applies to the installed `mc` command. A one-off
-`nix run github:tomasmark79/mc` launches MC directly and does not change the
-parent shell's working directory on exit.
-
-## Local development and maintenance
-
-```bash
-nix build .#mc
-nix run .#mc-tests
-```
-
-The `mc-tests` package is exposed only on Linux. Tests require Linux with user
-namespaces enabled and must run as a regular user.
-They do not write to the actual desktop clipboard. To test a native build, set
-`MC_TEST_BINARY` to the absolute path of the installed MC and `MC_TEST_HELPER`
-to `misc/mc-clipboard.py`, make `python3`, `tmux`, and `unshare` available,
-and run `python3 nix/tests/run.py`.
-
-Keep changes local until they have been reviewed and tested. Update the package's
-upstream source with `nix flake update mc-upstream`, then build and run the tests.
-`flake.lock` pins the selected master revision; a build does not silently fetch
-new code. Consumers can override or follow `mc-upstream` independently of this
-fork, so updating upstream does not require publishing a new Modern revision.
-If a new upstream revision conflicts with our patches, the build fails until
-the integration is repaired.
-
-When maintaining the native source tree and refreshing the Modern patch set:
+When updating the maintained native source tree:
 
 ```bash
 git fetch upstream master
 git merge upstream/master
-# Resolve conflicts and stage the resolved source files if necessary.
-python3 nix/update-modern-patch.py
+# Resolve and stage source conflicts if necessary.
+python3 nix/update-patches.py
 nix flake update mc-upstream
-nix build .#mc
-nix run .#mc-tests
+nix run .#emcx-tests
 ```
 
-The patch exporter includes only application sources and assets, excluding
-repository workflows and documentation. All Modern packaging, tests, and
-maintenance support live in `nix/`. The Nix package version combines the upstream
-commit date and hash with the hash of our patch, in the form
-`unstable-YYYY-MM-DD-UPSTREAM-modern-PATCH`. There is no manually maintained
-version file or hardcoded upstream release number. Native builds derive their
-version from Git.
-The original license terms remain in effect; see `COPYING`.
+`nix/patches/features.patch` contains our functional changes.
+`nix/patches/identity.patch` contains the identity changes applied afterward.
+The exporter reverses the identity patch in a temporary Git index before
+exporting functional changes; it leaves the working tree and staging untouched.
+Refresh the identity patch deliberately if upstream changes its affected code.
+Keep changes local until reviewed and tested. See `COPYING` for the original
+GNU GPL license and `AUTHORS` for upstream contributors.

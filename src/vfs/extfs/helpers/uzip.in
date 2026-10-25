@@ -105,7 +105,7 @@ sub zipfs_cache_signature {
 # including archive paths longer than a single page.
 sub zipfs_cached_realpathname {
     my ($fname) = @_;
-    my $cache = $ENV{MC_EXTFS_CACHE};
+    my $cache = $ENV{EMCX_EXTFS_CACHE};
     return () unless defined $cache && $cache =~ m{^/};
 
     my @parent = lstat(File::Basename::dirname($cache));
@@ -492,7 +492,7 @@ sub cleandirs {
 sub mktmpdir {
 	use File::Temp qw(mkdtemp);
 	my $template = "/tmp/mcuzipfs.XXXXXX";
-	$template="$ENV{MC_TMPDIR}/mcuzipfs.XXXXXX" if ($ENV{MC_TMPDIR});
+	$template="$ENV{EMCX_TMPDIR}/mcuzipfs.XXXXXX" if ($ENV{EMCX_TMPDIR});
 	return mkdtemp($template);
 }
 

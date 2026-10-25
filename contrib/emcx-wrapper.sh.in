@@ -1,0 +1,25 @@
+if test -n "$EMCX_TMPDIR"; then
+	EMCX_PWD_FILE="`mktemp "${EMCX_TMPDIR}/emcx.pwd.XXXXXX"`"
+elif test -n "$TMPDIR"; then
+	EMCX_PWD_FILE="`mktemp "${TMPDIR}/emcx.pwd.XXXXXX"`"
+else
+	EMCX_PWD_FILE="`mktemp "/tmp/emcx.pwd.XXXXXX"`"
+fi
+
+EMCX_STATUS=0
+@bindir@/emcx -P "$EMCX_PWD_FILE" "$@" || EMCX_STATUS=$?
+
+if test -r "$EMCX_PWD_FILE"; then
+	# Command substitution removes trailing '\n's, hence the added and later removed '_'.
+	EMCX_PWD="`cat "$EMCX_PWD_FILE"; printf '_'`"
+	EMCX_PWD="${EMCX_PWD%_}"
+	if test -n "$EMCX_PWD" && test "$EMCX_PWD" != "$PWD" && test -d "$EMCX_PWD"; then
+		cd "$EMCX_PWD" || true
+	fi
+	unset EMCX_PWD
+fi
+
+# invoke the external rm command, avoiding shell alias or function
+command rm -f "$EMCX_PWD_FILE"
+unset EMCX_PWD_FILE
+eval "unset EMCX_STATUS; return $EMCX_STATUS"

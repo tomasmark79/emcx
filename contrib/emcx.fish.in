@@ -1,0 +1,3 @@
+function emcx --description 'Visual shell for Unix-like systems - fish wrapper'
+	source @pkglibexecdir@/emcx-wrapper.fish $argv
+end

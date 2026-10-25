@@ -1,5 +1,5 @@
 {
-  description = "Modern Midnight Commander with DotName skins and enhanced file actions";
+  description = "Extended Commander — a terminal file manager based on Midnight Commander";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
   inputs.mc-upstream = {
@@ -23,25 +23,31 @@
         system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
-          mc = pkgs.callPackage ./nix/package.nix { upstreamSource = mc-upstream; };
+          emcx = pkgs.callPackage ./nix/package.nix { upstreamSource = mc-upstream; };
         in
         {
-          inherit mc;
-          default = mc;
+          inherit emcx;
+          default = emcx;
         }
         // nixpkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
-          mc-tests = import ./nix/tests.nix { inherit pkgs mc; };
+          emcx-tests = import ./nix/tests.nix { inherit pkgs emcx; };
         }
       );
       apps = eachSystem (system: {
         default = {
           type = "app";
-          program = "${self.packages.${system}.mc}/bin/mc";
+          program = "${self.packages.${system}.emcx}/bin/emcx";
         };
       });
-      checks = eachSystem (system: {
-        build = self.packages.${system}.mc;
-      });
+      checks = eachSystem (system:
+        let pkgs = nixpkgs.legacyPackages.${system}; in {
+          build = self.packages.${system}.emcx;
+          coexistence = pkgs.buildEnv {
+            name = "emcx-with-upstream-mc";
+            paths = [ self.packages.${system}.emcx pkgs.mc ];
+            extraOutputsToInstall = [ "man" ];
+          };
+        });
       devShells = eachSystem (
         system:
         let
@@ -49,7 +55,7 @@
         in
         {
           default = pkgs.mkShell {
-            inputsFrom = [ self.packages.${system}.mc ];
+            inputsFrom = [ self.packages.${system}.emcx ];
             packages = [
               pkgs.python3
               pkgs.tmux

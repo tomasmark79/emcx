@@ -168,7 +168,7 @@ sub mcdebfs_run
 	{
 		use File::Temp qw(mkdtemp);
 		my $template = "/tmp/mcdebfs.run.XXXXXX";
-		$template="$ENV{MC_TMPDIR}/mcdebfs.XXXXXX" if ($ENV{MC_TMPDIR});
+		$template="$ENV{EMCX_TMPDIR}/mcdebfs.XXXXXX" if ($ENV{EMCX_TMPDIR});
 		$tmpdir = mkdtemp($template);
 		$tmpcmd="$tmpdir/run";
 		&mcdebfs_copyout($archive, $filename, $tmpcmd);

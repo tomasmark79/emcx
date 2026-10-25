@@ -877,8 +877,8 @@ load_setup_get_keymap_profile_config (gboolean load_from_file)
     }
     g_free (fname);
 
-    // 4) getenv("MC_KEYMAP")
-    fname = load_setup_get_full_config_name (NULL, g_getenv ("MC_KEYMAP"));
+    // 4) getenv("EMCX_KEYMAP")
+    fname = load_setup_get_full_config_name (NULL, g_getenv ("EMCX_KEYMAP"));
     if (fname != NULL && strcmp (fname, sysconfig_keymap) != 0 && strcmp (fname, share_keymap) != 0)
     {
         load_setup_init_config_from_file (&keymap_config, fname, TRUE);

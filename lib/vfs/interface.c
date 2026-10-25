@@ -842,7 +842,7 @@ mc_tmpdir (void)
             return tmpdir;
     }
 
-    sys_tmp = getenv ("MC_TMPDIR");
+    sys_tmp = getenv ("EMCX_TMPDIR");
     if (sys_tmp == NULL || !IS_PATH_SEP (sys_tmp[0]))
     {
         sys_tmp = getenv ("TMPDIR");
@@ -850,13 +850,13 @@ mc_tmpdir (void)
             sys_tmp = TMPDIR_DEFAULT;
     }
 
-    template = g_build_filename (sys_tmp, "mc-XXXXXX", (char *) NULL);
+    template = g_build_filename (sys_tmp, "emcx-XXXXXX", (char *) NULL);
     g_strlcpy (buffer, template, sizeof (buffer));
     g_free (template);
 
     tmpdir = g_mkdtemp (buffer);
     if (tmpdir != NULL)
-        g_setenv ("MC_TMPDIR", tmpdir, TRUE);
+        g_setenv ("EMCX_TMPDIR", tmpdir, TRUE);
     else
     {
         fprintf (stderr,

@@ -27,14 +27,14 @@ class ZipCacheTests(unittest.TestCase):
         wrapper.write_text(
             f"#!{sys.executable}\n"
             "import json, os, sys\n"
-            "fd = os.open(os.environ['MC_ZIP_LOG'], os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)\n"
+            "fd = os.open(os.environ['EMCX_ZIP_LOG'], os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)\n"
             "os.write(fd, (json.dumps(sys.argv[1:]) + '\\n').encode())\n"
             "os.close(fd)\n"
             f"os.execv({self.unzip!r}, [{self.unzip!r}, *sys.argv[1:]])\n"
         )
         wrapper.chmod(0o700)
-        if "MC_TEST_UZIP" in os.environ:
-            self.helper = Path(os.environ["MC_TEST_UZIP"])
+        if "EMCX_TEST_UZIP" in os.environ:
+            self.helper = Path(os.environ["EMCX_TEST_UZIP"])
         else:
             source = Path(__file__).resolve().parents[2] / "src/vfs/extfs/helpers/uzip.in"
             text = source.read_text()
@@ -44,8 +44,8 @@ class ZipCacheTests(unittest.TestCase):
             self.helper = self.base / "uzip"
             self.helper.write_text(text)
             self.helper.chmod(0o700)
-        self.env = dict(os.environ, MC_EXTFS_CACHE=str(self.cache),
-                        MC_TEST_EXTFS_LIST_CMD=str(wrapper), MC_ZIP_LOG=str(self.log),
+        self.env = dict(os.environ, EMCX_EXTFS_CACHE=str(self.cache),
+                        MC_TEST_EXTFS_LIST_CMD=str(wrapper), EMCX_ZIP_LOG=str(self.log),
                         LC_ALL="C.UTF-8")
 
     def archive_files(self, files):
@@ -147,7 +147,7 @@ class ZipCacheTests(unittest.TestCase):
             with self.subTest(mode=mode):
                 env = self.env.copy()
                 if mode == "absent":
-                    env.pop("MC_EXTFS_CACHE")
+                    env.pop("EMCX_EXTFS_CACHE")
                 elif mode == "public-parent":
                     self.base.chmod(0o755)
                 elif mode == "symlink-lock":

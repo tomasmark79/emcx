@@ -91,7 +91,7 @@ mcu7zip_copyin ()
 
 mcu7zip_mkdir ()
 {
-        dir=`mktemp -d "${MC_TMPDIR:-/tmp}/mctmpdir-u7z.XXXXXX"` || exit 1
+        dir=`mktemp -d "${EMCX_TMPDIR:-/tmp}/mctmpdir-u7z.XXXXXX"` || exit 1
         mkdir -p "$dir"/"$2"
         $P7ZIP a "$1" "$dir/${2%%/*}" >/dev/null 2>&1
         rm -rf "$dir"

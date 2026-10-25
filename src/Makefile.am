@@ -35,7 +35,7 @@ endif
 
 AM_CPPFLAGS += -I$(top_srcdir) $(GLIB_CFLAGS)
 
-bin_PROGRAMS = mc
+bin_PROGRAMS = emcx
 
 if USE_INTERNAL_EDIT
 EDITLIB = editor/libedit.la
@@ -55,14 +55,14 @@ libinternal_la_LIBADD = \
 	viewer/libmcviewer.la \
 	$(DIFFLIB) $(EDITLIB) $(SUBSHELLLIB)
 
-mc_LDADD = \
+emcx_LDADD = \
 	libinternal.la \
 	$(top_builddir)/lib/libmc.la
 
 SRC_mc_conssaver = \
 	cons.handler.c consaver/cons.saver.h
 
-mc_SOURCES = \
+emcx_SOURCES = \
 	main.c
 
 libinternal_la_SOURCES = \
@@ -103,19 +103,19 @@ endif
 # Make relative symlinks, but do the right thing if LN_S is `ln' or `cp'.
 #
 install_mcview:
-	cd $(DESTDIR)$(bindir)/$(binprefix) && rm -f mcview && $(LN_S) mc mcview
+	cd $(DESTDIR)$(bindir)/$(binprefix) && rm -f emcx-view && $(LN_S) emcx emcx-view
 
 install_mcedit:
-	cd $(DESTDIR)$(bindir)/$(binprefix) && rm -f mcedit && $(LN_S) mc mcedit
+	cd $(DESTDIR)$(bindir)/$(binprefix) && rm -f emcx-edit && $(LN_S) emcx emcx-edit
 
 install_mcdiff:
-	cd $(DESTDIR)$(bindir)/$(binprefix) && rm -f mcdiff && $(LN_S) mc mcdiff
+	cd $(DESTDIR)$(bindir)/$(binprefix) && rm -f emcx-diff && $(LN_S) emcx emcx-diff
 
 uninstall-hook:
-	rm -f $(DESTDIR)$(bindir)/$(binprefix)/mcview
+	rm -f $(DESTDIR)$(bindir)/$(binprefix)/emcx-view
 if USE_INTERNAL_EDIT
-	rm -f $(DESTDIR)$(bindir)/$(binprefix)/mcedit
+	rm -f $(DESTDIR)$(bindir)/$(binprefix)/emcx-edit
 endif
 if USE_DIFF
-	rm -f $(DESTDIR)$(bindir)/$(binprefix)/mcdiff
+	rm -f $(DESTDIR)$(bindir)/$(binprefix)/emcx-diff
 endif

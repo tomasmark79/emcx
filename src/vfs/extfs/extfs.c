@@ -1204,7 +1204,7 @@ extfs_cmd (const char *str_extfs_cmd, const struct extfs_super_t *archive,
         {
             g_string_prepend_c (cmd, ' ');
             g_string_prepend (cmd, quoted_cache_name->str);
-            g_string_prepend (cmd, "MC_EXTFS_CACHE=");
+            g_string_prepend (cmd, "EMCX_EXTFS_CACHE=");
             g_string_free (quoted_cache_name, TRUE);
         }
     }

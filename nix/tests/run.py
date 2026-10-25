@@ -16,17 +16,17 @@ import zipfile
 from unittest.mock import MagicMock, patch
 
 
-BINARY = os.environ["MC_TEST_BINARY"]
-HELPER = os.environ["MC_TEST_HELPER"]
+BINARY = os.environ["EMCX_TEST_BINARY"]
+HELPER = os.environ["EMCX_TEST_HELPER"]
 
 
 class Session:
     def __init__(self, directory, skin=None, root=False, args=(), envskin=None,
                  keymap="", truecolor=True, safe_delete=False, extra_env=None,
-                 right_directory=None):
+                 right_directory=None, executable=None, panel_arguments=True):
         self.base = Path(directory)
         self.socket = str(self.base / "tmux.sock")
-        self.config = self.base / "config/mc"
+        self.config = self.base / "config/emcx"
         self.base.mkdir(parents=True, exist_ok=True)
         if skin is not None or keymap:
             self.config.mkdir(parents=True)
@@ -48,7 +48,7 @@ class Session:
         self.file.write_text("test content\n")
         (self.right / "other.txt").write_text("second panel\n")
         env = os.environ.copy()
-        for key in ("MC_TMPDIR", "MC_SID", "MC_SKIN", "MC_KEYMAP", "TMUX", "TMUX_PANE", "DISPLAY",
+        for key in ("EMCX_TMPDIR", "EMCX_SID", "EMCX_SKIN", "EMCX_KEYMAP", "TMUX", "TMUX_PANE", "DISPLAY",
                     "NO_COLOR"):
             env.pop(key, None)
         env.update(XDG_CONFIG_HOME=str(self.base / "config"),
@@ -62,11 +62,13 @@ class Session:
         runtime.mkdir(mode=0o700)
         env.update(XDG_RUNTIME_DIR=str(runtime), WAYLAND_DISPLAY=str(runtime / "missing-wayland"))
         if envskin:
-            env["MC_SKIN"] = envskin
+            env["EMCX_SKIN"] = envskin
         if extra_env:
             env.update(extra_env)
         command = (["unshare", "--user", "--map-root-user", "--"] if root else [])
-        command += [BINARY, "-u", *args, str(self.left), str(self.right)]
+        command += [executable or BINARY, *(["-u"] if panel_arguments else []), *args]
+        if panel_arguments:
+            command += [str(self.left), str(self.right)]
         subprocess.run(["tmux", "-f", "/dev/null", "-S", self.socket,
                         "new-session", "-d", "-s", "test", "-x", "120", "-y", "35",
                         shlex.join(command)], env=env, check=True, timeout=10,
@@ -108,7 +110,7 @@ class Session:
 class RuntimeTests(unittest.TestCase):
     def setUp(self):
         # GIO refuses trash on some system filesystems, such as the one containing /tmp.
-        self.tmp = tempfile.TemporaryDirectory(prefix=".mc-regression-", dir=Path.home())
+        self.tmp = tempfile.TemporaryDirectory(prefix=".emcx-regression-", dir=Path.home())
         self.addCleanup(self.tmp.cleanup)
 
     def session(self, **kwargs):
@@ -214,14 +216,14 @@ class RuntimeTests(unittest.TestCase):
             self.assertEqual((s.right / name).read_bytes(), data)
         s.wait(lambda t: "Source" not in t and "source mask:" not in t,
                "Copy did not finish")
-        self.assertFalse(list(s.base.glob("mc-*/extfs-cache*.pag")), "F5 used the ZIP helper")
-        self.assertFalse([p for p in s.base.glob("mc-*/extfs*")
+        self.assertFalse(list(s.base.glob("emcx-*/extfs-cache*.pag")), "F5 used the ZIP helper")
+        self.assertFalse([p for p in s.base.glob("emcx-*/extfs*")
                           if not p.name.startswith("extfs-cache")], "F5 extracted temporary files")
         s.keys("F10")
         deadline = time.monotonic() + 8
-        while time.monotonic() < deadline and list(s.base.glob("mc-*/extfs-cache*")):
+        while time.monotonic() < deadline and list(s.base.glob("emcx-*/extfs-cache*")):
             time.sleep(.05)
-        self.assertFalse(list(s.base.glob("mc-*/extfs-cache*")), "ZIP index was not cleaned up")
+        self.assertFalse(list(s.base.glob("emcx-*/extfs-cache*")), "ZIP index was not cleaned up")
 
     def zip_with_file(self, archive, contents, compression=zipfile.ZIP_DEFLATED):
         with zipfile.ZipFile(archive, "w", compression=compression) as z:
@@ -277,9 +279,9 @@ class RuntimeTests(unittest.TestCase):
         s.wait(lambda t: "Cannot read source file" in t, "ZIP CRC error was not reported")
 
     def test_zip_custom_helper_fallback(self):
-        helper_dir = Path(self.tmp.name) / "data/mc/extfs.d"
+        helper_dir = Path(self.tmp.name) / "data/emcx/extfs.d"
         helper_dir.mkdir(parents=True)
-        helper = Path(BINARY).resolve().parents[1] / "libexec/mc/extfs.d/uzip"
+        helper = Path(BINARY).resolve().parents[1] / "libexec/emcx/extfs.d/uzip"
         shutil.copyfile(helper, helper_dir / "uzip")
         (helper_dir / "uzip").chmod(0o700)
         s = self.session(skin="dotname-light")
@@ -287,7 +289,7 @@ class RuntimeTests(unittest.TestCase):
         self.zip_with_file(archive, b"custom helper")
         self.open_zip_panel(s, archive)
         self.copy_zip_file(s, b"custom helper")
-        self.assertTrue(list(s.base.glob("mc-*/extfs-cache*.pag")), "Custom ZIP helper was bypassed")
+        self.assertTrue(list(s.base.glob("emcx-*/extfs-cache*.pag")), "Custom ZIP helper was bypassed")
 
     def test_zip_alias_fallback(self):
         s = self.session(skin="dotname-light")
@@ -299,7 +301,7 @@ class RuntimeTests(unittest.TestCase):
                 z.writestr(info, contents)
         self.open_zip_panel(s, archive)
         self.copy_zip_file(s, b"alias")
-        self.assertTrue(list(s.base.glob("mc-*/extfs-cache*.pag")), "ZIP alias semantics were bypassed")
+        self.assertTrue(list(s.base.glob("emcx-*/extfs-cache*.pag")), "ZIP alias semantics were bypassed")
 
     def test_zip_viewer_then_copy(self):
         s = self.session(skin="dotname-light")
@@ -309,7 +311,7 @@ class RuntimeTests(unittest.TestCase):
         self.open_zip_panel(s, archive)
         s.keys("Home", "Down", "F3")
         s.wait(lambda t: "ZIP viewer test contents" in t, "ZIP viewer did not open")
-        self.assertTrue(list(s.base.glob("mc-*/extfs-cache*.pag")), "Viewer did not use its temporary copy")
+        self.assertTrue(list(s.base.glob("emcx-*/extfs-cache*.pag")), "Viewer did not use its temporary copy")
         s.keys("F10")
         s.wait(lambda t: "uzip://" in t and "file.txt" in t, "ZIP viewer did not close")
         self.copy_zip_file(s, contents)
@@ -333,7 +335,7 @@ class RuntimeTests(unittest.TestCase):
                 break
             time.sleep(.05)
         self.assertEqual(output.read_bytes(), contents)
-        self.assertFalse(list(s.base.glob("mc-*/extfs-cache*.pag")), "Background copy used the helper")
+        self.assertFalse(list(s.base.glob("emcx-*/extfs-cache*.pag")), "Background copy used the helper")
 
     def test_skins_without_truecolor(self):
         for root in (False, True):

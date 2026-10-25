@@ -24,7 +24,7 @@ fgetflags (const char *path, unsigned long *flags)
 {
     int (*original) (const char *, unsigned long *) = dlsym (RTLD_NEXT, "fgetflags");
 
-    if (in_directory (path, "MC_TEST_MOVE_SOURCE"))
+    if (in_directory (path, "EMCX_TEST_MOVE_SOURCE"))
     {
         *flags = 0;
         return 0;
@@ -37,9 +37,9 @@ fsetflags (const char *path, unsigned long flags)
 {
     int (*original) (const char *, unsigned long) = dlsym (RTLD_NEXT, "fsetflags");
 
-    if (in_directory (path, "MC_TEST_MOVE_TARGET"))
+    if (in_directory (path, "EMCX_TEST_MOVE_TARGET"))
     {
-        FILE *log = fopen (getenv ("MC_TEST_MOVE_LOG"), "a");
+        FILE *log = fopen (getenv ("EMCX_TEST_MOVE_LOG"), "a");
         if (log != NULL)
         {
             fputs ("fsetflags: EOPNOTSUPP\n", log);
@@ -63,7 +63,7 @@ read (int fd, void *buffer, size_t count)
     if (length >= 0)
     {
         path[length] = '\0';
-        if (in_directory (path, "MC_TEST_MOVE_SOURCE"))
+        if (in_directory (path, "EMCX_TEST_MOVE_SOURCE"))
             usleep (50000);
     }
     return original (fd, buffer, count);

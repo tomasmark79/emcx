@@ -1,0 +1,23 @@
+set --local EMCX_PWD_FILE
+if set -q EMCX_TMPDIR
+	set EMCX_PWD_FILE (mktemp $EMCX_TMPDIR/emcx.pwd.XXXXXX)
+else if set -q TMPDIR
+	set EMCX_PWD_FILE (mktemp $TMPDIR/emcx.pwd.XXXXXX)
+else
+	set EMCX_PWD_FILE (mktemp /tmp/emcx.pwd.XXXXXX)
+end
+
+set --local EMCX_STATUS 0
+@bindir@/emcx -P "$EMCX_PWD_FILE" $argv || set EMCX_STATUS $status
+
+if test -r "$EMCX_PWD_FILE"
+	# This construct preserves internal and trailing '\n' characters.
+	read -l -z EMCX_PWD < (cat $EMCX_PWD_FILE | psub)
+	if test -n $EMCX_PWD && test $EMCX_PWD != $PWD && test -d $EMCX_PWD
+		cd $EMCX_PWD || true
+	end
+end
+
+# invoke the external rm command, avoiding shell alias or function
+command rm -f $EMCX_PWD_FILE
+exit $EMCX_STATUS

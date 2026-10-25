@@ -12,7 +12,7 @@ from run import Session
 
 class InterruptedMoveTests(unittest.TestCase):
     def setUp(self):
-        self.source = tempfile.TemporaryDirectory(prefix=".mc-move-", dir=Path.home())
+        self.source = tempfile.TemporaryDirectory(prefix=".emcx-move-", dir=Path.home())
         self.addCleanup(self.source.cleanup)
         self.target = tempfile.TemporaryDirectory(prefix="mc-move-", dir="/dev/shm")
         self.addCleanup(self.target.cleanup)
@@ -22,10 +22,10 @@ class InterruptedMoveTests(unittest.TestCase):
         self.session = Session(
             self.source.name, skin="dotname-light", right_directory=self.target.name,
             extra_env={
-                "LD_PRELOAD": os.environ["MC_TEST_MOVE_FAULTS"],
-                "MC_TEST_MOVE_SOURCE": str(Path(self.source.name) / "left"),
-                "MC_TEST_MOVE_TARGET": self.target.name,
-                "MC_TEST_MOVE_LOG": str(self.log),
+                "LD_PRELOAD": os.environ["EMCX_TEST_MOVE_FAULTS"],
+                "EMCX_TEST_MOVE_SOURCE": str(Path(self.source.name) / "left"),
+                "EMCX_TEST_MOVE_TARGET": self.target.name,
+                "EMCX_TEST_MOVE_LOG": str(self.log),
             },
         )
         self.addCleanup(self.session.stop)

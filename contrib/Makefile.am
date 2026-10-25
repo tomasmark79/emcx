@@ -2,19 +2,19 @@
 noinst_DATA = README.xterm
 
 SCRIPTS_IN = \
-	mc.csh.in \
-	mc.fish.in \
-	mc.sh.in \
-	mc-wrapper.csh.in \
-	mc-wrapper.fish.in \
-	mc-wrapper.sh.in
+	emcx.csh.in \
+	emcx.fish.in \
+	emcx.sh.in \
+	emcx-wrapper.csh.in \
+	emcx-wrapper.fish.in \
+	emcx-wrapper.sh.in
 SCRIPTS_OUT = \
-	mc.csh \
-	mc.fish \
-	mc.sh \
-	mc-wrapper.csh \
-	mc-wrapper.fish \
-	mc-wrapper.sh
+	emcx.csh \
+	emcx.fish \
+	emcx.sh \
+	emcx-wrapper.csh \
+	emcx-wrapper.fish \
+	emcx-wrapper.sh
 
 pkglibexec_SCRIPTS = $(SCRIPTS_OUT)
 
@@ -29,21 +29,21 @@ EXTRA_DIST = \
 	$(SCRIPTS_IN) \
 	$(noinst_DATA)
 
-mc.csh: $(top_builddir)/config.status $(srcdir)/mc.csh.in
-	$(SED) "s%@""pkglibexecdir@%$(pkglibexecdir)%" $(srcdir)/mc.csh.in > mc.csh
+emcx.csh: $(top_builddir)/config.status $(srcdir)/emcx.csh.in
+	$(SED) "s%@""pkglibexecdir@%$(pkglibexecdir)%" $(srcdir)/emcx.csh.in > emcx.csh
 
-mc.fish: $(top_builddir)/config.status $(srcdir)/mc.fish.in
-	$(SED) "s%@""pkglibexecdir@%$(pkglibexecdir)%" $(srcdir)/mc.fish.in > mc.fish
+emcx.fish: $(top_builddir)/config.status $(srcdir)/emcx.fish.in
+	$(SED) "s%@""pkglibexecdir@%$(pkglibexecdir)%" $(srcdir)/emcx.fish.in > emcx.fish
 
-mc.sh: $(top_builddir)/config.status $(srcdir)/mc.sh.in
-	$(SED) "s%@""pkglibexecdir@%$(pkglibexecdir)%" $(srcdir)/mc.sh.in > mc.sh
+emcx.sh: $(top_builddir)/config.status $(srcdir)/emcx.sh.in
+	$(SED) "s%@""pkglibexecdir@%$(pkglibexecdir)%" $(srcdir)/emcx.sh.in > emcx.sh
 
-mc-wrapper.csh: $(top_builddir)/config.status $(srcdir)/mc-wrapper.csh.in
-	$(SED) "s%@""bindir@%$(bindir)%" $(srcdir)/mc-wrapper.csh.in > mc-wrapper.csh
+emcx-wrapper.csh: $(top_builddir)/config.status $(srcdir)/emcx-wrapper.csh.in
+	$(SED) "s%@""bindir@%$(bindir)%" $(srcdir)/emcx-wrapper.csh.in > emcx-wrapper.csh
 
-mc-wrapper.fish: $(top_builddir)/config.status $(srcdir)/mc-wrapper.fish.in
-	$(SED) "s%@""bindir@%$(bindir)%" $(srcdir)/mc-wrapper.fish.in > mc-wrapper.fish
+emcx-wrapper.fish: $(top_builddir)/config.status $(srcdir)/emcx-wrapper.fish.in
+	$(SED) "s%@""bindir@%$(bindir)%" $(srcdir)/emcx-wrapper.fish.in > emcx-wrapper.fish
 
-mc-wrapper.sh: $(top_builddir)/config.status $(srcdir)/mc-wrapper.sh.in
-	$(SED) "s%@""bindir@%$(bindir)%" $(srcdir)/mc-wrapper.sh.in > mc-wrapper.sh
+emcx-wrapper.sh: $(top_builddir)/config.status $(srcdir)/emcx-wrapper.sh.in
+	$(SED) "s%@""bindir@%$(bindir)%" $(srcdir)/emcx-wrapper.sh.in > emcx-wrapper.sh
 
