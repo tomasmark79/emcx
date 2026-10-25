@@ -107,6 +107,8 @@ The tests cover:
   disposable files in home and `/dev/shm`, plus a test-only preload library
   that rejects destination ext2 attributes; they do not access network mounts.
 - Actual cursor colors in a running MC for a regular user and effective UID 0.
+- Visible hotlist selection in both themes and account types, including keyboard
+  navigation and moving focus from the list to the dialog buttons.
 - Clean user and root profiles, `skin=default`, explicit root variants,
   `MC_SKIN`, and `--skin`.
 - Switching with `Alt+Shift+T`, preserving the marked file and second panel,

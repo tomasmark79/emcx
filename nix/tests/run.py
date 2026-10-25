@@ -4,6 +4,7 @@ import configparser
 import importlib.util
 import io
 import os
+import re
 import shutil
 from pathlib import Path
 import shlex
@@ -126,6 +127,60 @@ class RuntimeTests(unittest.TestCase):
         s.keys("Left")
         s.wait(lambda t: s.file.name in t and "nested-marker.txt" not in t,
                "Left did not return to the parent")
+
+    def test_hotlist_selection_visible(self):
+        labels = ("Bookmark_One", "Bookmark_Two")
+
+        def backgrounds(screen):
+            background = None
+            result = {}
+            pattern = r"\x1b\[([0-9;]*)m|Bookmark_One|Bookmark_Two"
+            for match in re.finditer(pattern, screen):
+                if match.group(1) is None:
+                    result[match.group()] = background
+                    continue
+                codes = [int(c or 0) for c in match.group(1).split(";")]
+                i = 0
+                while i < len(codes):
+                    c = codes[i]
+                    if c in (0, 49):
+                        background = None
+                    elif 40 <= c <= 47 or 100 <= c <= 107:
+                        background = (c,)
+                    elif c in (38, 48) and i + 2 < len(codes):
+                        length = 3 if codes[i + 1] == 5 else 5
+                        if c == 48:
+                            background = tuple(codes[i:i + length])
+                        i += length - 1
+                    i += 1
+            return tuple(result.get(label) for label in labels)
+
+        for root in (False, True):
+            for skin in ("dotname-light", "dotname-dark"):
+                with self.subTest(root=root, skin=skin):
+                    directory = Path(self.tmp.name) / f"{skin}-{root}"
+                    s = Session(directory, skin=skin, root=root)
+                    try:
+                        s.wait(lambda t: s.file.name in t, "Initial panel did not open")
+                        (s.config / "hotlist").write_text(
+                            f'ENTRY "{labels[0]}" URL "{s.left}"\n'
+                            f'ENTRY "{labels[1]}" URL "{s.right}"\n'
+                        )
+                        s.keys("C-\\")
+                        s.wait(lambda t: all(label in t for label in labels),
+                               "Directory hotlist did not open")
+                        s.keys("Home")
+                        selected, normal = backgrounds(s.screen())
+                        self.assertNotEqual(selected, normal,
+                                            "Selected hotlist row has no distinct background")
+                        s.keys("Down")
+                        s.wait(lambda t: backgrounds(t) == (normal, selected),
+                               "Hotlist highlight did not follow selection")
+                        s.keys("Tab")
+                        s.wait(lambda t: backgrounds(t)[0] != backgrounds(t)[1],
+                               "Hotlist selection disappeared after focus moved to a button")
+                    finally:
+                        s.stop()
 
     def test_zip_f5_streaming_and_cleanup(self):
         s = self.session(skin="dotname-light")

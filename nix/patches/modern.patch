@@ -369,10 +369,10 @@ index 74cb63c96..15e25cf09 100644
  	default.ini \
 diff --git a/misc/skins/dotname-dark-root.ini b/misc/skins/dotname-dark-root.ini
 new file mode 100644
-index 000000000..ff1b31e6c
+index 000000000..d7bab57ec
 --- /dev/null
 +++ b/misc/skins/dotname-dark-root.ini
-@@ -0,0 +1,191 @@
+@@ -0,0 +1,193 @@
 +# DotName dark skin using the fixed xterm 256-color palette.
 +# Requires a 256-color TERM entry; COLORTERM=truecolor is not needed.
 +
@@ -461,6 +461,8 @@ index 000000000..ff1b31e6c
 +[dialog]
 +    _default_ = MainFg;Dialog
 +    dfocus = MainFg;DialogFocus
++    dselnormal = MainFg;DialogFocus
++    dselfocus = MainFg;DialogFocus
 +    dhotnormal = MainFg;;underline
 +    dhotfocus = MainFg;DialogFocus;underline
 +    dtitle = MainFg;;bold
@@ -566,10 +568,10 @@ index 000000000..ff1b31e6c
 +    window-close-char = ✕
 diff --git a/misc/skins/dotname-dark.ini b/misc/skins/dotname-dark.ini
 new file mode 100644
-index 000000000..e513e7d4b
+index 000000000..668935a25
 --- /dev/null
 +++ b/misc/skins/dotname-dark.ini
-@@ -0,0 +1,191 @@
+@@ -0,0 +1,193 @@
 +# DotName dark skin using the fixed xterm 256-color palette.
 +# Requires a 256-color TERM entry; COLORTERM=truecolor is not needed.
 +
@@ -658,6 +660,8 @@ index 000000000..e513e7d4b
 +[dialog]
 +    _default_ = MainFg;Dialog
 +    dfocus = MainFg;DialogFocus
++    dselnormal = MainFg;DialogFocus
++    dselfocus = MainFg;DialogFocus
 +    dhotnormal = MainFg;;underline
 +    dhotfocus = MainFg;DialogFocus;underline
 +    dtitle = MainFg;;bold
@@ -763,10 +767,10 @@ index 000000000..e513e7d4b
 +    window-close-char = ✕
 diff --git a/misc/skins/dotname-light-root.ini b/misc/skins/dotname-light-root.ini
 new file mode 100644
-index 000000000..9c8d84914
+index 000000000..1eb1ff4b5
 --- /dev/null
 +++ b/misc/skins/dotname-light-root.ini
-@@ -0,0 +1,191 @@
+@@ -0,0 +1,193 @@
 +# DotName light skin using the fixed xterm 256-color palette.
 +# Requires a 256-color TERM entry; COLORTERM=truecolor is not needed.
 +
@@ -855,6 +859,8 @@ index 000000000..9c8d84914
 +[dialog]
 +    _default_ = color16;Dialog
 +    dfocus = ;DialogFocus
++    dselnormal = ;DialogFocus
++    dselfocus = ;DialogFocus
 +    dhotnormal = ;;underline
 +    dhotfocus = ;DialogFocus;underline
 +    dtitle = ;;bold
@@ -960,10 +966,10 @@ index 000000000..9c8d84914
 +    window-close-char = ✕
 diff --git a/misc/skins/dotname-light.ini b/misc/skins/dotname-light.ini
 new file mode 100644
-index 000000000..3be8a74d4
+index 000000000..587fb2442
 --- /dev/null
 +++ b/misc/skins/dotname-light.ini
-@@ -0,0 +1,191 @@
+@@ -0,0 +1,193 @@
 +# DotName light skin using the fixed xterm 256-color palette.
 +# Requires a 256-color TERM entry; COLORTERM=truecolor is not needed.
 +
@@ -1052,6 +1058,8 @@ index 000000000..3be8a74d4
 +[dialog]
 +    _default_ = color16;Dialog
 +    dfocus = ;DialogFocus
++    dselnormal = ;DialogFocus
++    dselfocus = ;DialogFocus
 +    dhotnormal = ;;underline
 +    dhotfocus = ;DialogFocus;underline
 +    dtitle = ;;bold
