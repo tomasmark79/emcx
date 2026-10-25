@@ -108,13 +108,7 @@ The wrapper path is resolved on each invocation, so package updates also work
 in an already-open shell using this alias. Direct `nix run` cannot change the
 parent shell's working directory.
 
-## Features in action
-
-These recordings show the customizations before the project was renamed:
-
-![File actions and themes](2026-10-07%2000-01-04.gif)
-
-![Terminal file manager alongside the desktop](2026-10-07%2000-06-08.gif)
+## Themes
 
 Switch themes with `Alt+Shift+T`. On macOS terminals, releasing `Esc` and then
 pressing uppercase `T` is another way to send that shortcut. DotName identifies
