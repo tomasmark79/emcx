@@ -60,6 +60,32 @@ class IdentityTests(unittest.TestCase):
             self.assertTrue(name + ".1" in files or name + ".1.gz" in files, name)
         self.assertFalse(files & {"mc.1.gz", "mc.1", "mcedit.1.gz", "mcview.1.gz", "mcdiff.1.gz"})
 
+    def test_help_banner_in_all_installed_languages_and_tui(self):
+        help_files = sorted((self.prefix / "share/emcx/help").glob("mc.hlp*"))
+        self.assertTrue(help_files, "No help files installed")
+        headers = []
+        for path in help_files:
+            text = path.read_text()
+            main = text.split("\x04[main]\n", 1)[1].split("\x04", 1)[0]
+            header = main.lstrip("\n").split("\x07", 1)[0]
+            headers.append(header)
+            self.assertIn("Extended Commander", main, path.name)
+        self.assertTrue(all(header == headers[0] for header in headers),
+                        "Translated help has a different logo")
+        s = Session(self.base / "help", skin="dotname-dark")
+        try:
+            s.wait(lambda t: s.file.name in t, "Initial panel did not open")
+            s.keys("F1")
+            s.wait(lambda t: "Extended Commander" in t and "Based on Midnight Commander." in t,
+                   "Help did not show the fork identity and upstream attribution")
+            screen = s.screen()
+            self.assertIn("├── \\ / ─┼─ ┌─┐ ┌─┐ ┌─┤ ┌─┐ ┌─┤", screen)
+            version = subprocess.check_output([BINARY, "--version"], env=self.env,
+                                              text=True).splitlines()[0].split(" ", 2)[2]
+            self.assertIn(version, screen, "Help lost the current version")
+        finally:
+            s.stop()
+
     def test_executable_names_select_the_correct_modes(self):
         for mode in ("edit", "view", "diff"):
             with self.subTest(mode=mode):

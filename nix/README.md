@@ -1,5 +1,10 @@
 # Extended Commander: customizations and tests
 
+The help logo and introductory product name are part of `identity.patch`,
+including translated help templates. Nix applies this patch automatically to
+the locked upstream source during every build; installed help files do not
+need manual changes. The original MC authorship and license remain in the help.
+
 This package includes custom trash and clipboard actions, cycling through
 favorite skins, and automatic selection of DotName root skin variants.
 

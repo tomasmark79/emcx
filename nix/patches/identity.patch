@@ -325,6 +325,189 @@ index d48ce2a67..000000000
 -function mc --description 'Visual shell for Unix-like systems - fish wrapper'
 -	source @pkglibexecdir@/mc-wrapper.fish $argv
 -end
+diff --git a/doc/hlp/es/xnc.hlp b/doc/hlp/es/xnc.hlp
+index b87fbe338..f0dbee81d 100644
+--- a/doc/hlp/es/xnc.hlp
++++ b/doc/hlp/es/xnc.hlp
+@@ -1,13 +1,13 @@
+ 
+ [main]
+-lqwqk     k           k     
+-x x x .   x     .     x     
+-x x x k lqu wqk k lqw tqk n 
+-x x x x x x x x x x x x x x 
+-v   v v mqv v v v mqu v v mj
+-    qqqqqqCommanderqj 
+-
+-Esta es la pantalla principal de ayuda de GNU Midnight Commander.
++lqq      x            x       x
++x        x            x       x
++tqq \ / qnq lqk lqk lqu lqk lqu
++x    X   x  tqj x x x x tqj x x
++mqq / \  mq mqq x x mqj mqq mqj
++    qqqqqqCommanderqq 
++
++Esta es la pantalla principal de ayuda de Extended Commander.
+ 
+ Puede pulsar la tecla «Intro»How to use help para aprender a navegar por el sistema de ayuda, o acceder directamente a los contenidosContents.
+ 
+diff --git a/doc/hlp/hu/xnc.hlp b/doc/hlp/hu/xnc.hlp
+index f33159b71..6a50fd670 100644
+--- a/doc/hlp/hu/xnc.hlp
++++ b/doc/hlp/hu/xnc.hlp
+@@ -1,12 +1,12 @@
+ [main]
+-lqwqk     k           k     
+-x x x .   x     .     x     
+-x x x k lqu wqk k lqw tqk n 
+-x x x x x x x x x x x x x x 
+-v   v v mqv v v v mqu v v mj
+-    qqqqqqCommanderqj 
+-
+-Ez a GNU Midnight Commander súgója.
++lqq      x            x       x
++x        x            x       x
++tqq \ / qnq lqk lqk lqu lqk lqu
++x    X   x  tqj x x x x tqj x x
++mqq / \  mq mqq x x mqj mqq mqj
++    qqqqqqCommanderqq 
++
++Ez a Extended Commander súgója.
+ 
+ Az interaktív súgó használatának megismeréséhez csak üss egy entertHow to use help. Itt közvetlenül a súgó tartalomjegyzékébeContents juthatsz.
+ 
+diff --git a/doc/hlp/it/xnc.hlp b/doc/hlp/it/xnc.hlp
+index dce793381..3bf05e6df 100644
+--- a/doc/hlp/it/xnc.hlp
++++ b/doc/hlp/it/xnc.hlp
+@@ -1,13 +1,13 @@
+ 
+ [main]
+-lqwqk     k           k     
+-x x x .   x     .     x     
+-x x x k lqu wqk k lqw tqk n 
+-x x x x x x x x x x x x x x 
+-v   v v mqv v v v mqu v v mj
+-    qqqqqqCommanderqj 
+-
+-Questa è la principale schermata della guida interattiva del GNU Midnight Commander. 
++lqq      x            x       x
++x        x            x       x
++tqq \ / qnq lqk lqk lqu lqk lqu
++x    X   x  tqj x x x x tqj x x
++mqq / \  mq mqq x x mqj mqq mqj
++    qqqqqqCommanderqq 
++
++Questa è la principale schermata della guida interattiva del Extended Commander.
+ 
+ Per saperne di più su come usare la guida interattiva, premere semplicemente invioHow to use help. Se lo si desidera, è possibile  consultare direttamente il sommarioContents della guida.
+ 
+diff --git a/doc/hlp/pl/xnc.hlp b/doc/hlp/pl/xnc.hlp
+index 9729bfdc7..5566070fc 100644
+--- a/doc/hlp/pl/xnc.hlp
++++ b/doc/hlp/pl/xnc.hlp
+@@ -1,13 +1,13 @@
+ 
+ [main]
+-lqwqk     k           k     
+-x x x .   x     .     x     
+-x x x k lqu wqk k lqw tqk n 
+-x x x x x x x x x x x x x x 
+-v   v v mqv v v v mqu v v mj
+-    qqqqqqCommanderqj 
+-
+-Główny ekran pomocy programu GNU Midnight Commander.
++lqq      x            x       x
++x        x            x       x
++tqq \ / qnq lqk lqk lqu lqk lqu
++x    X   x  tqj x x x x tqj x x
++mqq / \  mq mqq x x mqj mqq mqj
++    qqqqqqCommanderqq 
++
++Główny ekran pomocy programu Extended Commander.
+ 
+ Aby dowiedzieć się, jak używać interaktywnej pomocy, należy nacisnąć klawisz EnterHow to use help. Można też przejść bezpośrednio do spisu treściContents.
+ 
+diff --git a/doc/hlp/ru/xnc.hlp b/doc/hlp/ru/xnc.hlp
+index bd0a937d5..f5288650a 100644
+--- a/doc/hlp/ru/xnc.hlp
++++ b/doc/hlp/ru/xnc.hlp
+@@ -1,12 +1,12 @@
+ [main]
+-lqwqk     k           k     
+-x x x .   x     .     x     
+-x x x k lqu wqk k lqw tqk n 
+-x x x x x x x x x x x x x x 
+-v   v v mqv v v v mqu v v mj
+-    qqqqqqCommanderqj 
+-
+-Вы сейчас видите главное окно интерактивной подсказки программы GNU Midnight Commander.
++lqq      x            x       x
++x        x            x       x
++tqq \ / qnq lqk lqk lqu lqk lqu
++x    X   x  tqj x x x x tqj x x
++mqq / \  mq mqq x x mqj mqq mqj
++    qqqqqqCommanderqq 
++
++Вы сейчас видите главное окно интерактивной подсказки программы Extended Commander.
+ 
+ Чтобы узнать, как пользоваться подсказкой, нажмите клавишу EnterHow to use help, иначе переходите к перечню разделовContents подсказки.
+ 
+diff --git a/doc/hlp/sr/xnc.hlp b/doc/hlp/sr/xnc.hlp
+index 78c0b4a65..f280a71c1 100644
+--- a/doc/hlp/sr/xnc.hlp
++++ b/doc/hlp/sr/xnc.hlp
+@@ -1,14 +1,14 @@
+ 
+ [main]
+ 
+-lqqk             nq         
+-x  x             x          
+-x  x lqk w w lqk tqk w w w w
+-x  x x x tqu x x x x tqu x x
+-v  x mqj v v mqj x v v v mqv
+-   mqqqнаредникqqj 
+-
+-Ово је главни екран помоћи за ГНУ-овог поноћног наредника.
++lqq      x            x       x
++x        x            x       x
++tqq \ / qnq lqk lqk lqu lqk lqu
++x    X   x  tqj x x x x tqj x x
++mqq / \  mq mqq x x mqj mqq mqj
++    qqqqqqCommanderqq 
++
++Ово је главни екран помоћи за Extended Commander.
+ 
+ Да бисте сазнали више о томе како да користите интерактивни систем помоћи потребно је да притиснете EnterHow to use help. Можете и одмах отићи на садржајContents помоћи.
+ 
+diff --git a/doc/hlp/xnc.hlp b/doc/hlp/xnc.hlp
+index a53e50c9e..ff3f7ea15 100644
+--- a/doc/hlp/xnc.hlp
++++ b/doc/hlp/xnc.hlp
+@@ -1,13 +1,15 @@
+ 
+ [main]
+-lqwqk     k           k     
+-x x x .   x     .     x     
+-x x x k lqu wqk k lqw tqk n 
+-x x x x x x x x x x x x x x 
+-v   v v mqv v v v mqu v v mj
+-    qqqqqqCommanderqj 
+-
+-This is the main help screen for GNU Midnight Commander.
++lqq      x            x       x
++x        x            x       x
++tqq \ / qnq lqk lqk lqu lqk lqu
++x    X   x  tqj x x x x tqj x x
++mqq / \  mq mqq x x mqj mqq mqj
++    qqqqqqCommanderqq 
++
++This is the main help screen for Extended Commander.
++
++Based on Midnight Commander.
+ 
+ To learn more on how to use the interactive help facility just press EnterHow to use help. You may want to go directly to the help contentsContents.
+ 
 diff --git a/lib/fileloc.h b/lib/fileloc.h
 index 3e3fb34f6..7bdb160f1 100644
 --- a/lib/fileloc.h

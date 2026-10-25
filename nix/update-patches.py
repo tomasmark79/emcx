@@ -10,7 +10,7 @@ import tempfile
 
 root = Path(__file__).resolve().parent.parent
 base = sys.argv[1] if len(sys.argv) > 1 else "upstream/master"
-paths = ["configure.ac", "m4.include", "lib", "misc", "src", "contrib", "tests", "version.sh"]
+paths = ["configure.ac", "m4.include", "lib", "misc", "src", "contrib", "tests", "doc/hlp", "version.sh"]
 conflicts = subprocess.check_output(
     ["git", "diff", "--name-only", "--diff-filter=U"], cwd=root, text=True
 )
