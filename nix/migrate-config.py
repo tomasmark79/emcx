@@ -8,6 +8,7 @@ from pathlib import Path
 import shutil
 import stat
 import sys
+import tempfile
 
 
 def copy_profile(source, target, copied):
@@ -30,6 +31,58 @@ def copy_profile(source, target, copied):
         raise RuntimeError(f"Unsupported profile entry: {source}")
 
 
+def write_private_file(parent, prefix, data, suffix=""):
+    fd, name = tempfile.mkstemp(dir=parent, prefix=prefix, suffix=suffix)
+    path = Path(name)
+    try:
+        with os.fdopen(fd, "wb") as stream:
+            stream.write(data)
+            stream.flush()
+            os.fsync(stream.fileno())
+    except Exception:
+        path.unlink(missing_ok=True)
+        raise
+    return path
+
+
+def migrate_hotlist(apply=False):
+    home = Path.home()
+    root = Path(os.environ.get("XDG_CONFIG_HOME", home / ".config"))
+    if not root.is_absolute():
+        raise RuntimeError("XDG configuration directory must be an absolute path")
+    source = root / "mc/hotlist"
+    if not os.path.lexists(source):
+        source = home / ".mc/hotlist"
+    if not source.is_file():
+        raise RuntimeError(f"No Midnight Commander hotlist found: {source}")
+    target = root / "emcx/hotlist"
+    if target.parent.resolve() == source.parent.resolve():
+        raise RuntimeError("The emcx profile points to the original mc profile; refusing to modify it")
+    if os.path.lexists(target) and not target.is_file():
+        raise RuntimeError(f"Target is not a regular hotlist file: {target}")
+    data = source.read_bytes()
+    previous = target.read_bytes() if target.is_file() else None
+    if (previous == data and not target.is_symlink() and target.stat().st_nlink == 1):
+        print("The emcx hotlist already matches the original MC hotlist.")
+        return
+    print(f"Copy {source} -> {target}")
+    if previous is not None:
+        print("The existing emcx hotlist will be backed up before replacement.")
+    if not apply:
+        print("Dry run. Close MC and emcx, then use --apply to import the hotlist.")
+        return
+    target.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    if previous is not None:
+        backup = write_private_file(target.parent, "hotlist.before-import-", previous, ".bak")
+        print(f"Backup: {backup}")
+    staged = write_private_file(target.parent, ".hotlist-import-", data)
+    try:
+        os.replace(staged, target)
+    finally:
+        staged.unlink(missing_ok=True)
+    print("Hotlist imported. Other emcx settings and the original mc profile are unchanged.")
+
+
 def migrate(apply=False):
     home = Path.home()
     roots = [
@@ -45,7 +98,8 @@ def migrate(apply=False):
         return
     for source, target in plans:
         if os.path.lexists(target):
-            raise RuntimeError(f"Target already exists; refusing to overwrite: {target}")
+            raise RuntimeError(f"Target already exists; refusing to overwrite: {target}. "
+                               "Use --hotlist-only to import bookmarks into an existing profile.")
         print(f"Copy {source} -> {target}")
     if not apply:
         print("Dry run. Use --apply to copy. The original mc profile is retained.")
@@ -76,10 +130,15 @@ def migrate(apply=False):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--apply", action="store_true", help="copy profiles; default is a dry run")
+    parser.add_argument("--apply", action="store_true", help="perform the import; default is a dry run")
+    parser.add_argument("--hotlist-only", action="store_true",
+                        help="import only bookmarks, backing up an existing emcx hotlist")
     args = parser.parse_args()
     try:
-        migrate(args.apply)
+        if args.hotlist_only:
+            migrate_hotlist(args.apply)
+        else:
+            migrate(args.apply)
     except (OSError, RuntimeError, shutil.Error) as error:
         print(f"emcx-migrate-config: {error}", file=sys.stderr)
         raise SystemExit(1)

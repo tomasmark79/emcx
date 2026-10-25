@@ -30,7 +30,8 @@ XDG locations, such as `~/.config/emcx`, `~/.local/share/emcx`, and `~/.cache/em
 `EMCX_SKIN`, `EMCX_KEYMAP`, and `EMCX_TMPDIR` provide fork-specific overrides.
 Internal configuration keys and profile formats remain compatible with MC.
 
-To reuse an existing MC profile, first review the proposed copy:
+To reuse an existing MC profile, close MC and emcx, then review and apply the copy
+before the first emcx launch:
 
 ```bash
 emcx-migrate-config
@@ -43,6 +44,18 @@ commands and public `MC_*` environment variables in the copied user menu. It doe
 modify the original profile or copy its cache. Existing emcx targets are never
 overwritten. Review custom scripts containing absolute paths separately.
 
+If emcx has already created a profile, import only the original MC hotlist:
+
+```bash
+emcx-migrate-config --hotlist-only
+emcx-migrate-config --hotlist-only --apply
+```
+
+This copies bookmarks without changing other emcx settings. An existing hotlist
+is backed up as `hotlist.before-import-*.bak` in the emcx configuration directory
+before atomic replacement. The original MC hotlist is retained. A legacy
+`~/.mc/hotlist` is also recognized when the XDG MC hotlist is absent.
+
 ## Nix and NixOS
 
 Run without installing:
@@ -51,7 +64,7 @@ Run without installing:
 nix run github:tomasmark79/emcx
 ```
 
-Install into a user profile:
+Install into a user profile (available to that user):
 
 ```bash
 nix profile install github:tomasmark79/emcx#emcx
@@ -74,6 +87,9 @@ inputs.mc-upstream = {
 
 Add `emcx.packages.${pkgs.stdenv.hostPlatform.system}.emcx` to
 `environment.systemPackages` in a module receiving the `emcx` input.
+This is the system-wide NixOS installation: both the regular user and root can
+run `emcx`, including `sudo emcx`. A user-profile installation or `nix run` does
+not provide this system-wide command. No manual links into `/usr/bin` are needed.
 The package supports Linux and macOS; the TUI test runner is Linux-only.
 
 `flake.lock` records exact source revisions. `nix flake update mc-upstream`
@@ -82,7 +98,7 @@ selects the current upstream master; builds reuse that selection. Update the
 the build until the patches are updated; it does not silently use an old source.
 
 To keep the shell in the directory visited in emcx, source its shell wrapper.
-For Bash on Linux:
+For Bash on NixOS:
 
 ```bash
 alias emcx='. "$(dirname "$(readlink -f "$(type -P emcx)")")/../libexec/emcx/emcx-wrapper.sh"'
@@ -107,23 +123,62 @@ our themes; it is not the application name.
 ## Native source builds
 
 The checked-in source tree also includes the functional and identity changes.
-On Debian, install the usual MC build dependencies plus libzip before building:
+On Debian (including ARM), install dependencies and build a system-wide copy
+under `/usr/local`. This makes `emcx` available to the regular user and root,
+including `sudo emcx`:
 
 ```bash
 sudo apt install build-essential autoconf automake autopoint gettext libtool \
-  pkg-config libglib2.0-dev libslang2-dev libssh2-1-dev libext2fs-dev libzip-dev
+  pkg-config libglib2.0-dev libslang2-dev libssh2-1-dev libext2fs-dev libzip-dev \
+  python3 libglib2.0-bin wl-clipboard unzip zip
 
 git clone --branch main https://github.com/tomasmark79/emcx.git
 cd emcx
 ./autogen.sh
-./configure --prefix="$HOME/.local/opt/emcx"
+./configure --prefix=/usr/local
 make -j"$(nproc)"
-make install
-python3 nix/finalize-install.py "$HOME/.local/opt/emcx"
-install -m755 nix/migrate-config.py "$HOME/.local/opt/emcx/bin/emcx-migrate-config"
+sudo make install
+sudo python3 nix/finalize-install.py /usr/local
+sudo install -m755 nix/migrate-config.py /usr/local/bin/emcx-migrate-config
+
+emcx --version
+sudo emcx --version
 ```
 
-Use a dedicated prefix as shown, then add its `bin` directory to `PATH`.
+The Python finalization step only renames manuals, and `install` only installs
+the migration command. Neither imports your profile. To import your existing
+MC bookmarks, close MC and emcx, then run these commands as your normal user:
+
+```bash
+emcx-migrate-config --hotlist-only
+emcx-migrate-config --hotlist-only --apply
+```
+
+They can also be run directly from the checkout as
+`python3 nix/migrate-config.py` with the same options, without rebuilding C.
+To copy the entire original profile instead, use the full-profile migration
+above before the first emcx invocation.
+
+For Bash directory tracking, add this to your `~/.bashrc`:
+
+```bash
+source /usr/local/libexec/emcx/emcx.sh
+```
+
+When switching from a private installation, remove the earlier
+`~/.local/opt/emcx/bin` PATH entry and its shell integration line. The system
+installation also works without an alias; `sudo emcx` invokes the binary directly.
+Root has its own profile. To import root's original MC bookmarks, close root's
+MC/emcx sessions and run `sudo emcx-migrate-config --hotlist-only` followed by
+`sudo emcx-migrate-config --hotlist-only --apply`. Run migration without sudo for
+your own bookmarks. The installer does not copy one user's profile to another.
+
+For an optional private installation, configure with
+`--prefix="$HOME/.local/opt/emcx"`, run `make install` without sudo, and use that
+prefix for the two Python/helper installation steps. Add its `bin` directory to
+your PATH and source its `libexec/emcx/emcx.sh`. This variant is scoped to your
+account; use the system installation above for `sudo emcx`.
+
 The finalization step renames the installed upstream manuals for emcx.
 Installing libzip after compilation does not enable ZIP streaming: configure
 and rebuild with the library present. The Nix package includes it automatically.
@@ -143,6 +198,19 @@ Tests use disposable profiles and files, their own tmux servers, and user
 namespaces for root-mode checks. They do not access a NAS or the real desktop
 clipboard. The coexistence check installs emcx and upstream MC into one Nix
 environment, including both sets of manual pages.
+
+To check the native Debian installation in a disposable container (including
+the normal user, root, `sudo emcx`, the shell wrapper and separate hotlists):
+
+```bash
+docker run --rm --platform linux/arm64 \
+  --mount type=bind,src="$PWD",dst=/source,readonly \
+  debian:bookworm bash /source/nix/tests/debian-install.sh
+```
+
+An ARM64 run on an x86 host requires an already configured binfmt emulator.
+Use `--platform linux/amd64` to test x86 Debian instead. The script installs
+dependencies and changes sudo rules only inside the disposable container.
 
 When updating the maintained native source tree:
 

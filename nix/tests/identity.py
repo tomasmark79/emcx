@@ -2,10 +2,12 @@
 
 import os
 from pathlib import Path
+import runpy
 import subprocess
 import tempfile
 import time
 import unittest
+from unittest.mock import patch
 
 from run import BINARY, Session
 
@@ -160,6 +162,72 @@ class IdentityTests(unittest.TestCase):
         (new / "skins/theme.ini").write_text("new theme\n")
         self.assertEqual((old / "ini").read_text(), "original settings\n")
         self.assertEqual((skins / "theme.ini").read_text(), "original theme\n")
+
+    def test_hotlist_import_backs_up_existing_bookmarks_without_changing_settings(self):
+        old = self.base / "config/mc"
+        old.mkdir(parents=True)
+        bookmarks = b'GROUP "Work"\nENTRY "Server" URL "/srv/files"\nENDGROUP\n# \xff\n'
+        (old / "hotlist").write_bytes(bookmarks)
+        new = self.base / "config/emcx"
+        new.mkdir()
+        (new / "hotlist").write_bytes(b'ENTRY "Current" URL "/tmp"\n')
+        (new / "ini").write_text("keep current settings\n")
+        result = self.migrate("--hotlist-only")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual((new / "hotlist").read_bytes(), b'ENTRY "Current" URL "/tmp"\n')
+        self.assertEqual(list(new.glob("hotlist.before-import-*")), [])
+        result = self.migrate("--hotlist-only", "--apply")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual((new / "hotlist").read_bytes(), bookmarks)
+        backups = list(new.glob("hotlist.before-import-*.bak"))
+        self.assertEqual(len(backups), 1)
+        self.assertEqual(backups[0].read_bytes(), b'ENTRY "Current" URL "/tmp"\n')
+        self.assertEqual(backups[0].stat().st_mode & 0o777, 0o600)
+        self.assertEqual((new / "ini").read_text(), "keep current settings\n")
+        self.assertEqual((old / "hotlist").read_bytes(), bookmarks)
+        self.assertEqual(self.migrate("--hotlist-only", "--apply").returncode, 0)
+        self.assertEqual(list(new.glob("hotlist.before-import-*.bak")), backups)
+
+    def test_hotlist_import_supports_legacy_mc_profile_and_custom_xdg_root(self):
+        old = self.base / ".mc"
+        old.mkdir()
+        (old / "hotlist").write_bytes(b'ENTRY "Legacy" URL "/srv"\n')
+        self.assertEqual(self.migrate("--hotlist-only").returncode, 0)
+        self.assertFalse((self.base / "config").exists())
+        result = self.migrate("--hotlist-only", "--apply")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual((self.base / "config/emcx/hotlist").read_bytes(),
+                         (old / "hotlist").read_bytes())
+        self.assertFalse((self.base / "data").exists())
+
+    def test_hotlist_import_refuses_a_profile_linked_to_mc(self):
+        old = self.base / "config/mc"
+        old.mkdir(parents=True)
+        (old / "hotlist").write_text("original bookmarks\n")
+        (self.base / "config/emcx").symlink_to(old, target_is_directory=True)
+        result = self.migrate("--hotlist-only", "--apply")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("points to the original mc profile", result.stderr)
+        self.assertEqual((old / "hotlist").read_text(), "original bookmarks\n")
+        self.assertEqual(list(old.glob("hotlist.before-import-*")), [])
+
+    def test_hotlist_import_failed_replacement_preserves_both_files(self):
+        old = self.base / "config/mc"
+        old.mkdir(parents=True)
+        (old / "hotlist").write_text("original MC bookmarks\n")
+        new = self.base / "config/emcx"
+        new.mkdir()
+        (new / "hotlist").write_text("current emcx bookmarks\n")
+        module = runpy.run_path(str(self.prefix / "bin/emcx-migrate-config"))
+        with patch.dict(os.environ, self.env), patch("os.replace", side_effect=OSError("injected failure")):
+            with self.assertRaisesRegex(OSError, "injected failure"):
+                module["migrate_hotlist"](apply=True)
+        self.assertEqual((old / "hotlist").read_text(), "original MC bookmarks\n")
+        self.assertEqual((new / "hotlist").read_text(), "current emcx bookmarks\n")
+        self.assertEqual(list(new.glob(".hotlist-import-*")), [])
+        backups = list(new.glob("hotlist.before-import-*.bak"))
+        self.assertEqual(len(backups), 1)
+        self.assertEqual(backups[0].read_text(), "current emcx bookmarks\n")
 
     def test_migration_failure_cleans_only_its_new_targets(self):
         old = self.base / "config/mc"
