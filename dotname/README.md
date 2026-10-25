@@ -62,6 +62,16 @@ it after MC has been compiled does not enable direct reading; reconfigure,
 rebuild, and reinstall MC. Check for `#define HAVE_LIBZIP 1` in `config.h` after
 configuration. The `zip` and `unzip` tools remain necessary for helper operations.
 
+## Interrupted moves
+
+Version `4.8.33-dotname.3` backports the upstream fix for
+[#4759](https://github.com/MidnightCommander/mc/issues/4759)
+(`b55cc075da84fd30d2c7d6a87264bc5cc29f7cb2`). When a cross-filesystem move is
+interrupted and Keep is selected, the original and the incomplete destination
+are preserved. Filesystem attribute failures must not turn an interrupted copy
+into a successful move and delete the original. The backport can be dropped
+when rebasing onto an upstream version containing that commit.
+
 ## Repeatable tests
 
 Run this command from the repository directory as a regular user:
@@ -76,6 +86,10 @@ or updating MC. Success ends with `OK`; failures return a nonzero exit status.
 
 The tests cover:
 
+- Interrupted cross-filesystem F6 with Skip/Keep, Abort/Keep, and Abort/Delete,
+  including remaining selected files and successful moves. These tests use
+  disposable files in home and `/dev/shm`, plus a test-only preload library
+  that rejects destination ext2 attributes; they do not access network mounts.
 - Actual cursor colors in a running MC for a regular user and effective UID 0.
 - Clean user and root profiles, `skin=default`, explicit root variants,
   `MC_SKIN`, and `--skin`.

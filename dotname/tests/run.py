@@ -21,7 +21,8 @@ HELPER = os.environ["MC_TEST_HELPER"]
 
 class Session:
     def __init__(self, directory, skin=None, root=False, args=(), envskin=None,
-                 keymap="", truecolor=True, safe_delete=False, extra_env=None):
+                 keymap="", truecolor=True, safe_delete=False, extra_env=None,
+                 right_directory=None):
         self.base = Path(directory)
         self.socket = str(self.base / "tmux.sock")
         self.config = self.base / "config/mc"
@@ -38,9 +39,10 @@ class Session:
             config.write_text(config.read_text() + "safe_delete=true\n")
         if keymap:
             (self.config / "mc.keymap").write_text(keymap)
-        self.left, self.right = self.base / "left", self.base / "right"
+        self.left = self.base / "left"
+        self.right = Path(right_directory) if right_directory else self.base / "right"
         self.left.mkdir()
-        self.right.mkdir()
+        self.right.mkdir(exist_ok=bool(right_directory))
         self.file = self.left / "file with spaces.txt"
         self.file.write_text("test content\n")
         (self.right / "other.txt").write_text("second panel\n")
