@@ -3,6 +3,22 @@
 This package includes custom trash and clipboard actions, cycling through
 favorite skins, and automatic selection of DotName root skin variants.
 
+## Layout and versioning
+
+All Modern build and maintenance support lives in this directory:
+
+- `package.nix` builds the locked upstream master with `patches/modern.patch`.
+- `tests.nix` supplies the runner and dependencies for the regression tests in `tests/`.
+- `update-modern-patch.py` exports the application changes from the maintained source tree.
+
+The Nix version is derived from the upstream commit date and hash plus the hash
+of `patches/modern.patch`: `unstable-YYYY-MM-DD-UPSTREAM-modern-PATCH`.
+There is no manually maintained version file. The same value is passed to `version.sh`
+through `MC_MODERN_VERSION`, so the binary and package report the same version.
+Native builds use Git version information. DotName names identify the skins in
+`misc/skins/`; they are not a separate package or release series. Historical
+changes remain available in Git rather than a separately maintained release folder.
+
 ## Defaults without a home configuration
 
 Shortcuts, skins, and F2 menu entries are included in the package. They do not
@@ -64,13 +80,13 @@ configuration. The `zip` and `unzip` tools remain necessary for helper operation
 
 ## Interrupted moves
 
-Version `4.8.33-dotname.3` backports the upstream fix for
-[#4759](https://github.com/MidnightCommander/mc/issues/4759)
-(`b55cc075da84fd30d2c7d6a87264bc5cc29f7cb2`). When a cross-filesystem move is
+The upstream fix for [#4759](https://github.com/MidnightCommander/mc/issues/4759)
+(`b55cc075da84fd30d2c7d6a87264bc5cc29f7cb2`) is included in the master base.
+When a cross-filesystem move is
 interrupted and Keep is selected, the original and the incomplete destination
 are preserved. Filesystem attribute failures must not turn an interrupted copy
-into a successful move and delete the original. The current master-based package
-includes this fix directly from upstream; it is not part of the Modern patch set.
+into a successful move and delete the original. This fix is not part of the
+Modern patch set.
 
 ## Repeatable tests
 

@@ -68,9 +68,9 @@ if [ -r "${VERSION_FILE}" ]
     SHOR_MC_VERSION="${PREV_MC_VERSION}"
 fi
 
-# Use the fork release version in both Git checkouts and source archives.
-if [ -r "${src_top_dir}/dotname/VERSION" ]; then
-    CURR_MC_VERSION=`cat "${src_top_dir}/dotname/VERSION"`
+# Nix supplies a version derived from the locked upstream and Modern patch.
+if [ -n "${MC_MODERN_VERSION:-}" ]; then
+    CURR_MC_VERSION="${MC_MODERN_VERSION}"
     SHOR_MC_VERSION="${CURR_MC_VERSION}"
     mc_print_version
 fi
@@ -82,7 +82,7 @@ git_head=`git --git-dir "${src_top_dir}/.git" rev-parse --verify HEAD 2>/dev/nul
 CURR_MC_VERSION="${git_head}"
 SHOR_MC_VERSION="${CURR_MC_VERSION}"
 
-new_version=`git --git-dir "${src_top_dir}/.git" describe --always 2>/dev/null`
+new_version=`git --git-dir "${src_top_dir}/.git" describe --always --exclude '*dotname*' 2>/dev/null`
 [ -z "${new_version}" ] && mc_print_version
 
 # store pretty tagged version
@@ -90,6 +90,6 @@ CURR_MC_VERSION="${new_version}"
 SHOR_MC_VERSION="${CURR_MC_VERSION}"
 
 # stop full rebuild by using not-exact git version string in config.h, see #2252, #4266
-SHOR_MC_VERSION=`git --git-dir "${src_top_dir}/.git" describe --always --abbrev=0 2>/dev/null`-git
+SHOR_MC_VERSION=`git --git-dir "${src_top_dir}/.git" describe --always --abbrev=0 --exclude '*dotname*' 2>/dev/null`-git
 
 mc_print_version

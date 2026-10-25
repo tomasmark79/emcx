@@ -10,7 +10,7 @@ The original documentation remains in `README`.
 The standard installation includes GIO trash actions, Wayland clipboard support,
 four DotName skins, automatic red variants for root, and live skin switching.
 These features include default shortcuts and work without a home configuration.
-[Feature details and tests](dotname/README.md).
+[Feature details and tests](nix/README.md).
 
 Switch between light and dark skins with `Alt+Shift+T`. On macOS, press and
 release `Esc`, then press `Shift+T` (uppercase `T`). In Apple's Terminal app,
@@ -140,7 +140,7 @@ namespaces enabled and must run as a regular user.
 They do not write to the actual desktop clipboard. To test a native build, set
 `MC_TEST_BINARY` to the absolute path of the installed MC and `MC_TEST_HELPER`
 to `misc/mc-clipboard.py`, make `python3`, `tmux`, and `unshare` available,
-and run `python3 dotname/tests/run.py`.
+and run `python3 nix/tests/run.py`.
 
 Keep changes local until they have been reviewed and tested. Update the package's
 upstream source with `nix flake update mc-upstream`, then build and run the tests.
@@ -163,6 +163,10 @@ nix run .#mc-tests
 ```
 
 The patch exporter includes only application sources and assets, excluding
-repository workflows and documentation. `dotname/VERSION` records the Modern
-version; the Nix package appends the upstream revision to the displayed version.
+repository workflows and documentation. All Modern packaging, tests, and
+maintenance support live in `nix/`. The Nix package version combines the upstream
+commit date and hash with the hash of our patch, in the form
+`unstable-YYYY-MM-DD-UPSTREAM-modern-PATCH`. There is no manually maintained
+version file or hardcoded upstream release number. Native builds derive their
+version from Git.
 The original license terms remain in effect; see `COPYING`.

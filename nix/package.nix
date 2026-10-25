@@ -10,10 +10,15 @@
   wl-clipboard,
   upstreamSource,
 }:
+let
+  modernRevision = builtins.substring 0 7 (builtins.hashFile "sha256" ./patches/modern.patch);
+  upstreamDate = upstreamSource.lastModifiedDate;
+  date = "${builtins.substring 0 4 upstreamDate}-${builtins.substring 4 2 upstreamDate}-${builtins.substring 6 2 upstreamDate}";
+  version = "unstable-${date}-${upstreamSource.shortRev}-modern-${modernRevision}";
+in
 mc.overrideAttrs (old: {
-  version =
-    lib.removeSuffix "\n" (builtins.readFile ../dotname/VERSION)
-    + "-${upstreamSource.shortRev or "unknown"}";
+  inherit version;
+  MC_MODERN_VERSION = version;
   # Build upstream master directly, then apply only the Modern customizations.
   # The lock records the exact upstream revision for reproducible builds.
   src = upstreamSource;
@@ -26,8 +31,6 @@ mc.overrideAttrs (old: {
   postPatch =
     (old.postPatch or "")
     + ''
-      mkdir -p dotname
-      printf '%s\n' "$version" > dotname/VERSION
       substituteInPlace misc/mc-clipboard.py \
         --replace-fail '/usr/bin/env python3' '${python3}/bin/python3'
     ''

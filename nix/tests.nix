@@ -3,7 +3,7 @@
 let
   moveFaults = pkgs.runCommandCC "mc-move-test-faults" { } ''
     mkdir -p $out/lib
-    $CC -Wall -Wextra -Werror -shared -fPIC ${../dotname/tests/move_faults.c} -ldl \
+    $CC -Wall -Wextra -Werror -shared -fPIC ${./tests/move_faults.c} -ldl \
       -o $out/lib/move-faults.so
   '';
 in
@@ -22,8 +22,8 @@ pkgs.writeShellApplication {
     export MC_TEST_HELPER=${../misc/mc-clipboard.py}
     export MC_TEST_UZIP=${mc}/libexec/mc/extfs.d/uzip
     export MC_TEST_MOVE_FAULTS=${moveFaults}/lib/move-faults.so
-    python3 ${../dotname/tests}/move_abort.py
-    python3 ${../dotname/tests/zip_cache.py}
-    exec python3 ${../dotname/tests/run.py} "$@"
+    python3 ${./tests}/move_abort.py
+    python3 ${./tests/zip_cache.py}
+    exec python3 ${./tests/run.py} "$@"
   '';
 }
