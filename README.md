@@ -38,7 +38,8 @@ emcx-migrate-config --apply
 ```
 
 Migration copies configuration and data, dereferences linked profiles and skins,
-and updates bare `mc-clipboard` commands in the copied user menu. It does not
+keeps directory cycles within the new profile, and updates bare `mc-clipboard`
+commands in the copied user menu. It does not
 modify the original profile or copy its cache. Existing emcx targets are never
 overwritten. Review custom scripts containing absolute paths separately.
 

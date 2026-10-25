@@ -114,6 +114,26 @@ class IdentityTests(unittest.TestCase):
         self.assertIn("mc-clipboard path", (old / "menu").read_text())
         self.assertEqual((self.base / "config/emcx/ini").read_text(), "new profile\n")
 
+    def test_migration_directory_cycles_stay_inside_new_profile(self):
+        old = self.base / "config/mc"
+        old.mkdir(parents=True)
+        (old / "ini").write_text("original settings\n")
+        (old / "links").mkdir()
+        (old / "links/mc").symlink_to(old, target_is_directory=True)
+        skins = self.base / "external-skins"
+        skins.mkdir()
+        (skins / "theme.ini").write_text("original theme\n")
+        (old / "skins").symlink_to(skins, target_is_directory=True)
+        result = self.migrate("--apply")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        new = self.base / "config/emcx"
+        self.assertEqual((new / "links/mc").resolve(), new.resolve())
+        self.assertFalse((new / "skins").is_symlink())
+        (new / "links/mc/ini").write_text("new settings\n")
+        (new / "skins/theme.ini").write_text("new theme\n")
+        self.assertEqual((old / "ini").read_text(), "original settings\n")
+        self.assertEqual((skins / "theme.ini").read_text(), "original theme\n")
+
     def test_migration_failure_cleans_only_its_new_targets(self):
         old = self.base / "config/mc"
         old.mkdir(parents=True)

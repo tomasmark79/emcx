@@ -6,7 +6,28 @@ import os
 import re
 from pathlib import Path
 import shutil
+import stat
 import sys
+
+
+def copy_profile(source, target, copied):
+    """Materialize external links and keep directory cycles inside the new profile."""
+    info = source.stat()
+    if stat.S_ISDIR(info.st_mode):
+        identity = (info.st_dev, info.st_ino)
+        if identity in copied:
+            target.symlink_to(os.path.relpath(copied[identity], target.parent),
+                              target_is_directory=True)
+            return
+        copied[identity] = target
+        target.mkdir(exist_ok=True)
+        for child in source.iterdir():
+            copy_profile(child, target / child.name, copied)
+        shutil.copystat(source, target)
+    elif stat.S_ISREG(info.st_mode):
+        shutil.copy2(source, target)
+    else:
+        raise RuntimeError(f"Unsupported profile entry: {source}")
 
 
 def migrate(apply=False):
@@ -35,8 +56,7 @@ def migrate(apply=False):
             target.parent.mkdir(parents=True, exist_ok=True)
             target.mkdir(mode=0o700)
             created.append(target)
-            # Copy contents of linked profiles/skins, without linking back to mc.
-            shutil.copytree(source, target, dirs_exist_ok=True, symlinks=False)
+            copy_profile(source, target, {})
             menu = target / "menu"
             if menu.is_file():
                 text = menu.read_bytes()
