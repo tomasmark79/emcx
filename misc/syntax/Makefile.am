@@ -10,11 +10,14 @@ SYNTAXFILES =			\
 	assembler.syntax	\
 	awk.syntax		\
 	b.syntax		\
+	bnf.syntax		\
 	c.syntax		\
 	cabal.syntax		\
+	caddyfile.syntax	\
 	changelog.syntax	\
 	cmake.syntax		\
 	cobol.syntax		\
+	conf.syntax		\
 	cs.syntax		\
 	css.syntax		\
 	cuda.syntax		\
@@ -27,6 +30,7 @@ SYNTAXFILES =			\
 	debian-sources-list.syntax	\
 	diff.syntax		\
 	dlink.syntax		\
+	dockerfile.syntax	\
 	dos.syntax		\
 	dot.syntax		\
 	ebuild.syntax		\
@@ -45,6 +49,7 @@ SYNTAXFILES =			\
 	j.syntax		\
 	jal.syntax		\
 	java.syntax		\
+	jinja2.syntax		\
 	js.syntax		\
 	json.syntax		\
 	kotlin.syntax		\
@@ -57,8 +62,11 @@ SYNTAXFILES =			\
 	mail.syntax		\
 	makefile.syntax		\
 	markdown.syntax		\
+	meta-ii.syntax		\
+	mib.syntax		\
 	ml.syntax		\
 	meson.syntax		\
+	muttrc.syntax		\
 	named.syntax		\
 	nemerle.syntax		\
 	nroff.syntax		\
@@ -79,6 +87,7 @@ SYNTAXFILES =			\
 	r.syntax		\
 	ruby.syntax		\
 	rust.syntax		\
+	turtle.syntax		\
 	sh.syntax		\
 	slang.syntax		\
 	smalltalk.syntax	\
@@ -92,6 +101,7 @@ SYNTAXFILES =			\
 	tcl.syntax		\
 	texinfo.syntax		\
 	toml.syntax		\
+	tree-meta.syntax	\
 	ts.syntax		\
 	tt.syntax		\
 	unknown.syntax		\

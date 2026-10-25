@@ -4,13 +4,14 @@ extfsdir = $(EXTFSHELPERSDIR)
 EXTFS_MISC  = README README.extfs
 
 # Scripts hat don't need adaptation to the local system
-EXTFS_CONST = bpp changesetfs gitfs+ patchsetfs rpm trpm u7z
+EXTFS_CONST = changesetfs gitfs+ patchsetfs rpm trpm u7z
 
 # Scripts that need adaptation to the local system - source files
 EXTFS_IN    = 			\
 	a+.in			\
 	apt+.in			\
 	audio.in		\
+	brotli.in		\
 	deb.in			\
 	deba.in			\
 	debd.in			\
@@ -35,6 +36,7 @@ EXTFS_IN    = 			\
 	ulib.in			\
 	unar.in			\
 	urar.in			\
+	usqfs.in		\
 	uwim.in			\
 	uzip.in			\
 	uzoo.in
@@ -44,6 +46,7 @@ EXTFS_OUT = 			\
 	a+			\
 	apt+			\
 	audio			\
+	brotli			\
 	deb			\
 	deba			\
 	debd			\
@@ -68,6 +71,7 @@ EXTFS_OUT = 			\
 	ulib			\
 	unar			\
 	urar			\
+	usqfs			\
 	uwim			\
 	uzip			\
 	uzoo

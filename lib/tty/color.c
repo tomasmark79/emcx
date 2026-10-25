@@ -2,7 +2,7 @@
    Color setup.
    Interface functions.
 
-   Copyright (C) 1994-2025
+   Copyright (C) 1994-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -23,7 +23,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 /** \file color.c
@@ -35,9 +35,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>          /* size_t */
+#include <sys/types.h>  // size_t
 
 #include "lib/global.h"
+#include "lib/util.h"  // MC_PTR_FREE
 
 #include "tty.h"
 #include "color.h"
@@ -46,18 +47,12 @@
 
 /*** global variables ****************************************************************************/
 
-/* *INDENT-OFF* */
-static tty_color_pair_t tty_color_defaults =
-{
-    .fg = NULL,
-    .bg = NULL,
-    .attrs = NULL,
-    .pair_index = 0
-};
-/* *INDENT-ON* */
+int *tty_color_role_to_pair = NULL;
 
 /* Set if we are actually using colors */
 gboolean use_colors = FALSE;
+
+gboolean need_convert_256color = FALSE;
 
 /*** file scope macro definitions ****************************************************************/
 
@@ -67,20 +62,14 @@ gboolean use_colors = FALSE;
 
 /*** file scope variables ************************************************************************/
 
-static GHashTable *mc_tty_color__hashtable = NULL;
+#ifdef HAVE_TESTS
+extern GHashTable *mc_tty_color__hashtable;
+#endif
+
+MC_TESTABLE GHashTable *mc_tty_color__hashtable = NULL;
 
 /* --------------------------------------------------------------------------------------------- */
 /*** file scope functions ************************************************************************/
-/* --------------------------------------------------------------------------------------------- */
-
-static void
-mc_color__deinit (tty_color_pair_t *color)
-{
-    g_free (color->fg);
-    g_free (color->bg);
-    g_free (color->attrs);
-}
-
 /* --------------------------------------------------------------------------------------------- */
 
 static gboolean
@@ -115,7 +104,8 @@ tty_color_get_next__color_pair_number (void)
     cp_count = g_hash_table_size (mc_tty_color__hashtable);
     for (cp = 0; cp < cp_count; cp++)
         if (g_hash_table_find (mc_tty_color__hashtable, tty_color_get_next_cpn_cb,
-                               GSIZE_TO_POINTER (cp)) == NULL)
+                               GSIZE_TO_POINTER (cp))
+            == NULL)
             break;
 
     return cp;
@@ -126,8 +116,9 @@ tty_color_get_next__color_pair_number (void)
 /* --------------------------------------------------------------------------------------------- */
 
 void
-tty_init_colors (gboolean disable, gboolean force)
+tty_init_colors (gboolean disable, gboolean force, int color_map_size)
 {
+    tty_color_role_to_pair = g_new (int, color_map_size);
     tty_color_init_lib (disable, force);
     mc_tty_color__hashtable = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
 }
@@ -138,8 +129,8 @@ void
 tty_colors_done (void)
 {
     tty_color_deinit_lib ();
-    mc_color__deinit (&tty_color_defaults);
     g_hash_table_destroy (mc_tty_color__hashtable);
+    MC_PTR_FREE (tty_color_role_to_pair);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -155,30 +146,34 @@ tty_use_colors (void)
 int
 tty_try_alloc_color_pair (const tty_color_pair_t *color, gboolean is_temp)
 {
-    gboolean is_base;
     gchar *color_pair;
     tty_color_lib_pair_t *mc_color_pair;
     int ifg, ibg, attr;
 
-    is_base = (color->fg == NULL || strcmp (color->fg, "base") == 0);
-    ifg = tty_color_get_index_by_name (is_base ? tty_color_defaults.fg : color->fg);
-    is_base = (color->bg == NULL || strcmp (color->bg, "base") == 0);
-    ibg = tty_color_get_index_by_name (is_base ? tty_color_defaults.bg : color->bg);
-    is_base = (color->attrs == NULL || strcmp (color->attrs, "base") == 0);
-    attr = tty_attr_get_bits (is_base ? tty_color_defaults.attrs : color->attrs);
+    ifg = tty_color_get_index_by_name (color->fg);
+    ibg = tty_color_get_index_by_name (color->bg);
+    attr = tty_attr_get_bits (color->attrs);
 
     color_pair = g_strdup_printf ("%d.%d.%d", ifg, ibg, attr);
     if (color_pair == NULL)
         return 0;
 
-    mc_color_pair =
-        (tty_color_lib_pair_t *) g_hash_table_lookup (mc_tty_color__hashtable,
-                                                      (gpointer) color_pair);
+    mc_color_pair = (tty_color_lib_pair_t *) g_hash_table_lookup (mc_tty_color__hashtable,
+                                                                  (gpointer) color_pair);
 
     if (mc_color_pair != NULL)
     {
         g_free (color_pair);
         return mc_color_pair->pair_index;
+    }
+
+    if (need_convert_256color)
+    {
+        if ((ifg & FLAG_TRUECOLOR) == 0)
+            ifg = convert_256color_to_truecolor (ifg);
+
+        if ((ibg & FLAG_TRUECOLOR) == 0)
+            ibg = convert_256color_to_truecolor (ibg);
     }
 
     mc_color_pair = g_try_new0 (tty_color_lib_pair_t, 1);
@@ -215,19 +210,6 @@ void
 tty_color_free_all (void)
 {
     g_hash_table_remove_all (mc_tty_color__hashtable);
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-void
-tty_color_set_defaults (const tty_color_pair_t *color)
-{
-    mc_color__deinit (&tty_color_defaults);
-
-    tty_color_defaults.fg = g_strdup (color->fg);
-    tty_color_defaults.bg = g_strdup (color->bg);
-    tty_color_defaults.attrs = g_strdup (color->attrs);
-    tty_color_defaults.pair_index = 0;
 }
 
 /* --------------------------------------------------------------------------------------------- */

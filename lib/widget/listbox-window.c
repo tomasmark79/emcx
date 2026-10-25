@@ -1,7 +1,7 @@
 /*
    Widget based utility functions.
 
-   Copyright (C) 1994-2025
+   Copyright (C) 1994-2026
    Free Software Foundation, Inc.
 
    Authors:
@@ -24,7 +24,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 /** \file listbox-window.c
@@ -36,9 +36,9 @@
 #include <stdlib.h>
 
 #include "lib/global.h"
-#include "lib/tty/tty.h"        /* COLS */
+#include "lib/tty/tty.h"  // COLS
 #include "lib/skin.h"
-#include "lib/strutil.h"        /* str_term_width1() */
+#include "lib/strutil.h"  // str_term_width1()
 #include "lib/widget.h"
 
 /*** global variables ****************************************************************************/
@@ -49,6 +49,17 @@
 
 /*** file scope variables ************************************************************************/
 
+static const dlg_colors_t listbox_colors = {
+    [DLG_COLOR_NORMAL] = PMENU_ENTRY_COLOR,
+    [DLG_COLOR_FOCUS] = PMENU_SELECTED_COLOR,
+    [DLG_COLOR_HOT_NORMAL] = PMENU_ENTRY_COLOR,
+    [DLG_COLOR_HOT_FOCUS] = PMENU_SELECTED_COLOR,
+    [DLG_COLOR_SELECTED_NORMAL] = PMENU_SELECTED_COLOR,  // unused
+    [DLG_COLOR_SELECTED_FOCUS] = PMENU_SELECTED_COLOR,   // unused
+    [DLG_COLOR_TITLE] = PMENU_TITLE_COLOR,
+    [DLG_COLOR_FRAME] = PMENU_FRAME_COLOR,
+};
+
 /*** file scope functions ************************************************************************/
 
 /* --------------------------------------------------------------------------------------------- */
@@ -56,8 +67,8 @@
 /* --------------------------------------------------------------------------------------------- */
 
 Listbox *
-listbox_window_centered_new (int center_y, int center_x, int lines, int cols,
-                             const char *title, const char *help)
+listbox_window_centered_new (int center_y, int center_x, int lines, int cols, const char *title,
+                             const char *help)
 {
     const int space = 4;
 
@@ -65,7 +76,7 @@ listbox_window_centered_new (int center_y, int center_x, int lines, int cols,
     Listbox *listbox;
     widget_pos_flags_t pos_flags = WPOS_TRYUP;
 
-    /* Adjust sizes */
+    // Adjust sizes
     lines = MIN (lines, LINES - 6);
 
     if (title != NULL)
@@ -78,12 +89,12 @@ listbox_window_centered_new (int center_y, int center_x, int lines, int cols,
 
     cols = MIN (cols, COLS - 6);
 
-    /* adjust position */
+    // adjust position
     if ((center_y < 0) || (center_x < 0))
         pos_flags |= WPOS_CENTER;
     else
     {
-        /* Actually, this this is not used in MC. */
+        // Actually, this this is not used in MC.
 
         ypos = center_y;
         xpos = center_x;
@@ -104,9 +115,8 @@ listbox_window_centered_new (int center_y, int center_x, int lines, int cols,
 
     listbox = g_new (Listbox, 1);
 
-    listbox->dlg =
-        dlg_create (TRUE, ypos, xpos, lines + space, cols + space, pos_flags, FALSE, listbox_colors,
-                    NULL, NULL, help, title);
+    listbox->dlg = dlg_create (TRUE, ypos, xpos, lines + space, cols + space, pos_flags, FALSE,
+                               listbox_colors, NULL, NULL, help, title);
 
     listbox->list = listbox_new (2, 2, lines, cols, FALSE, NULL);
     group_add_widget (GROUP (listbox->dlg), listbox->list);

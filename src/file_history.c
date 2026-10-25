@@ -1,7 +1,7 @@
 /*
    Load and show history of edited and viewed files
 
-   Copyright (C) 2020-2025
+   Copyright (C) 2020-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -20,19 +20,19 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
 
-#include <stdio.h>              /* file functions */
+#include <stdio.h>  // file functions
 
 #include "lib/global.h"
 
-#include "lib/fileloc.h"        /* MC_FILEPOS_FILE */
-#include "lib/mcconfig.h"       /* mc_config_get_full_path() */
-#include "lib/strutil.h"        /* str_term_width1() */
-#include "lib/util.h"           /* backup functions */
+#include "lib/fileloc.h"   // MC_FILEPOS_FILE
+#include "lib/mcconfig.h"  // mc_config_get_full_path()
+#include "lib/strutil.h"   // str_term_width1()
+#include "lib/util.h"      // backup functions
 
 #include "file_history.h"
 
@@ -54,8 +54,50 @@ typedef struct file_history_data_t
 
 /*** file scope variables ************************************************************************/
 
+static const char SEPARATOR[] = " ";
+
 /* --------------------------------------------------------------------------------------------- */
 /*** file scope functions ************************************************************************/
+/* --------------------------------------------------------------------------------------------- */
+
+static void
+file_history_parse_entry (const char *buf, GList **file_list)
+{
+    file_history_data_t *fhd;
+    const char *s = strrchr (buf, *SEPARATOR);
+
+    // Ignore entries without saved file position info in the filepos file
+    if (s == NULL)
+        return;
+
+    fhd = g_new (file_history_data_t, 1);
+    fhd->file_name = str_unescape (buf, s - buf, "", TRUE);
+
+    const size_t len = strlen (s + 1);
+
+    fhd->file_pos = g_strndup (s + 1, len - 1);  // ignore '\n'
+
+    *file_list = g_list_prepend (*file_list, fhd);
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+static void
+file_history_write_entry (const file_history_data_t *fhd, GString *s)
+{
+    char *file_name;
+
+    file_name = str_escape (fhd->file_name, -1, "", TRUE);
+    g_string_append (s, file_name);
+    g_free (file_name);
+
+    if (fhd->file_pos != NULL)
+    {
+        g_string_append_c (s, *SEPARATOR);
+        g_string_append (s, fhd->file_pos);
+    }
+}
+
 /* --------------------------------------------------------------------------------------------- */
 
 static GList *
@@ -66,7 +108,7 @@ file_history_list_read (void)
     char buf[MC_MAXPATHLEN + 100];
     GList *file_list = NULL;
 
-    /* open file with positions */
+    // open file with positions
     fn = mc_config_get_full_path (MC_FILEPOS_FILE);
     if (fn == NULL)
         return NULL;
@@ -77,19 +119,7 @@ file_history_list_read (void)
         return NULL;
 
     while (fgets (buf, sizeof (buf), f) != NULL)
-    {
-        char *s;
-        file_history_data_t *fhd;
-        size_t len;
-
-        s = strrchr (buf, ' ');
-        /* FIXME: saved file position info is present in filepos file */
-        fhd = g_new (file_history_data_t, 1);
-        fhd->file_name = g_strndup (buf, s - buf);
-        len = strlen (s + 1);
-        fhd->file_pos = g_strndup (s + 1, len - 1);     /* ignore '\n' */
-        file_list = g_list_prepend (file_list, fhd);
-    }
+        file_history_parse_entry (buf, &file_list);
 
     fclose (f);
 
@@ -120,15 +150,7 @@ file_history_list_write (const GList *file_list)
 
         for (; file_list != NULL && !write_error; file_list = g_list_next (file_list))
         {
-            file_history_data_t *fhd = (file_history_data_t *) file_list->data;
-
-            g_string_append (s, fhd->file_name);
-            if (fhd->file_pos != NULL)
-            {
-                g_string_append_c (s, ' ');
-                g_string_append (s, fhd->file_pos);
-            }
-
+            file_history_write_entry (file_list->data, s);
             write_error = (fprintf (f, "%s\n", s->str) < 0);
             g_string_truncate (s, 0);
         }
@@ -158,7 +180,7 @@ file_history_create_item (history_descriptor_t *hd, void *data)
     hd->max_width = MAX (width, hd->max_width);
 
     listbox_add_item (hd->listbox, LISTBOX_APPEND_AT_END, 0, fhd->file_name, fhd->file_pos, TRUE);
-    /* fhd->file_pos is not copied, NULLize it to prevent double free */
+    // fhd->file_pos is not copied, NULLize it to prevent double free
     fhd->file_pos = NULL;
 }
 
@@ -220,7 +242,7 @@ show_file_history (const Widget *w, int *action)
     file_list = g_list_last (file_list);
 
     history_descriptor_init (&hd, w->rect.y, w->rect.x, file_list, 0);
-    /* redefine list-specific functions */
+    // redefine list-specific functions
     hd.create = file_history_create_item;
     hd.release = file_history_release_item;
     hd.free = file_history_free_item;
@@ -229,7 +251,7 @@ show_file_history (const Widget *w, int *action)
 
     hd.list = g_list_first (hd.list);
 
-    /* Has history cleaned up or not? */
+    // Has history cleaned up or not?
     if (len != g_list_length (hd.list))
     {
         hd.list = g_list_reverse (hd.list);

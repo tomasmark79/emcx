@@ -5,17 +5,15 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir) \
 	@CHECK_CFLAGS@
 
-LIBS = @CHECK_LIBS@ \
-	$(top_builddir)/lib/libmc.la
-
-if ENABLE_MCLIB
-LIBS += $(GLIB_LIBS)
-endif
+LDADD = \
+	$(top_builddir)/lib/libmc.la \
+	@CHECK_LIBS@
 
 TESTS = \
 	parse_integer \
 	str_replace_all \
 	str_verscmp \
+	str_rstrip_eol \
 	filevercmp
 
 check_PROGRAMS = $(TESTS)
@@ -28,6 +26,9 @@ str_replace_all_SOURCES = \
 
 str_verscmp_SOURCES = \
 	str_verscmp.c
+
+str_rstrip_eol_SOURCES = \
+	str_rstrip_eol.c
 
 filevercmp_SOURCES = \
 	filevercmp.c

@@ -177,7 +177,8 @@
 #
 #
 # Any new entries you want to add are always welcome if they are useful on more than one
-# system. You can post your modifications as tickets at www.midnight-commander.org.
+# system. You can post your modifications as a ticket in our tracker:
+# https://github.com/MidnightCommander/mc/issues
 
 
 ### Changes ###
@@ -405,7 +406,7 @@ Open=%cd %p/rpm://
 View=%view{ascii} @EXTHELPERSDIR@/package.sh view rpm
 
 [deb]
-Regex=\\.u?deb$
+Regex=\\.[ud]?deb$
 Open=%cd %p/deb://
 View=%view{ascii} @EXTHELPERSDIR@/package.sh view deb
 
@@ -554,37 +555,58 @@ Open=@EXTHELPERSDIR@/text.sh open chm
 
 ### Images ###
 
-[xcf]
-Shell=.xcf
-Open=@EXTHELPERSDIR@/image.sh open xcf
-
-[xbm]
-Shell=.xbm
-Open=@EXTHELPERSDIR@/image.sh open xbm
-
-[xpm]
-Shell=.xpm
-Include=image
-
-[ico]
-Shell=.ico
-Include=image
-
+# Special cases
 [svg]
 Shell=.svg
 ShellIgnoreCase=true
 View=%view{ascii} @EXTHELPERSDIR@/image.sh view svg
 Open=@EXTHELPERSDIR@/image.sh open svg
 
+[xbm]
+Shell=.xbm
+ShellIgnoreCase=true
+Open=@EXTHELPERSDIR@/image.sh open xbm
+
+[xcf]
+Shell=.xcf
+ShellIgnoreCase=true
+Open=@EXTHELPERSDIR@/image.sh open xcf
+
+# Rest
+[xpm]
+Shell=.xpm
+ShellIgnoreCase=true
+Include=image
+
+[ico]
+Shell=.ico
+ShellIgnoreCase=true
+Include=image
+
 [webp]
 Shell=.webp
-View=%view{ascii} @EXTHELPERSDIR@/image.sh view webp
-Open=@EXTHELPERSDIR@/image.sh open webp
+ShellIgnoreCase=true
+Include=image
 
 [avif]
 Shell=.avif
-View=%view{ascii} @EXTHELPERSDIR@/image.sh view avif
-Open=@EXTHELPERSDIR@/image.sh open avif
+ShellIgnoreCase=true
+Include=image
+
+[heic]
+Shell=.heic
+ShellIgnoreCase=true
+Include=image
+
+[heif]
+Shell=.heif
+ShellIgnoreCase=true
+Include=image
+
+[hif]
+Shell=.hif
+ShellIgnoreCase=true
+Include=image
 
 ### Sound files ###
 
@@ -916,6 +938,12 @@ ShellIgnoreCase=true
 Open=%cd %p/uwim://
 View=%view{ascii} @EXTHELPERSDIR@/archive.sh view wim
 
+[brotli]
+Shell=.br
+ShellIgnoreCase=true
+Open=Open=%cd %p/brotli://
+View=%view{ascii} @EXTHELPERSDIR@/archive.sh view br
+
 
 ######### Files by Type #########
 
@@ -936,6 +964,10 @@ Shell=.ipk
 Type=\\(gzip compressed
 Include=tar.gz
 
+[squashfs]
+Type=^Squashfs filesystem
+Open=%cd %p/usqfs://
+View=%view{ascii} unsquashfs -stat %f ; unsquashfs -lls -d "" %f
 
 ### Sources ###
 
@@ -1127,8 +1159,20 @@ Type=\\(Zip archive
 Open=%cd %p/uzip://
 View=%view{ascii} @EXTHELPERSDIR@/archive.sh view zip
 
-[jar]
+[jar-war-by-type]
 Type=\\(Java (Jar file|archive) data \\((zip|JAR)\\)\\)
+TypeIgnoreCase=true
+Open=%cd %p/uzip://
+View=%view{ascii} @EXTHELPERSDIR@/archive.sh view zip
+
+[jar-war-by-regex]
+Regex=\\.[jw]ar$
+RegexIgnoreCase=true
+Open=%cd %p/uzip://
+View=%view{ascii} @EXTHELPERSDIR@/archive.sh view zip
+
+[apk]
+Type=Android package \\(APK\\)
 TypeIgnoreCase=true
 Open=%cd %p/uzip://
 View=%view{ascii} @EXTHELPERSDIR@/archive.sh view zip

@@ -8,8 +8,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
+    permissions:
+      contents: read
+
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Build on Solaris
         uses: vmactions/solaris-vm@v1
@@ -31,7 +34,6 @@ jobs:
               ./configure \
                 --prefix="$(pwd)/install-prefix" \
                 --with-screen=ncurses \
-                --enable-mclib \
                 --enable-aspell \
                 --enable-werror \
                 && \
@@ -41,7 +43,7 @@ jobs:
               make install \
             '
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: test-suite-logs-solaris

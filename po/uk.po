@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the mc package.
 #
 # Translators:
-# Andrij Mizyk <andm1zyk@proton.me>, 2022
+# Andrij Mizyk <andm1zyk@proton.me>, 2022,2025
 # 1057792d4be8b9c6cf7b64c224fea2c1_7fc5896, 2022
 # f977cb811fcf66493f48eac227fd7473_b98aa5d <2419f1d8d12d92441152e78ae3e3bde0_722180>, 2021-2022
 # Andriy Il <toelik@ukr.net>, 2016-2017
@@ -14,14 +14,14 @@
 # Serhii Trykoza <sergey.trikoza@gmail.com>, 2019
 # Slava Zanko <slavazanko@gmail.com>, 2011
 # Vlad Anisimov <uniss@ua.fm>, 2019
-# Yury V. Zaytsev <yury@shurup.com>, 2016
+# Yury V. Zaytsev <yury@shurup.com>, 2016,2025
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
-"Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2025-01-23 10:30+0100\n"
+"Report-Msgid-Bugs-To: https://github.com/MidnightCommander/mc/issues\n"
+"POT-Creation-Date: 2026-03-01 11:35+0300\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
-"Last-Translator: Rostyslav Haitkulov <info@ubilling.net.ua>, 2023\n"
+"Last-Translator: Andrij Mizyk <andm1zyk@proton.me>, 2022,2025\n"
 "Language-Team: Ukrainian (http://app.transifex.com/mc/mc/language/uk/)\n"
 "Language: uk\n"
 "MIME-Version: 1.0\n"
@@ -33,6 +33,9 @@ msgstr ""
 "(n % 100 >=11 && n % 100 <=14 )) ? 2: 3);\n"
 
 # "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+msgid "No translation"
+msgstr ""
+
 msgid "Warning: cannot load codepages list"
 msgstr "Попередження: не вдалося завантажити список кодових сторінок"
 
@@ -62,6 +65,10 @@ msgstr "Не вдалося створити для подій групу «%s»
 #, c-format
 msgid "Unable to create event '%s'!"
 msgstr "Не вдалося створити подію '%s'!"
+
+#, c-format
+msgid "Copyright (C) 1996-%zu the Free Software Foundation"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -167,27 +174,42 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Unable to use '%s' skin with 256 colors support\n"
-"on non-256 colors terminal.\n"
+"Unable to use '%s' skin with 256 colors support:\n"
+"%s\n"
 "Default skin has been loaded"
 msgstr ""
-"Не вдалося використати обкладинку «%s» із підтримкою 256 кольорів\n"
-"на не-256-кольоровому терміналі.\n"
-"Завантажено стандартну обкладинку"
 
-msgid "True color not supported with ncurses."
-msgstr "Ncurses не підтримує 16М кольорів."
+msgid ""
+"\n"
+"If your terminal supports 256 colors, you need to set your TERM\n"
+"environment variable to match your terminal, perhaps using\n"
+"a *-256color or *-direct256 variant. Use the 'toe -a'\n"
+"command to list all available variants on your system.\n"
+msgstr ""
 
-msgid "Your terminal doesn't even seem to support 256 colors."
-msgstr "Не виглядає на те, що ваш термінал підтримує 256 кольорів."
+msgid ""
+"For true color support, you need version 6.1 or later of the ncurses\n"
+"library with wide character and ABI 6 or higher support.\n"
+"Please upgrade your system.\n"
+msgstr ""
+
+msgid ""
+"\n"
+"If your terminal supports true colors, you need to set your TERM\n"
+"environment variable to a *-direct256, *-direct16, or *-direct variant.\n"
+"Use the 'toe -a' command to list all available variants on your system.\n"
+msgstr ""
 
 msgid "True color not supported in this slang version."
 msgstr "True колір не підтримується в цій версії slang."
 
-msgid "Set COLORTERM=truecolor if your terminal really supports true colors."
+msgid ""
+"\n"
+"If your terminal supports true colors, you need to set your TERM\n"
+"environment variable to a *-direct256, *-direct16, or *-direct variant.\n"
+"Use the 'toe -a' command to list all available variants on your system.\n"
+"Alternatively, you can set COLORTERM=truecolor.\n"
 msgstr ""
-"Встановіть COLORTERM=truecolor якщо ваш термінал справді підтримує 16,7М "
-"кольорів."
 
 msgid "Escape"
 msgstr "Клавіша Escape"
@@ -574,6 +596,12 @@ msgstr "Запускається лінійне перенесення…"
 msgid "Getting file"
 msgstr "Триває отримання файлу"
 
+#, fuzzy, c-format
+msgid ""
+"Changes to file lost:\n"
+"%s"
+msgstr "Зміни у файлі втрачено"
+
 msgid "Changes to file lost"
 msgstr "Зміни у файлі втрачено"
 
@@ -693,9 +721,6 @@ msgstr "Для повільних терміналів"
 msgid "Use stickchars to draw"
 msgstr "Псевдографіка для малювання"
 
-msgid "Resets soft keys on HP terminals"
-msgstr "Скидає програмні клавіші на терміналах HP"
-
 msgid "Load definitions of key bindings from specified file"
 msgstr "Завантажити визначення прив’язок клавіш із вказаного файлу"
 
@@ -708,65 +733,11 @@ msgstr "Запитує запуск у чорно-білому режимі"
 msgid "Request to run in color mode"
 msgstr "Запит на запуск у кольоровому режимі"
 
-msgid "Specifies a color configuration"
-msgstr "Вказує конфігурацію кольорів"
-
-msgid "<string>"
-msgstr "<string>"
-
 msgid "Show mc with specified skin"
 msgstr "Показати mc із обраною обкладинкою"
 
-#. TRANSLATORS: don't translate keywords
-msgid ""
-"--colors KEYWORD={FORE},{BACK},{ATTR}:KEYWORD2=...\n"
-"\n"
-"{FORE}, {BACK} and {ATTR} can be omitted, and the default will be used\n"
-"\n"
-" Keywords:\n"
-"   Global:       errors, disabled, reverse, gauge, header\n"
-"                 input, inputmark, inputunchanged, commandlinemark\n"
-"                 bbarhotkey, bbarbutton, statusbar\n"
-"   File display: normal, selected, marked, markselect\n"
-"   Dialog boxes: dnormal, dfocus, dhotnormal, dhotfocus, errdhotnormal,\n"
-"                 errdhotfocus\n"
-"   Menus:        menunormal, menuhot, menusel, menuhotsel, menuinactive\n"
-"   Popup menus:  pmenunormal, pmenusel, pmenutitle\n"
-"   Editor:       editnormal, editbold, editmarked, editwhitespace, "
-"editnonprintable,\n"
-"                 editlinestate, editbg, editframe, editframeactive\n"
-"                 editframedrag\n"
-"   Viewer:       viewnormal,viewbold, viewunderline, viewselected\n"
-"   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
-msgstr ""
-
-#. TRANSLATORS: don't translate color names and attributes
-msgid ""
-"Standard Colors:\n"
-"   black, gray, red, brightred, green, brightgreen, brown,\n"
-"   yellow, blue, brightblue, magenta, brightmagenta, cyan,\n"
-"   brightcyan, lightgray and white\n"
-"\n"
-"Extended colors, when 256 colors are available:\n"
-"   color16 to color255, or rgb000 to rgb555 and gray0 to gray23\n"
-"\n"
-"Attributes:\n"
-"   bold, italic, underline, reverse, blink; append more with '+'\n"
-msgstr ""
-"Стандартні кольори:\n"
-"чорний, сірий, червоний, світло-червоний, зелений, світло-зелений, "
-"коричневий,\n"
-" жовтий, синій, світло-синій, пурпурний, світло-пурпурний, блакитний,\n"
-"світло-блакитний, світло-сірий та білий\n"
-"\n"
-"Розширені кольори, якщо доступно 256 кольорів:\n"
-"колір 16 до кольору 255, або rgb000 до rgb555 і сірий 0 до сірого 23\n"
-"\n"
-"Властивості:\n"
-"жирний, підкреслений, з права на ліво, блимаючий; додати більше з '+'\n"
-
-msgid "Color options"
-msgstr "Параметри кольору"
+msgid "<string>"
+msgstr "<string>"
 
 msgid "[+lineno] file1[:lineno] [file2[:lineno]...]"
 msgstr "[+lineno] file1[:lineno] [file2[:lineno]...]"
@@ -780,24 +751,21 @@ msgstr "file1 file2"
 msgid "[this_dir] [other_panel_dir]"
 msgstr "[цей_каталог] [каталог_іншої_панелі]"
 
+#, c-format
 msgid ""
 "\n"
-"Please send any bug reports (including the output of 'mc -V')\n"
-"as tickets at www.midnight-commander.org\n"
+"Please send any bug reports (including the output of '%s -V')\n"
+"as tickets at %s\n"
 msgstr ""
-"\n"
-"Будь ласка, надсилайте будь-які повідомлення про помилки (включаючи вивід "
-"'mc -V') як квитки на сайті www.midnight-commander.org\n"
-
-#, c-format
-msgid "GNU Midnight Commander %s\n"
-msgstr "GNU Midnight Commander %s\n"
 
 msgid "Main options"
 msgstr "Головні параметри"
 
 msgid "Terminal options"
 msgstr "Параметри терміналу"
+
+msgid "Color options"
+msgstr "Параметри кольору"
 
 msgid "Arguments parse error!"
 msgstr "Сталася помилка під час обробки аргументів."
@@ -857,31 +825,17 @@ msgstr "Пошук"
 msgid "Search is disabled"
 msgstr "Пошук вимкнено"
 
-#, c-format
-msgid ""
-"Cannot create temporary diff file\n"
-"%s"
+msgid "Cannot create temporary diff file"
 msgstr ""
-"Не вдалося створити тимчасовий різницевий файл\n"
-"%s"
 
 #, c-format
 msgid ""
 "Cannot create backup file\n"
-"%s%s\n"
-"%s"
+"%s~~~"
 msgstr ""
-"Не вдалося створити файл резервної копії\n"
-"%s%s\n"
-"%s"
 
-#, c-format
-msgid ""
-"Cannot create temporary merge file\n"
-"%s"
+msgid "Cannot create temporary merge file"
 msgstr ""
-"Не вдалося створити тимчасовий файл об’єднання\n"
-"%s "
 
 msgid "&Fastest (Assume large files)"
 msgstr "Н&айшвидший (приймати великі файли)"
@@ -949,34 +903,35 @@ msgstr "ButtonBar|Параметри"
 msgid "ButtonBar|Quit"
 msgstr "ButtonBar|Вихід"
 
-msgid "Quit"
-msgstr "Вийти"
-
 msgid "File(s) was modified. Save with exit?"
 msgstr "Файл(и) було змінено. Вийти зі збереженням?"
 
+#, c-format
 msgid ""
-"Midnight Commander is being shut down.\n"
+"%s is being shut down.\n"
 "Save modified file(s)?"
-msgstr "Midnight Commander закривається. Зберегти змінені файли?"
+msgstr ""
+
+msgid "Quit"
+msgstr "Вийти"
 
 msgid "Diff:"
 msgstr "Різниця:"
 
 msgid "File name is empty!"
-msgstr ""
-
-#, c-format
-msgid "\"%s\" is a directory"
-msgstr "«%s» є каталогом"
+msgstr "Назва файла порожня!"
 
 #, c-format
 msgid ""
-"Cannot stat \"%s\"\n"
+"%s\n"
+"is a directory"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot stat\n"
 "%s"
 msgstr ""
-"Не вдалося отримати властивості «%s»\n"
-"%s "
 
 msgid "Diff viewer: invalid mode"
 msgstr "Переглядач diff: некоректний режим"
@@ -992,8 +947,10 @@ msgid "Loading..."
 msgstr "Завантаження..."
 
 #, c-format
-msgid "Cannot open %s for reading"
-msgstr "Не вдалося відкрити %s для читання"
+msgid ""
+"Cannot open\n"
+"%s"
+msgstr ""
 
 msgid "Load file"
 msgstr "Завантажити файл"
@@ -1003,12 +960,10 @@ msgid "Error reading %s"
 msgstr "Сталася помилка зчитування %s"
 
 #, c-format
-msgid "Cannot get size/permissions for %s"
-msgstr "Не вдалося отримати розмір/права доступу для %s"
-
-#, c-format
-msgid "\"%s\" is not a regular file"
-msgstr "«%s» не є звичайним файлом"
+msgid ""
+"%s\n"
+"is not a regular file"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -1026,8 +981,10 @@ msgid "Error reading from pipe: %s"
 msgstr "Сталася помилка читання з каналу: %s"
 
 #, c-format
-msgid "Cannot open pipe for reading: %s"
-msgstr "Не вдалося відкрити канал для читання: %s"
+msgid ""
+"Cannot open pipe for reading\n"
+"%s"
+msgstr ""
 
 msgid "File has hard-links. Detach before saving?"
 msgstr "Файл має жорсткі посилання. Відкріпити їх перед зберіганням?"
@@ -1040,12 +997,11 @@ msgid "Error writing to pipe: %s"
 msgstr "Сталася помилка запису в канал: %s"
 
 #, c-format
-msgid "Cannot open pipe for writing: %s"
-msgstr "Не вдалося відкрити канал для запису: %s"
-
-#, c-format
-msgid "Cannot open file for writing: %s"
-msgstr "Не вдалося відкрити файл для запису: %s"
+msgid ""
+"Cannot open file\n"
+"%s\n"
+"for writing"
+msgstr ""
 
 msgid "The file you are saving does not end with a newline."
 msgstr "Файл, що зберігається, не завершено новим рядком"
@@ -1074,6 +1030,12 @@ msgstr "Замінити закінчення рядків на:"
 msgid "Save As"
 msgstr "Зберегти як"
 
+#, c-format
+msgid ""
+"Cannot create directory\n"
+"%s"
+msgstr ""
+
 msgid "&Quick save"
 msgstr "&Швидке збереження"
 
@@ -1089,8 +1051,12 @@ msgstr "Перевіряти новий рядок &POSIX"
 msgid "Edit Save Mode"
 msgstr "Редагувати режим збереження "
 
-msgid "Cannot save: destination is not a regular file"
-msgstr "Сталася помилка під час збереження: цільовий об’єкт не є файлом"
+#, c-format
+msgid ""
+"Cannot save\n"
+"%s:\n"
+"not a regular file"
+msgstr ""
 
 msgid "A file already exists with this name"
 msgstr "Файл із такою назвою вже існує"
@@ -1151,11 +1117,9 @@ msgstr "Закрити файл"
 
 #, c-format
 msgid ""
-"Midnight Commander is being shut down.\n"
+"%s is being shut down.\n"
 "Save modified file %s?"
 msgstr ""
-"Виконується вихід із Midnight Commander.\n"
-"Зберегти змінений файл %s?"
 
 msgid "This function is not implemented"
 msgstr "Цю функція ще не реалізовано"
@@ -1202,7 +1166,7 @@ msgid "Enter shell command(s):"
 msgstr "Введіть команди оболонки:"
 
 msgid "Cannot execute external command"
-msgstr ""
+msgstr "Не вдається виконати зовнішню команду"
 
 msgid "mail -s <subject> -c <cc> <to>"
 msgstr "mail -s <Тема> -c <Копії> <До>"
@@ -1369,6 +1333,9 @@ msgstr "Перейти до парної &дужки"
 
 msgid "Toggle s&yntax highlighting"
 msgstr "Перемкнути підсвітку синтаксис&у"
+
+msgid "Togg&le right margin"
+msgstr ""
 
 msgid "&Find declaration"
 msgstr "&Знайти об’явлення"
@@ -1556,6 +1523,14 @@ msgstr "У вид&іленні"
 msgid "&Find all"
 msgstr "&Знайти все"
 
+#, c-format
+msgid "Searching %s: %3d%%"
+msgstr "Виконується пошук %s: %3d%%"
+
+#, c-format
+msgid "Searching %s"
+msgstr "Виконується пошук %s"
+
 msgid "Enter replacement string:"
 msgstr "Введіть рядок для заміни:"
 
@@ -1578,25 +1553,13 @@ msgid "Confirm replace"
 msgstr "Підтвердити заміну"
 
 #, c-format
-msgid "Searching %s: %3d%%"
-msgstr "Виконується пошук %s: %3d%%"
-
-#, c-format
-msgid "Searching %s"
-msgstr "Виконується пошук %s"
-
-#, c-format
 msgid "%ld replacements made"
 msgstr "Виконано замін: %ld"
 
+#, c-format
 msgid ""
 "A user friendly text editor\n"
-"written for the Midnight Commander."
-msgstr ""
-"Дружній до користувача редактор тексту\n"
-"написаний для Midnight Commander."
-
-msgid "Copyright (C) 1996-2025 the Free Software Foundation"
+"written for the %s."
 msgstr ""
 
 msgid "About"
@@ -1725,16 +1688,14 @@ msgstr "< Авто >"
 msgid "< Reload Current Syntax >"
 msgstr "< Оновити поточний синтаксис >"
 
-msgid "Load syntax file"
-msgstr "Завантажити файл синтаксису"
-
 #, c-format
 msgid ""
-"Cannot open file %s\n"
+"Cannot open file\n"
 "%s"
 msgstr ""
-"Не вдалося відкрити файл %s\n"
-"%s"
+
+msgid "Load syntax file"
+msgstr "Завантажити файл синтаксису"
 
 #, c-format
 msgid "Error in file %s on line %d"
@@ -1764,8 +1725,9 @@ msgstr ""
 "Це не xterm чи консоль Linux;\n"
 "підоболонку не можливо перемкнути."
 
-msgid "Type 'exit' to return to the Midnight Commander"
-msgstr "Введіть 'exit', щоб повернутися до Midnight Commander"
+#, c-format
+msgid "Type 'exit' to return to the %s"
+msgstr ""
 
 msgid "Set &all"
 msgstr "Вст. &yсі"
@@ -1797,28 +1759,27 @@ msgstr "Розширена зміна власника"
 
 #, c-format
 msgid ""
-"Cannot chmod \"%s\"\n"
-"%s"
+"Cannot chmod\n"
+"%sn%s"
 msgstr ""
-"Не вдалося змінити права на «%s» \n"
-"%s"
-
-msgid "&Ignore"
-msgstr "&Ігнорувати"
-
-msgid "Ignore &all"
-msgstr "Ігнорувати &все"
-
-msgid "&Retry"
-msgstr "По&вторити"
 
 #, c-format
 msgid ""
-"Cannot chown \"%s\"\n"
+"Cannot chown\n"
+"%sn%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot chmod\n"
 "%s"
 msgstr ""
-"Не вдалося змінити власника «%s» \n"
+
+#, c-format
+msgid ""
+"Cannot chown\n"
 "%s"
+msgstr ""
 
 msgid "< Default >"
 msgstr "< Типово >"
@@ -1826,14 +1787,22 @@ msgstr "< Типово >"
 msgid "Skins"
 msgstr "Шкіри"
 
-msgid "Other 8 bit"
-msgstr "Інше 8-розрядне"
-
 msgid "Running"
 msgstr "Виконується"
 
 msgid "Stopped"
 msgstr "Зупинено"
+
+#, c-format
+msgid "Detected display codepage: %s"
+msgstr ""
+
+#, c-format
+msgid "Selected source (file I/O) codepage: %s"
+msgstr ""
+
+msgid "Classic terminal file manager inspired by Norton Commander."
+msgstr ""
 
 msgid "&Never"
 msgstr "&Ніколи"
@@ -2053,27 +2022,6 @@ msgstr "Confirmation|&Очищення історії"
 msgid "Confirmation"
 msgstr "Підтвердження"
 
-msgid "&UTF-8 output"
-msgstr "&UTF-8 вивід"
-
-msgid "&Full 8 bits output"
-msgstr "&Повний 8 бітовий вивід"
-
-msgid "&ISO 8859-1"
-msgstr "&ISO 8859-1"
-
-msgid "7 &bits"
-msgstr "7 &біт"
-
-msgid "F&ull 8 bits input"
-msgstr "Повний &8-розрядний ввід"
-
-msgid "Display bits"
-msgstr "Відображення символів"
-
-msgid "Input / display codepage:"
-msgstr "Кодування вводу/показу:"
-
 msgid "Directory tree"
 msgstr "Дерево каталогів"
 
@@ -2131,7 +2079,6 @@ msgstr "Фонові завдання"
 #, c-format
 msgid ""
 "Cannot change directory to\n"
-"%s\n"
 "%s"
 msgstr ""
 
@@ -2189,8 +2136,8 @@ msgstr "На верху ієрархії каталогів"
 msgid "Inode uses extents"
 msgstr "Інфовузол використовує екстенти"
 
-msgid "Huge_file"
-msgstr "Великий_файл"
+msgid "Huge file"
+msgstr ""
 
 msgid "No COW"
 msgstr "Не CoW"
@@ -2224,15 +2171,19 @@ msgstr "Команда chattr"
 
 #, c-format
 msgid ""
-"Cannot chattr \"%s\"\n"
-"%s"
+"Cannot chattr\n"
+"%sn%s"
 msgstr ""
-"Не вдалося змінити атрибути \"%s\"\n"
-"%s"
 
 #, c-format
 msgid ""
-"Cannot get ext2 attributes of \"%s\"\n"
+"Cannot get ext2 attributes of\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot chattr\n"
 "%s"
 msgstr ""
 
@@ -2337,12 +2288,16 @@ msgid "Link"
 msgstr "Посилання"
 
 #, c-format
-msgid "link: %s"
-msgstr "посилання: %s"
+msgid ""
+"Cannot create link\n"
+"%s"
+msgstr ""
 
 #, c-format
-msgid "symlink: %s"
-msgstr "символьне посилання: %s"
+msgid ""
+"Cannot create symbolic link\n"
+"%s"
+msgstr ""
 
 msgid "View file"
 msgstr "Перегляд файлу"
@@ -2414,12 +2369,16 @@ msgid "Edit symlink"
 msgstr "Редагувати символьне посилання"
 
 #, c-format
-msgid "edit symlink, unable to remove %s: %s"
-msgstr "редагування символьного посилання, не вдалося видалити %s: %s"
+msgid ""
+"Edit symlink, unable to remove\n"
+"%s"
+msgstr ""
 
 #, c-format
-msgid "edit symlink: %s"
-msgstr "редагування символьного посилання: %s"
+msgid ""
+"Cannot edit symlink\n"
+"%s"
+msgstr ""
 
 msgid "FTP to machine"
 msgstr "FTP-з’єднання з віддаленою машиною"
@@ -2429,16 +2388,6 @@ msgstr "З’єднання по SFTP"
 
 msgid "Shell link to machine"
 msgstr "Shell-з’єднання з віддаленою машиною"
-
-msgid "Undelete files on an ext2 file system"
-msgstr "Відновлення файлів на файловій системі ext2"
-
-msgid ""
-"Enter device (without /dev/) to undelete\n"
-"files on: (F1 for details)"
-msgstr ""
-"Введіть назву пристрою (без /dev/), на якому\n"
-"потрібно відновити файли після видалення: (F1 — подробиці)"
 
 msgid "Directory scanning"
 msgstr "Сканування каталогу"
@@ -2460,13 +2409,8 @@ msgstr "Не можна виконувати команди на нелокал�
 msgid "Parameter"
 msgstr "Параметр"
 
-#, c-format
-msgid ""
-"Cannot create temporary command file\n"
-"%s"
+msgid "Cannot create temporary command file"
 msgstr ""
-"Не вдалося створити тимчасовий командний файл\n"
-"%s"
 
 msgid "Pipe failed"
 msgstr "Сталася помилка каналу"
@@ -2474,12 +2418,9 @@ msgstr "Сталася помилка каналу"
 #, c-format
 msgid ""
 "You have an outdated %s file.\n"
-"Midnight Commander now uses %s file.\n"
+"%s now uses %s file.\n"
 "Please copy your modifications of the old file to the new one."
 msgstr ""
-"У вас застарів файл %s.\n"
-"Midnight Commander зараз використовує файл %s.\n"
-"Скопіюйте свою модифікацію старого файлу у новий."
 
 #, c-format
 msgid ""
@@ -2487,7 +2428,7 @@ msgid ""
 "%s%s\n"
 "file has changed with version 4.0.\n"
 "It seems that the installation has failed.\n"
-"Please fetch a fresh copy from the Midnight Commander package."
+"Please fetch a fresh copy from the %s package."
 msgstr ""
 
 #, c-format
@@ -2544,31 +2485,21 @@ msgstr " із шаблоном джерела:"
 
 #, c-format
 msgid ""
-"Cannot stat hardlink source file \"%s\"\n"
+"Cannot stat hardlink source file\n"
 "%s"
 msgstr ""
-"Не вдалося отримати властивості вихідного файлу жорсткого посилання \"%s\"\n"
-"%s"
 
 #, c-format
 msgid ""
-"Cannot create target hardlink \"%s\"\n"
+"Cannot create target hardlink\n"
 "%s"
 msgstr ""
-"Не вдалося створити цільове жорстке посилання \"%s\"\n"
-"%s"
-
-#, c-format
-msgid "Cannot create target hardlink \"%s\""
-msgstr "Не вдалося створити цільове жорстке посилання \"%s\""
 
 #, c-format
 msgid ""
-"Cannot read source link \"%s\"\n"
+"Cannot read source link\n"
 "%s"
 msgstr ""
-"Не вдалося прочитати джерельне посилання «%s»\n"
-"%s"
 
 msgid ""
 "Cannot make stable symlinks across non-local filesystems:\n"
@@ -2582,11 +2513,9 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot create target symlink \"%s\"\n"
+"Cannot create target symlink\n"
 "%s"
 msgstr ""
-"Не вдалося створити цільове символьне посилання «%s»\n"
-"%s"
 
 #, c-format
 msgid ""
@@ -2612,45 +2541,46 @@ msgstr ""
 "«%s»\n"
 "є одним і тим же файлом "
 
+msgid "&Ignore"
+msgstr "&Ігнорувати"
+
 msgid "Ignore a&ll"
 msgstr ""
 
+msgid "&Retry"
+msgstr "По&вторити"
+
 #, c-format
 msgid ""
-"Directory \"%s\" not empty.\n"
+"Directory\n"
+"%s\n"
+"is not empty.\n"
 "Delete it recursively?"
 msgstr ""
-"Каталог \"%s\" не порожній.\n"
-"Видалити його рекурсивно?"
 
 #, c-format
 msgid ""
 "Background process:\n"
-"Directory \"%s\" not empty.\n"
+"Directory\n"
+"%s\n"
+"is not empty.\n"
 "Delete it recursively?"
 msgstr ""
-"Фоновий процес:\n"
-"Каталог \"%s\" не порожній.\n"
-"Видалити рекурсивно?"
 
 msgid "Non&e"
 msgstr "Ж&oдного"
 
 #, c-format
 msgid ""
-"Cannot remove file \"%s\"\n"
+"Cannot remove file\n"
 "%s"
 msgstr ""
-"Не вдалося видалити файл «%s»\n"
-"%s"
 
 #, c-format
 msgid ""
-"Cannot stat file \"%s\"\n"
+"Cannot stat file\n"
 "%s"
 msgstr ""
-"Не вдалося отримати властивості файлу «%s»\n"
-"%s"
 
 #, c-format
 msgid "Cannot overwrite directory \"%s\""
@@ -2658,153 +2588,127 @@ msgstr "Не вдалося перезаписати каталог «%s»"
 
 #, c-format
 msgid ""
-"Cannot move file \"%s\" to \"%s\"\n"
-"%s"
-msgstr ""
-"Не вдалося перенести файл «%s» у «%s»\n"
-"%s "
-
-#, c-format
-msgid ""
-"Cannot remove directory \"%s\"\n"
-"%s"
-msgstr ""
-"Не вдалося видалити каталог «%s»\n"
-"%s"
-
-#, c-format
-msgid ""
-"Cannot enter into directory \"%s\"\n"
+"Cannot move file\n"
+"%s\n"
+"to\n"
 "%s"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot overwrite directory \"%s\"\n"
+"Cannot remove directory\n"
 "%s"
 msgstr ""
-"Не вдалося перезаписати каталог «%s»\n"
-"%s"
 
 #, c-format
 msgid ""
-"Cannot overwrite file \"%s\"\n"
+"Cannot enter into directory\n"
 "%s"
-msgstr "Не вдалося перезаписати файл «%s» %s"
+msgstr ""
 
 #, c-format
 msgid ""
-"Cannot move directory \"%s\" to \"%s\"\n"
+"Cannot overwrite directory\n"
 "%s"
 msgstr ""
-"Не вдалося перенести каталог «%s» у «%s»\n"
+
+#, c-format
+msgid ""
+"Cannot overwrite file\n"
 "%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot move directory\n"
+"%s\n"
+"to\n"
+"%s"
+msgstr ""
 
 msgid "Cannot operate on \"..\"!"
 msgstr "Не можна виконувати операції з «..»"
 
 #, c-format
 msgid ""
-"Cannot stat source file \"%s\"\n"
-"%s"
-msgstr ""
-"Не вдалося отримати властивості вихідного файлу «%s»\n"
-"%s"
-
-#, c-format
-msgid ""
-"Cannot get ext2 attributes of source file \"%s\"\n"
+"Cannot stat source file\n"
 "%s"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot set ext2 attributes of target file \"%s\"\n"
+"Cannot get ext2 attributes of source file\n"
 "%s"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot create special file \"%s\"\n"
+"Cannot set ext2 attributes of target file\n"
 "%s"
 msgstr ""
-"Не вдалося створити спеціальний файл «%s»\n"
-"%s"
 
 #, c-format
 msgid ""
-"Cannot chown target file \"%s\"\n"
+"Cannot create special file\n"
 "%s"
 msgstr ""
-"Не вдалося змінити власника цільового файлу «%s»\n"
-"%s"
 
 #, c-format
 msgid ""
-"Cannot chmod target file \"%s\"\n"
+"Cannot chown target file\n"
 "%s"
 msgstr ""
-"Не вдалося змінити права доступу до цільового файлу «%s»\n"
-"%s"
 
 #, c-format
 msgid ""
-"Cannot open source file \"%s\"\n"
+"Cannot chmod target file\n"
 "%s"
 msgstr ""
-"Не вдалося відкрити вихідний файл «%s»\n"
+
+#, c-format
+msgid ""
+"Cannot open source file\n"
 "%s"
+msgstr ""
 
 msgid "Reget failed, about to overwrite file"
 msgstr "Сталася помилка дозавантаження файлу, файл буде перезаписано "
 
 #, c-format
 msgid ""
-"Cannot fstat source file \"%s\"\n"
+"Cannot fstat source file\n"
 "%s"
 msgstr ""
-"Не вдалося отримати властивості вихідного файлу «%s»\n"
-"%s"
 
 #, c-format
 msgid ""
-"Cannot create target file \"%s\"\n"
+"Cannot create target file\n"
 "%s"
 msgstr ""
-"Не вдалося створити цільовий файл «%s»\n"
-"%s "
 
 #, c-format
 msgid ""
-"Cannot fstat target file \"%s\"\n"
+"Cannot fstat target file\n"
 "%s"
 msgstr ""
-"Не вдалося отримати властивості цільового файлу «%s»\n"
-"%s"
 
 #, c-format
 msgid ""
-"Cannot preallocate space for target file \"%s\"\n"
+"Cannot preallocate space for target file\n"
 "%s"
 msgstr ""
-"Не вдалося зарезервувати місце для цільового файлу «%s»\n"
-"%s"
 
 #, c-format
 msgid ""
-"Cannot read source file \"%s\"\n"
+"Cannot read source file\n"
 "%s"
 msgstr ""
-"Не вдалося прочитати вихідний файл \"%s\"\n"
-"%s"
 
 #, c-format
 msgid ""
-"Cannot write target file \"%s\"\n"
+"Cannot write target file\n"
 "%s"
 msgstr ""
-"Не вдалося записати цільовий файл «%s»\n"
-"%s"
 
 msgid "(stalled)"
 msgstr "(простоювання)"
@@ -2820,37 +2724,31 @@ msgstr "&Продовжити копіювання"
 
 #, c-format
 msgid ""
-"Cannot close source file \"%s\"\n"
-"%s"
-msgstr ""
-"Не вдалося закрити вихідний файл «%s»\n"
-"%s"
-
-#, c-format
-msgid ""
-"Cannot close target file \"%s\"\n"
-"%s"
-msgstr ""
-"Не вдалося закрити цільовий файл «%s»\n"
-"%s"
-
-#, c-format
-msgid ""
-"Cannot set ext2 attributes for target file \"%s\"\n"
+"Cannot close source file\n"
 "%s"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot stat source directory \"%s\"\n"
+"Cannot close target file\n"
 "%s"
 msgstr ""
-"Не вдавдалосяться отримати властивості вихідного каталогу «%s»\n"
-"%s"
 
 #, c-format
 msgid ""
-"Cannot get ext2 attributes of source directory \"%s\"\n"
+"Cannot set ext2 attributes for target file\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot stat source directory\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot get ext2 attributes of source directory\n"
 "%s"
 msgstr ""
 
@@ -2872,27 +2770,23 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Destination \"%s\" must be a directory\n"
+"Destination\n"
+"%s\n"
+"must be a directory\n"
 "%s"
 msgstr ""
-"Призначення «%s» повинно бути каталогом\n"
-"%s"
 
 #, c-format
 msgid ""
-"Cannot create target directory \"%s\"\n"
+"Cannot create target directory\n"
 "%s"
 msgstr ""
-"Не вдалося створити цільовий каталог «%s»\n"
-"%s"
 
 #, c-format
 msgid ""
-"Cannot chown target directory \"%s\"\n"
+"Cannot chown target directory\n"
 "%s"
 msgstr ""
-"Не вдалося змінити власника цільового каталогу «%s»\n"
-"%s"
 
 #, c-format
 msgid "Directories: %zu, total size: %s"
@@ -3016,6 +2910,9 @@ msgstr "&Iти за посиланнями"
 msgid "Preserve &attributes"
 msgstr "Зберігати атриб&yти"
 
+msgid "Preserve e&xt2 attributes"
+msgstr ""
+
 msgid "Di&ve into subdir if exists"
 msgstr "Ус&eредину каталога, якщо існує"
 
@@ -3041,6 +2938,9 @@ msgstr "&Відомості"
 msgid "&Tree"
 msgstr "Д&eрево"
 
+msgid "Paneli&ze"
+msgstr "Панелі&зувати"
+
 msgid "&Listing format..."
 msgstr "&Формат списку"
 
@@ -3061,9 +2961,6 @@ msgstr "&Shell-з’єднання…"
 
 msgid "SFTP li&nk..."
 msgstr "SFTP-&зʼєднання"
-
-msgid "Paneli&ze"
-msgstr "Панелі&зувати"
 
 msgid "&Rescan"
 msgstr "&Пересканувати"
@@ -3170,9 +3067,6 @@ msgstr "Фонові завдання"
 msgid "Screen lis&t"
 msgstr "Список екранів"
 
-msgid "&Undelete files (ext2fs only)"
-msgstr "&Відновлення файлів (лише ext2fs)"
-
 msgid "&Listing format edit"
 msgstr "&Редагування формату списку"
 
@@ -3200,9 +3094,6 @@ msgstr "&Підтвердження…"
 msgid "&Appearance..."
 msgstr "&Вигляд..."
 
-msgid "&Display bits..."
-msgstr "&Відображення символів…"
-
 msgid "&Virtual FS..."
 msgstr "Віртуальні &ФС…"
 
@@ -3217,11 +3108,8 @@ msgstr[1] "Відкрито %zu екрани. Все одно вийти?"
 msgstr[2] "Відкрито %zu екранів. Все одно вийти?"
 msgstr[3] "Відкрито %zu екранів. Все одно вийти?"
 
-msgid "The Midnight Commander"
-msgstr "Midnight Commander"
-
-msgid "Do you really want to quit the Midnight Commander?"
-msgstr "Справді вийти з Midnight Commander?"
+msgid "Do you really want to quit?"
+msgstr ""
 
 msgid "&Above"
 msgstr "Верхня"
@@ -3427,10 +3315,6 @@ msgstr "Мітка для «%s»: "
 
 msgid "Add to hotlist"
 msgstr "Додати до списку"
-
-#, c-format
-msgid "Midnight Commander %s"
-msgstr "Midnight Commander %s"
 
 #, c-format
 msgid "File: %s"
@@ -3731,15 +3615,10 @@ msgstr ""
 "Зовнішнє панелізування:\n"
 "%s"
 
-#, c-format
 msgid ""
 "External panelize:\n"
-"failed to read data from child stdout:\n"
-"%s"
+"failed to read data from child stdout:"
 msgstr ""
-"Зовнішнє панелізування:\n"
-"не вдалося прочитати дані з підбуфера виводу:\n"
-"%s"
 
 msgid "Cannot run external panelize in a non-local directory"
 msgstr "Не вдалося виконати зовнішнє панелізування в нелокальному каталозі"
@@ -3779,6 +3658,13 @@ msgid ""
 msgstr ""
 "Не вдалося отримати властивості призначення\n"
 "%s"
+
+#, c-format
+msgid ""
+"Destination\n"
+"%s\n"
+"must be a directory"
+msgstr ""
 
 #, c-format
 msgid "Delete %s?"
@@ -3899,14 +3785,12 @@ msgstr ""
 msgid "Home directory path is not absolute"
 msgstr "Шлях до домашнього каталогу не абсолютний"
 
+#, c-format
 msgid ""
-"GNU Midnight Commander\n"
+"%s\n"
 "is already running on this terminal.\n"
 "Subshell support will be disabled."
 msgstr ""
-"GNU Midnight Commander\n"
-"вже запущено в цьому терміналі\n"
-"підтримку підоболонки буде вимкнено."
 
 #, c-format
 msgid ""
@@ -3976,33 +3860,28 @@ msgstr "Із підтримкою подій X11"
 msgid "With internationalization support"
 msgstr "Із підтримкою інтернаціоналізації"
 
-msgid "With multiple codepages support"
-msgstr "Із підтримкою кількох кодових сторінок"
-
 msgid "With ext2fs attributes support"
 msgstr "Із підтримкою атрибутів ext2fs"
 
 #, c-format
-msgid "Built with GLib %d.%d.%d\n"
-msgstr "Зібрано із GLib %d.%d.%d\n"
+msgid "Built with GLib %d.%d.%d (using GLib %u.%u.%u)\n"
+msgstr ""
 
 #, c-format
-msgid "Built with S-Lang %s with terminfo database\n"
-msgstr "Зібрано зі S-Lang %s з базою даних terminfo\n"
+msgid "Built with S-Lang"
+msgstr ""
 
 #, c-format
-msgid "Built with ncurses %s\n"
-msgstr "Зібрано з ncurses %s\n"
-
-msgid "Built with ncurses (unknown version)"
-msgstr "Зібрано з ncurses (невідома версія)"
+msgid " and terminfo database (using S-Lang %s)\n"
+msgstr ""
 
 #, c-format
-msgid "Built with ncursesw %s\n"
-msgstr "Зібрано з ncursesw %s\n"
+msgid "Built with %s"
+msgstr ""
 
-msgid "Built with ncursesw (unknown version)"
-msgstr "Зібрано з ncursesw (невідома версія)"
+#, c-format
+msgid " (using %s)\n"
+msgstr ""
 
 #, c-format
 msgid "Built with libssh2 %d.%d.%d\n"
@@ -4168,11 +4047,6 @@ msgstr ""
 msgid ""
 "EXTFS virtual file system:\n"
 "wrong archive name"
-msgstr ""
-
-msgid ""
-"EXTFS virtual file system:\n"
-"cannot build command"
 msgstr ""
 
 #, c-format
@@ -4365,6 +4239,12 @@ msgstr "sftp: з’єднання перервано користувачем"
 msgid "sftp: connection to server failed: %s"
 msgstr "sftp: з’єдання з сервером невдале: %s"
 
+#, c-format
+msgid ""
+"sftp: cannot open %s:\n"
+"%s"
+msgstr ""
+
 msgid "sftp: found host key of unsupported type: RSA1"
 msgstr "sftp: знайдено ключ господаря непідтримуваного типу: RSA1"
 
@@ -4525,96 +4405,17 @@ msgstr ""
 msgid "tar: mc_lseek not stopped at a record boundary"
 msgstr ""
 
-msgid "undelfs: error"
-msgstr "undelfs: сталася помилка"
-
-msgid "not enough memory"
-msgstr "недостатньо пам’яті"
-
-msgid "while allocating block buffer"
-msgstr "при отриманні блока буфера"
-
-#, c-format
-msgid "open_inode_scan: %d"
-msgstr "open_inode_scan: %d"
-
-#, c-format
-msgid "while starting inode scan %d"
-msgstr "на початку сканування інформаційного вузла %d"
-
-#, c-format
-msgid "undelfs: loading deleted files information %d inodes"
-msgstr ""
-"undelfs: завантаження інформації про видалені файли інформаційних вузлів: %d"
-
-#, c-format
-msgid "while calling ext2_block_iterate %d"
-msgstr "під час викликання ext2_block_iterate %d"
-
-msgid "no more memory while reallocating array"
-msgstr "не вистачило пам’яті для масиву"
-
-#, c-format
-msgid "while doing inode scan %d"
-msgstr "під час сканування інформаційного вузла %d"
-
-#, c-format
-msgid "Cannot open file %s"
-msgstr "Не вдалося відкрити файл %s "
-
-msgid "undelfs: reading inode bitmap..."
-msgstr "undelfs: читається бітова карта інформаційних вузлів…"
-
-#, c-format
-msgid ""
-"Cannot load inode bitmap from:\n"
-"%s"
-msgstr ""
-"Не вдалося завантажити бітову карту інформаційних вузлів з:\n"
-" %s"
-
-msgid "undelfs: reading block bitmap..."
-msgstr "undelfs: читається блок бітової карти…"
-
-#, c-format
-msgid ""
-"Cannot load block bitmap from:\n"
-"%s"
-msgstr ""
-"Не вдалося завантажити блок бітової карти з:\n"
-" %s"
-
-msgid "vfs_info is not fs!"
-msgstr "vfs_info не є файловою системою."
-
-msgid "You have to chdir to extract files first"
-msgstr "Щоб видобути файли, необхідно спочатку змінити каталог"
-
-msgid "while iterating over blocks"
-msgstr "під час проходження блоків"
-
-#, c-format
-msgid "Cannot open file \"%s\""
-msgstr "Не вдалося відкрити файл «%s»"
-
-msgid "Ext2lib error"
-msgstr "Сталася помилка Ext2lib"
-
 msgid "Invalid value"
 msgstr "Неправильне значення"
 
 msgid "File was modified. Save with exit?"
 msgstr "Файл змінено. Зберегти?"
 
-msgid "&Cancel quit"
-msgstr "&Не виходити"
-
+#, c-format
 msgid ""
-"Midnight Commander is being shut down.\n"
+"%s is being shut down.\n"
 "Save modified file?"
 msgstr ""
-"Виконується вихід із Midnight Commander.\n"
-"Зберегти змінений файл?"
 
 msgid "&Line number"
 msgstr "Номер рядка"
@@ -4661,13 +4462,12 @@ msgstr "ButtonBar|НеФормат."
 msgid "ButtonBar|Format"
 msgstr "ButtonBar|Формат."
 
-#, c-format
-msgid ""
-"Failed to read data from child stdout:\n"
-"%s"
+#, fuzzy
+msgid "Quick view"
+msgstr "&Швидкий перегляд"
+
+msgid "Failed to read data from child stdout"
 msgstr ""
-"Помилка читання даних зі stdout підпроцеса:\n"
-"%s"
 
 #, c-format
 msgid ""
@@ -4692,22 +4492,18 @@ msgstr "Перегляд:"
 
 #, c-format
 msgid ""
-"Cannot open \"%s\"\n"
-"%s"
+"Cannot view\n"
+"%s\n"
+"Not a regular file"
 msgstr ""
-"Не вдалося відкрити «%s»\n"
-"%s"
-
-msgid "Cannot view: not a regular file"
-msgstr "Не вдалося показати: не звичайний файл"
 
 #, c-format
 msgid ""
-"Cannot open \"%s\" in parse mode\n"
+"Cannot open\n"
+"%s\n"
+"in parse mode\n"
 "%s"
 msgstr ""
-"Не вдалось відкрити \"%s\" в режимі парсингу\n"
-"%s"
 
 msgid "Search done"
 msgstr "Пошук завершено"
@@ -4717,3 +4513,122 @@ msgstr "Почати спочатку?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Не вдалося отримати локальну копію /ftp://some.host/editme.txt"
+
+#~ msgid "Resets soft keys on HP terminals"
+#~ msgstr "Скидає програмні клавіші на терміналах HP"
+
+#~ msgid "Specifies a color configuration"
+#~ msgstr "Вказує конфігурацію кольорів"
+
+#~ msgid ""
+#~ "Standard Colors:\n"
+#~ "   black, gray, red, brightred, green, brightgreen, brown,\n"
+#~ "   yellow, blue, brightblue, magenta, brightmagenta, cyan,\n"
+#~ "   brightcyan, lightgray and white\n"
+#~ "\n"
+#~ "Extended colors, when 256 colors are available:\n"
+#~ "   color16 to color255, or rgb000 to rgb555 and gray0 to gray23\n"
+#~ "\n"
+#~ "Attributes:\n"
+#~ "   bold, italic, underline, reverse, blink; append more with '+'\n"
+#~ msgstr ""
+#~ "Стандартні кольори:\n"
+#~ "чорний, сірий, червоний, світло-червоний, зелений, світло-зелений, "
+#~ "коричневий,\n"
+#~ " жовтий, синій, світло-синій, пурпурний, світло-пурпурний, блакитний,\n"
+#~ "світло-блакитний, світло-сірий та білий\n"
+#~ "\n"
+#~ "Розширені кольори, якщо доступно 256 кольорів:\n"
+#~ "колір 16 до кольору 255, або rgb000 до rgb555 і сірий 0 до сірого 23\n"
+#~ "\n"
+#~ "Властивості:\n"
+#~ "жирний, підкреслений, з права на ліво, блимаючий; додати більше з '+'\n"
+
+#~ msgid "Undelete files on an ext2 file system"
+#~ msgstr "Відновлення файлів на файловій системі ext2"
+
+#~ msgid ""
+#~ "Enter device (without /dev/) to undelete\n"
+#~ "files on: (F1 for details)"
+#~ msgstr ""
+#~ "Введіть назву пристрою (без /dev/), на якому\n"
+#~ "потрібно відновити файли після видалення: (F1 — подробиці)"
+
+#~ msgid "&Undelete files (ext2fs only)"
+#~ msgstr "&Відновлення файлів (лише ext2fs)"
+
+#~ msgid "undelfs: error"
+#~ msgstr "undelfs: сталася помилка"
+
+#~ msgid "not enough memory"
+#~ msgstr "недостатньо пам’яті"
+
+#~ msgid "while allocating block buffer"
+#~ msgstr "при отриманні блока буфера"
+
+#, c-format
+#~ msgid "open_inode_scan: %d"
+#~ msgstr "open_inode_scan: %d"
+
+#, c-format
+#~ msgid "while starting inode scan %d"
+#~ msgstr "на початку сканування інформаційного вузла %d"
+
+#, c-format
+#~ msgid "undelfs: loading deleted files information %d inodes"
+#~ msgstr ""
+#~ "undelfs: завантаження інформації про видалені файли інформаційних вузлів: "
+#~ "%d"
+
+#, c-format
+#~ msgid "while calling ext2_block_iterate %d"
+#~ msgstr "під час викликання ext2_block_iterate %d"
+
+#~ msgid "no more memory while reallocating array"
+#~ msgstr "не вистачило пам’яті для масиву"
+
+#, c-format
+#~ msgid "while doing inode scan %d"
+#~ msgstr "під час сканування інформаційного вузла %d"
+
+#, c-format
+#~ msgid "Cannot open file %s"
+#~ msgstr "Не вдалося відкрити файл %s "
+
+#~ msgid "undelfs: reading inode bitmap..."
+#~ msgstr "undelfs: читається бітова карта інформаційних вузлів…"
+
+#, c-format
+#~ msgid ""
+#~ "Cannot load inode bitmap from:\n"
+#~ "%s"
+#~ msgstr ""
+#~ "Не вдалося завантажити бітову карту інформаційних вузлів з:\n"
+#~ " %s"
+
+#~ msgid "undelfs: reading block bitmap..."
+#~ msgstr "undelfs: читається блок бітової карти…"
+
+#, c-format
+#~ msgid ""
+#~ "Cannot load block bitmap from:\n"
+#~ "%s"
+#~ msgstr ""
+#~ "Не вдалося завантажити блок бітової карти з:\n"
+#~ " %s"
+
+#~ msgid "vfs_info is not fs!"
+#~ msgstr "vfs_info не є файловою системою."
+
+#~ msgid "You have to chdir to extract files first"
+#~ msgstr "Щоб видобути файли, необхідно спочатку змінити каталог"
+
+#~ msgid "while iterating over blocks"
+#~ msgstr "під час проходження блоків"
+
+#, c-format
+#~ msgid "Cannot open file \"%s\""
+#~ msgstr "Не вдалося відкрити файл «%s»"
+
+#~ msgid "Ext2lib error"
+#~ msgstr "Сталася помилка Ext2lib"

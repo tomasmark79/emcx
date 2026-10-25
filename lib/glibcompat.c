@@ -1,7 +1,7 @@
 /*
    GLIB - Library of useful routines for C programming
 
-   Copyright (C) 2009-2025
+   Copyright (C) 2009-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -20,7 +20,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 /** \file glibcompat.c
@@ -52,7 +52,7 @@
 /*** public functions ****************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
-#if ! GLIB_CHECK_VERSION (2, 54, 0)
+#if !GLIB_CHECK_VERSION(2, 54, 0)
 /**
  * g_ptr_array_find_with_equal_func: (skip)
  * @haystack: pointer array to be searched
@@ -97,11 +97,11 @@ g_ptr_array_find_with_equal_func (GPtrArray *haystack, gconstpointer needle, GEq
 
     return FALSE;
 }
-#endif /* ! GLIB_CHECK_VERSION (2, 54, 0) */
+#endif
 
 /* --------------------------------------------------------------------------------------------- */
 
-#if ! GLIB_CHECK_VERSION (2, 63, 3)
+#if !GLIB_CHECK_VERSION(2, 63, 3)
 /**
  * g_clear_slist: (skip)
  * @slist_ptr: (not nullable): a #GSList return location
@@ -162,11 +162,11 @@ g_clear_list (GList **list_ptr, GDestroyNotify destroy)
     }
 }
 
-#endif /* ! GLIB_CHECK_VERSION (2, 63, 3) */
+#endif
 
 /* --------------------------------------------------------------------------------------------- */
 
-#if ! GLIB_CHECK_VERSION (2, 60, 0)
+#if !GLIB_CHECK_VERSION(2, 60, 0)
 /**
  * g_queue_clear_full:
  * @queue: a pointer to a #GQueue
@@ -187,11 +187,11 @@ g_queue_clear_full (GQueue *queue, GDestroyNotify free_func)
 
     g_queue_clear (queue);
 }
-#endif /* ! GLIB_CHECK_VERSION (2, 60, 0) */
+#endif
 
 /* --------------------------------------------------------------------------------------------- */
 
-#if ! GLIB_CHECK_VERSION (2, 77, 0)
+#if !GLIB_CHECK_VERSION(2, 77, 0)
 /**
  * g_string_new_take:
  * @init: (nullable): initial text used as the string.
@@ -222,7 +222,7 @@ g_string_new_take (char *init)
 
     return string;
 }
-#endif /* ! GLIB_CHECK_VERSION (2, 77, 0) */
+#endif
 
 /* --------------------------------------------------------------------------------------------- */
 
@@ -299,6 +299,29 @@ mc_g_string_append_c_len (GString *s, gchar c, guint len)
     }
 
     return s;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+/**
+ * mc_g_string_concat:
+ * @dst: (not nullable): the destination #GString.
+ * @src: (not nullable): the source #GString.
+ * @return: @dst
+ *
+ * Adds @src to the end of @dst.
+ *
+ * There is no such API in GLib2.
+ */
+GString *
+mc_g_string_concat (GString *dest, const GString *src)
+{
+    g_return_val_if_fail (dest != NULL, NULL);
+    g_return_val_if_fail (src != NULL, NULL);
+
+    g_string_append_len (dest, src->str, src->len);
+
+    return dest;
 }
 
 /* --------------------------------------------------------------------------------------------- */

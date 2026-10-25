@@ -2,7 +2,7 @@
    Skins engine.
    Reading and parse ini-files
 
-   Copyright (C) 2009-2025
+   Copyright (C) 2009-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -21,7 +21,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -29,11 +29,11 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "lib/global.h"         /* <glib.h> */
+#include "lib/global.h"  // <glib.h>
 
 #include "internal.h"
 #include "lib/fileloc.h"
-#include "lib/util.h"           /* exist_file() */
+#include "lib/util.h"  // exist_file()
 
 /*** global variables ****************************************************************************/
 
@@ -70,10 +70,11 @@ mc_skin_get_list_from_dir (const gchar *base_dir, GPtrArray *list)
             unsigned int i;
 
             slen = strlen (cname);
-            sname = g_strndup (cname, slen);
 
-            if (slen > 4 && strcmp (sname + slen - 4, ".ini") == 0)
-                sname[slen - 4] = '\0';
+            if (slen <= 4 || strcmp (cname + slen - 4, ".ini") != 0)
+                continue;
+
+            sname = g_strndup (cname, slen - 4);
 
             for (i = 0; i < list->len; i++)
                 if (strcmp (sname, g_ptr_array_index (list, i)) == 0)
@@ -166,15 +167,15 @@ mc_skin_ini_file_load_raw (mc_skin_t *mc_skin)
     }
     g_free (file_name);
 
-    /* ${XDG_DATA_HOME}/mc/skins/ */
+    // ${XDG_DATA_HOME}/mc/skins/
     if (mc_skin_ini_file_load_search_in_dir (mc_skin, mc_config_get_data_path ()))
         return TRUE;
 
-    /* /etc/mc/skins/ */
+    // /etc/mc/skins/
     if (mc_skin_ini_file_load_search_in_dir (mc_skin, mc_global.sysconfig_dir))
         return TRUE;
 
-    /* /usr/share/mc/skins/ */
+    // /usr/share/mc/skins/
     return mc_skin_ini_file_load_search_in_dir (mc_skin, mc_global.share_data_dir);
 }
 

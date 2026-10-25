@@ -1,7 +1,7 @@
 /*
    Virtual File System switch code
 
-   Copyright (C) 1995-2025
+   Copyright (C) 1995-2026
    Free Software Foundation, Inc.
 
    Written by: 1995 Miguel de Icaza
@@ -23,7 +23,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 /**
@@ -46,24 +46,23 @@
 #include <errno.h>
 #include <stdlib.h>
 
-#ifdef __linux__
-#ifdef HAVE_LINUX_FS_H
-#include <linux/fs.h>
-#endif /* HAVE_LINUX_FS_H */
-#ifdef HAVE_SYS_IOCTL_H
-#include <sys/ioctl.h>
-#endif /* HAVE_SYS_IOCTL_H */
-#endif /* __linux__ */
+#ifdef HAVE_FICLONERANGE
+#include <linux/fs.h>   // FICLONERANGE
+#include <sys/ioctl.h>  // ioctl()
+#elif defined(HAVE_COPY_FILE_RANGE)
+#include <unistd.h>  // COPY_FILE_RANGE_CLONE
+#elif defined(HAVE_SYS_CLONEFILE_H)
+#include <sys/clonefile.h>  // CLONE_NOOWNERCOPY
+#elif defined(HAVE_REFLINK)
+#include <unistd.h>  // reflink()
+#endif
 
 #include "lib/global.h"
 #include "lib/strutil.h"
 #include "lib/util.h"
-#include "lib/widget.h"         /* message() */
+#include "lib/widget.h"  // message()
 #include "lib/event.h"
-
-#ifdef HAVE_CHARSET
 #include "lib/charsets.h"
-#endif
 
 #include "vfs.h"
 #include "utilvfs.h"
@@ -108,7 +107,7 @@ static long vfs_free_handle_list = -1;
 /* --------------------------------------------------------------------------------------------- */
 /*** file scope functions ************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
-/* now used only by vfs_translate_path, but could be used in other vfs 
+/* now used only by vfs_translate_path, but could be used in other vfs
  * plugin to automatic detect encoding
  * path - path to translate
  * size - how many bytes from path translate
@@ -118,74 +117,66 @@ static long vfs_free_handle_list = -1;
  */
 
 static estr_t
-_vfs_translate_path (const char *path, int size, GIConv defcnv, GString *buffer)
+_vfs_translate_path (const char *path, const long size, GIConv defcnv, GString *buffer)
 {
     estr_t state = ESTR_SUCCESS;
-#ifdef HAVE_CHARSET
     const char *semi;
 
     if (size == 0)
         return ESTR_SUCCESS;
 
-    size = (size > 0) ? size : (signed int) strlen (path);
+    const long sz = size > 0 ? size : (long) strlen (path);
 
-    /* try found /#enc: */
-    semi = g_strrstr_len (path, size, VFS_ENCODING_PREFIX);
+    // try to find /#enc:
+    semi = g_strrstr_len (path, sz, VFS_ENCODING_PREFIX);
     if (semi != NULL && (semi == path || IS_PATH_SEP (semi[-1])))
     {
         char encoding[16];
         const char *slash;
         GIConv coder = INVALID_CONV;
-        int ms;
+        long ms;
 
-        /* first must be translated part before #enc: */
+        // first must be translated part before #enc:
         ms = semi - path;
-
         state = _vfs_translate_path (path, ms, defcnv, buffer);
-
         if (state != ESTR_SUCCESS)
             return state;
 
-        /* now can be translated part after #enc: */
-        semi += strlen (VFS_ENCODING_PREFIX);   /* skip "#enc:" */
+        // now can be translated part after #enc:
+        semi += strlen (VFS_ENCODING_PREFIX);  // skip "#enc:"
         slash = strchr (semi, PATH_SEP);
-        /* ignore slashes after size; */
-        if (slash - path >= size)
+        // ignore slashes after sz
+        if (slash - path >= sz)
             slash = NULL;
 
-        ms = (slash != NULL) ? slash - semi : (int) strlen (semi);
-        ms = MIN ((unsigned int) ms, sizeof (encoding) - 1);
-        /* limit encoding size (ms) to path size (size) */
-        if (semi + ms > path + size)
-            ms = path + size - semi;
+        ms = slash != NULL ? slash - semi : (long) strlen (semi);
+        ms = MIN (ms, (long) sizeof (encoding) - 1);
+        // limit encoding size (ms) to path size (sz)
+        if (semi + ms > path + sz)
+            ms = path + sz - semi;
         memcpy (encoding, semi, ms);
         encoding[ms] = '\0';
 
         if (is_supported_encoding (encoding))
             coder = str_crt_conv_to (encoding);
 
-        if (coder != INVALID_CONV)
+        if (coder == INVALID_CONV)
+        {
+            errno = EINVAL;
+            state = ESTR_FAILURE;
+        }
+        else
         {
             if (slash != NULL)
-                state = str_vfs_convert_to (coder, slash + 1, path + size - slash - 1, buffer);
+                state = str_vfs_convert_to (coder, slash + 1, path + sz - slash - 1, buffer);
             str_close_conv (coder);
-            return state;
         }
-
-        errno = EINVAL;
-        state = ESTR_FAILURE;
     }
     else
     {
-        /* path can be translated whole at once */
-        state = str_vfs_convert_to (defcnv, path, size, buffer);
+        // path can be translated whole at once
+        state = str_vfs_convert_to (defcnv, path, sz, buffer);
     }
-#else
-    (void) size;
-    (void) defcnv;
-
-    g_string_assign (buffer, path);
-#endif /* HAVE_CHARSET */
 
     return state;
 }
@@ -274,11 +265,11 @@ vfs_new_handle (struct vfs_class *vclass, void *fsinfo)
     h->fsinfo = fsinfo;
     h->vclass = vclass;
 
-    /* Allocate the first free handle */
+    // Allocate the first free handle
     h->handle = vfs_free_handle_list;
     if (h->handle == -1)
     {
-        /* No free allocated handles, allocate one */
+        // No free allocated handles, allocate one
         h->handle = vfs_openfiles->len;
         g_ptr_array_add (vfs_openfiles, h);
     }
@@ -298,7 +289,7 @@ int
 vfs_ferrno (struct vfs_class *vfs)
 {
     return vfs->ferrno != NULL ? vfs->ferrno (vfs) : E_UNKNOWN;
-    /* Hope that error message is obscure enough ;-) */
+    // Hope that error message is obscure enough ;-)
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -306,8 +297,8 @@ vfs_ferrno (struct vfs_class *vfs)
 gboolean
 vfs_register_class (struct vfs_class *vfs)
 {
-    if (vfs->init != NULL)      /* vfs has own initialization function */
-        if (vfs->init (vfs) == 0)       /* but it failed */
+    if (vfs->init != NULL)         // vfs has own initialization function
+        if (vfs->init (vfs) == 0)  // but it failed
             return FALSE;
 
     g_ptr_array_add (vfs__classes_list, vfs);
@@ -461,15 +452,15 @@ vfs_file_class_flags (const vfs_path_t *vpath)
 void
 vfs_init (void)
 {
-    /* create the VFS handle arrays */
+    // create the VFS handle arrays
     vfs__classes_list = g_ptr_array_new ();
 
-    /* create the VFS handle array */
+    // create the VFS handle array
     vfs_openfiles = g_ptr_array_new ();
 
     vfs_str_buffer = g_string_new ("");
 
-    mc_readdir_result = vfs_dirent_init (NULL, "", -1);
+    mc_readdir_result = vfs_dirent_init (NULL, "", -1, DT_UNKNOWN);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -479,7 +470,7 @@ vfs_setup_work_dir (void)
 {
     vfs_setup_cwd ();
 
-    /* FIXME: is we really need for this check? */
+    // FIXME: is we really need for this check?
     /*
        if (strlen (current_dir) > MC_MAXPATHLEN - 2)
        vfs_die ("Current dir too long.\n");
@@ -507,7 +498,7 @@ vfs_shut (void)
             vfs->done (vfs);
     }
 
-    /* NULL-ize pointers to make unit tests happy */
+    // NULL-ize pointers to make unit tests happy
     g_ptr_array_free (vfs_openfiles, TRUE);
     vfs_openfiles = NULL;
     g_ptr_array_free (vfs__classes_list, TRUE);
@@ -522,17 +513,17 @@ vfs_shut (void)
 
 /* --------------------------------------------------------------------------------------------- */
 /**
-  * Init or create vfs_dirent structure
-  *
-  * @d vfs_dirent structure to init. If NULL, new structure is created.
-  * @fname file name
-  * @ino file inode number
-  *
-  * @return pointer to d if d isn't NULL, or pointer to newly created structure.
-  */
+ * Init or create vfs_dirent structure
+ *
+ * @d vfs_dirent structure to init. If NULL, new structure is created.
+ * @fname file name
+ * @ino file inode number
+ *
+ * @return pointer to d if d isn't NULL, or pointer to newly created structure.
+ */
 
 struct vfs_dirent *
-vfs_dirent_init (struct vfs_dirent *d, const char *fname, ino_t ino)
+vfs_dirent_init (struct vfs_dirent *d, const char *fname, ino_t ino, unsigned char type)
 {
     struct vfs_dirent *ret = d;
 
@@ -542,35 +533,36 @@ vfs_dirent_init (struct vfs_dirent *d, const char *fname, ino_t ino)
     if (ret->d_name_str == NULL)
         ret->d_name_str = g_string_sized_new (MC_MAXFILENAMELEN);
 
-    vfs_dirent_assign (ret, fname, ino);
+    vfs_dirent_assign (ret, fname, ino, type);
 
     return ret;
 }
 
 /* --------------------------------------------------------------------------------------------- */
 /**
-  * Assign members of vfs_dirent structure
-  *
-  * @d vfs_dirent structure for assignment
-  * @fname file name
-  * @ino file inode number
-  */
+ * Assign members of vfs_dirent structure
+ *
+ * @d vfs_dirent structure for assignment
+ * @fname file name
+ * @ino file inode number
+ */
 
 void
-vfs_dirent_assign (struct vfs_dirent *d, const char *fname, ino_t ino)
+vfs_dirent_assign (struct vfs_dirent *d, const char *fname, ino_t ino, unsigned char type)
 {
     g_string_assign (d->d_name_str, fname);
     d->d_name = d->d_name_str->str;
     d->d_len = d->d_name_str->len;
     d->d_ino = ino;
+    d->d_type = type;
 }
 
 /* --------------------------------------------------------------------------------------------- */
 /**
-  * Destroy vfs_dirent structure
-  *
-  * @d vfs_dirent structure to destroy.
-  */
+ * Destroy vfs_dirent structure
+ *
+ * @d vfs_dirent structure to destroy.
+ */
 
 void
 vfs_dirent_free (struct vfs_dirent *d)
@@ -620,7 +612,7 @@ vfs_print_message (const char *msg, ...)
     event_data.msg = g_strdup_vprintf (msg, ap);
     va_end (ap);
 
-    mc_event_raise (MCEVENT_GROUP_CORE, "vfs_print_message", (gpointer) & event_data);
+    mc_event_raise (MCEVENT_GROUP_CORE, "vfs_print_message", (gpointer) &event_data);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -663,9 +655,9 @@ vfs_setup_cwd (void)
 
         if (tmp_vpath != NULL)
         {
-            /* One of directories in the path is not readable */
+            // One of directories in the path is not readable
 
-            /* Check if it is O.K. to use the current_dir */
+            // Check if it is O.K. to use the current_dir
             if (!vfs_test_current_dir (tmp_vpath))
                 vfs_set_raw_current_dir (tmp_vpath);
             else
@@ -709,7 +701,7 @@ vfs_preallocate (int dest_vfs_fd, off_t src_fsize, off_t dest_fsize)
     (void) dest_fsize;
     return 0;
 
-#else /* HAVE_POSIX_FALLOCATE */
+#else  // HAVE_POSIX_FALLOCATE
     void *dest_fd = NULL;
     struct vfs_class *dest_class;
 
@@ -722,19 +714,20 @@ vfs_preallocate (int dest_vfs_fd, off_t src_fsize, off_t dest_fsize)
 
     return posix_fallocate (*(int *) dest_fd, dest_fsize, src_fsize - dest_fsize);
 
-#endif /* HAVE_POSIX_FALLOCATE */
+#endif
 }
 
- /* --------------------------------------------------------------------------------------------- */
+/* --------------------------------------------------------------------------------------------- */
 
 int
 vfs_clone_file (int dest_vfs_fd, int src_vfs_fd)
 {
-#ifdef FICLONE
+#ifdef HAVE_FILE_CLONING_BY_RANGE
     void *dest_fd = NULL;
     void *src_fd = NULL;
     struct vfs_class *dest_class;
     struct vfs_class *src_class;
+    off_t in_offset, out_offset;
 
     dest_class = vfs_class_find_by_handle (dest_vfs_fd, &dest_fd);
     if ((dest_class->flags & VFSF_LOCAL) == 0)
@@ -760,10 +753,78 @@ vfs_clone_file (int dest_vfs_fd, int src_vfs_fd)
         return (-1);
     }
 
-    return ioctl (*(int *) dest_fd, FICLONE, *(int *) src_fd);
+    in_offset = mc_lseek (src_vfs_fd, 0, SEEK_CUR);
+    if (in_offset < 0)
+        return (-1);
+    out_offset = mc_lseek (dest_vfs_fd, 0, SEEK_CUR);
+    if (out_offset < 0)
+        return (-1);
+
+#if defined(FICLONERANGE)
+    {
+        struct file_clone_range fcr = {
+            .src_fd = *(int *) src_fd,
+            .src_offset = in_offset,
+            .src_length = 0,
+            .dest_offset = out_offset,
+        };
+
+        return ioctl (*(int *) dest_fd, FICLONERANGE, &fcr);
+    }
+#elif defined(COPY_FILE_RANGE_CLONE)
+    {
+        ssize_t result;
+
+        do
+        {
+            result = copy_file_range (*(int *) src_fd, &in_offset, *(int *) dest_fd, &out_offset,
+                                      SSIZE_MAX, COPY_FILE_RANGE_CLONE);
+        }
+        while (result > 0);
+        return result;
+    }
+#endif
+
 #else
     (void) dest_vfs_fd;
     (void) src_vfs_fd;
+    errno = ENOTSUP;
+    return (-1);
+#endif
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+int
+vfs_clone_file_by_path (const vfs_path_t *dest_vpath, const vfs_path_t *src_vpath,
+                        gboolean preserve_uidgid)
+{
+#ifdef HAVE_FILE_CLONING_BY_PATH
+    const char *src_path;
+    const char *dest_path;
+
+    if (!vfs_file_is_local (dest_vpath) || !vfs_file_is_local (src_vpath))
+    {
+        errno = ENOTSUP;
+        return (-1);
+    }
+
+    src_path = vfs_path_get_last_path_str (src_vpath);
+    dest_path = vfs_path_get_last_path_str (dest_vpath);
+
+#if defined(HAVE_SYS_CLONEFILE_H)
+#ifndef CLONE_NOOWNERCOPY  // macOS 10.13+
+#define CLONE_NOOWNERCOPY 0
+#endif
+    return my_clonefile (src_path, dest_path, preserve_uidgid ? 0 : CLONE_NOOWNERCOPY);
+#elif defined(HAVE_REFLINK)
+    return reflink (src_path, dest_path, preserve_uidgid);
+#endif
+
+#else
+    (void) dest_vpath;
+    (void) src_vpath;
+    (void) preserve_uidgid;
     errno = ENOTSUP;
     return (-1);
 #endif

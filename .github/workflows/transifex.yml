@@ -3,14 +3,19 @@ name: transifex
 on:
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+
 jobs:
   transifex-upload:
-
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 5
+
+    permissions:
+      contents: read
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
 
       - name: Install gettext & po4a
         run: sudo apt-get install -y gettext po4a

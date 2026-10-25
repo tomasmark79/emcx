@@ -1,7 +1,7 @@
 /*
    Widgets for the Midnight Commander
 
-   Copyright (C) 1994-2025
+   Copyright (C) 1994-2026
    Free Software Foundation, Inc.
 
    Authors:
@@ -25,7 +25,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 /** \file buttonbar.c
@@ -40,7 +40,7 @@
 #include "lib/global.h"
 
 #include "lib/tty/tty.h"
-#include "lib/tty/key.h"        /* XCTRL and ALT macros  */
+#include "lib/tty/key.h"  // XCTRL and ALT macros
 #include "lib/skin.h"
 #include "lib/strutil.h"
 #include "lib/util.h"
@@ -180,7 +180,7 @@ buttonbar_callback (Widget *w, Widget *sender, widget_msg_t msg, int parm, void 
         {
             buttonbar_init_button_positions (bb);
             widget_gotoyx (w, 0, 0);
-            tty_setcolor (DEFAULT_COLOR);
+            tty_setcolor (BUTTONBAR_HOTKEY_COLOR);
             tty_printf ("%-*s", w->rect.cols, "");
             widget_gotoyx (w, 0, 0);
 
@@ -221,15 +221,15 @@ buttonbar_mouse_callback (Widget *w, mouse_msg_t msg, mouse_event_t *event)
     switch (msg)
     {
     case MSG_MOUSE_CLICK:
-        {
-            WButtonBar *bb = BUTTONBAR (w);
-            int button;
+    {
+        WButtonBar *bb = BUTTONBAR (w);
+        int button;
 
-            button = buttonbar_get_button_by_x_coord (bb, event->x);
-            if (button >= 0)
-                buttonbar_call (bb, button);
-            break;
-        }
+        button = buttonbar_get_button_by_x_coord (bb, event->x);
+        if (button >= 0)
+            buttonbar_call (bb, button);
+        break;
+    }
 
     default:
         break;

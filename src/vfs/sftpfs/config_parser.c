@@ -1,7 +1,7 @@
 /* Virtual File System: SFTP file system.
    The SSH config parser
 
-   Copyright (C) 2011-2025
+   Copyright (C) 2011-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -21,18 +21,18 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
 #include <errno.h>
 #include <stddef.h>
-#include <stdlib.h>             /* atoi() */
+#include <stdlib.h>  // atoi()
 
 #include "lib/global.h"
 
 #include "lib/search.h"
-#include "lib/util.h"           /* tilde_expand() */
+#include "lib/util.h"  // tilde_expand()
 #include "lib/vfs/utilvfs.h"
 
 #include "internal.h"
@@ -51,13 +51,14 @@
 
 typedef struct
 {
-    char *real_host;            /* host DNS name or ip address */
-    int port;                   /* port for connect to host */
-    char *user;                 /* the user to log in as */
-    gboolean password_auth;     /* FALSE - no passwords allowed (default TRUE) */
-    gboolean identities_only;   /* TRUE - no ssh agent (default FALSE) */
-    gboolean pubkey_auth;       /* FALSE - disable public key authentication (default TRUE) */
-    char *identity_file;        /* A file from which the user's DSA, ECDSA or DSA authentication identity is read. */
+    char *real_host;           // host DNS name or ip address
+    int port;                  // port for connect to host
+    char *user;                // the user to log in as
+    gboolean password_auth;    // FALSE - no passwords allowed (default TRUE)
+    gboolean identities_only;  // TRUE - no ssh agent (default FALSE)
+    gboolean pubkey_auth;      // FALSE - disable public key authentication (default TRUE)
+    char *identity_file;  // A file from which the user's DSA, ECDSA or DSA authentication identity
+                          // is read.
 } sftpfs_ssh_config_entity_t;
 
 enum config_var_type
@@ -72,25 +73,57 @@ enum config_var_type
 
 /*** file scope variables ************************************************************************/
 
-/* *INDENT-OFF* */
 static struct
 {
     const char *pattern;
     mc_search_t *pattern_regexp;
     enum config_var_type type;
     size_t offset;
-} config_variables[] =
-{
-    {"^\\s*User\\s+(.*)$", NULL, STRING, offsetof (sftpfs_ssh_config_entity_t, user)},
-    {"^\\s*HostName\\s+(.*)$", NULL, STRING, offsetof (sftpfs_ssh_config_entity_t, real_host)},
-    {"^\\s*IdentitiesOnly\\s+(.*)$", NULL, BOOLEAN, offsetof (sftpfs_ssh_config_entity_t, identities_only)},
-    {"^\\s*IdentityFile\\s+(.*)$", NULL, FILENAME, offsetof (sftpfs_ssh_config_entity_t, identity_file)},
-    {"^\\s*Port\\s+(.*)$", NULL, INTEGER, offsetof (sftpfs_ssh_config_entity_t, port)},
-    {"^\\s*PasswordAuthentication\\s+(.*)$", NULL, BOOLEAN, offsetof (sftpfs_ssh_config_entity_t, password_auth)},
-    {"^\\s*PubkeyAuthentication\\s+(.*)$", NULL, STRING, offsetof (sftpfs_ssh_config_entity_t, pubkey_auth)},
-    {NULL, NULL, 0, 0}
+} config_variables[] = {
+    {
+        "^\\s*User\\s+(.*)$",
+        NULL,
+        STRING,
+        offsetof (sftpfs_ssh_config_entity_t, user),
+    },
+    {
+        "^\\s*HostName\\s+(.*)$",
+        NULL,
+        STRING,
+        offsetof (sftpfs_ssh_config_entity_t, real_host),
+    },
+    {
+        "^\\s*IdentitiesOnly\\s+(.*)$",
+        NULL,
+        BOOLEAN,
+        offsetof (sftpfs_ssh_config_entity_t, identities_only),
+    },
+    {
+        "^\\s*IdentityFile\\s+(.*)$",
+        NULL,
+        FILENAME,
+        offsetof (sftpfs_ssh_config_entity_t, identity_file),
+    },
+    {
+        "^\\s*Port\\s+(.*)$",
+        NULL,
+        INTEGER,
+        offsetof (sftpfs_ssh_config_entity_t, port),
+    },
+    {
+        "^\\s*PasswordAuthentication\\s+(.*)$",
+        NULL,
+        BOOLEAN,
+        offsetof (sftpfs_ssh_config_entity_t, password_auth),
+    },
+    {
+        "^\\s*PubkeyAuthentication\\s+(.*)$",
+        NULL,
+        STRING,
+        offsetof (sftpfs_ssh_config_entity_t, pubkey_auth),
+    },
+    { NULL, NULL, 0, 0 },
 };
-/* *INDENT-ON* */
 
 /* --------------------------------------------------------------------------------------------- */
 /*** file scope functions ************************************************************************/
@@ -150,7 +183,7 @@ sftpsfs_expand_hostname (const char *host, const char *real_host)
 
 /* --------------------------------------------------------------------------------------------- */
 
-#define POINTER_TO_STRUCTURE_MEMBER(type)  \
+#define POINTER_TO_STRUCTURE_MEMBER(type)                                                          \
     ((type) ((char *) config_entity + (size_t) config_variables[i].offset))
 
 /**
@@ -176,7 +209,7 @@ sftpfs_fill_config_entity_from_string (sftpfs_ssh_config_entity_t *config_entity
             char **pointer_str;
             gboolean *pointer_bool;
 
-            /* Calculate start of value in string */
+            // Calculate start of value in string
             value_offset = mc_search_getstart_result_by_num (config_variables[i].pattern_regexp, 1);
             value = &buffer[value_offset];
 
@@ -232,7 +265,7 @@ sftpfs_fill_config_entity_from_config (FILE *ssh_config_handler,
 
     mc_return_val_if_error (mcerror, FALSE);
 
-    host_regexp = mc_search_new ("^\\s*host\\s+(.*)$", DEFAULT_CHARSET);
+    host_regexp = mc_search_new ("^\\s*host\\s+(.*)$", NULL);
     host_regexp->search_type = MC_SEARCH_T_REGEX;
     host_regexp->is_case_sensitive = FALSE;
 
@@ -248,8 +281,7 @@ sftpfs_fill_config_entity_from_config (FILE *ssh_config_handler,
 
             if (!feof (ssh_config_handler))
             {
-                mc_propagate_error (mcerror, e,
-                                    _("sftp: an error occurred while reading %s: %s"),
+                mc_propagate_error (mcerror, e, _ ("sftp: an error occurred while reading %s: %s"),
                                     SFTPFS_SSH_CONFIG, strerror (e));
                 ok = FALSE;
                 goto done;
@@ -267,7 +299,7 @@ sftpfs_fill_config_entity_from_config (FILE *ssh_config_handler,
             const char *host_pattern;
             int host_pattern_offset;
 
-            /* if previous host block exactly describe our connection */
+            // if previous host block exactly describe our connection
             if (host_block_hit)
                 goto done;
 
@@ -275,20 +307,19 @@ sftpfs_fill_config_entity_from_config (FILE *ssh_config_handler,
             host_pattern = &buffer[host_pattern_offset];
             if (strcmp (host_pattern, vpath_element->host) == 0)
             {
-                /* current host block describe our connection */
+                // current host block describe our connection
                 host_block_hit = TRUE;
             }
             else
             {
                 mc_search_t *pattern_regexp;
 
-                pattern_regexp = mc_search_new (host_pattern, DEFAULT_CHARSET);
+                pattern_regexp = mc_search_new (host_pattern, NULL);
                 pattern_regexp->search_type = MC_SEARCH_T_GLOB;
                 pattern_regexp->is_case_sensitive = FALSE;
                 pattern_regexp->is_entire_line = TRUE;
-                pattern_block_hit =
-                    mc_search_run (pattern_regexp, vpath_element->host, 0,
-                                   strlen (vpath_element->host), NULL);
+                pattern_block_hit = mc_search_run (pattern_regexp, vpath_element->host, 0,
+                                                   strlen (vpath_element->host), NULL);
                 mc_search_free (pattern_regexp);
             }
         }
@@ -298,7 +329,7 @@ sftpfs_fill_config_entity_from_config (FILE *ssh_config_handler,
         }
     }
 
-  done:
+done:
     mc_search_free (host_regexp);
     return ok;
 }
@@ -335,8 +366,8 @@ sftpfs_get_config_entity (const vfs_path_element_t *vpath_element, GError **mcer
     {
         gboolean ok;
 
-        ok = sftpfs_fill_config_entity_from_config
-            (ssh_config_handler, config_entity, vpath_element, mcerror);
+        ok = sftpfs_fill_config_entity_from_config (ssh_config_handler, config_entity,
+                                                    vpath_element, mcerror);
         fclose (ssh_config_handler);
 
         if (!ok)
@@ -353,7 +384,7 @@ sftpfs_get_config_entity (const vfs_path_element_t *vpath_element, GError **mcer
         {
             sftpfs_ssh_config_entity_free (config_entity);
             config_entity = NULL;
-            mc_propagate_error (mcerror, EPERM, "%s", _("sftp: Unable to get current user name."));
+            mc_propagate_error (mcerror, EPERM, "%s", _ ("sftp: Unable to get current user name."));
         }
     }
     return config_entity;
@@ -422,8 +453,7 @@ sftpfs_init_config_variables_patterns (void)
 
     for (i = 0; config_variables[i].pattern != NULL; i++)
     {
-        config_variables[i].pattern_regexp =
-            mc_search_new (config_variables[i].pattern, DEFAULT_CHARSET);
+        config_variables[i].pattern_regexp = mc_search_new (config_variables[i].pattern, NULL);
         config_variables[i].pattern_regexp->search_type = MC_SEARCH_T_REGEX;
         config_variables[i].pattern_regexp->is_case_sensitive = FALSE;
     }

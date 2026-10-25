@@ -1,7 +1,7 @@
 /* Virtual File System: SFTP file system.
    The internal functions: dirs
 
-   Copyright (C) 2011-2025
+   Copyright (C) 2011-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -21,7 +21,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -80,9 +80,8 @@ sftpfs_opendir (const vfs_path_t *vpath, GError **mcerror)
     {
         int libssh_errno;
 
-        handle =
-            libssh2_sftp_open_ex (sftpfs_super->sftp_session, fixfname->str, fixfname->len, 0, 0,
-                                  LIBSSH2_SFTP_OPENDIR);
+        handle = libssh2_sftp_open_ex (sftpfs_super->sftp_session, fixfname->str, fixfname->len, 0,
+                                       0, LIBSSH2_SFTP_OPENDIR);
         if (handle != NULL)
             break;
 
@@ -128,7 +127,7 @@ sftpfs_readdir (void *data, GError **mcerror)
     }
     while (rc == LIBSSH2_ERROR_EAGAIN);
 
-    return (rc != 0 ? vfs_dirent_init (NULL, mem, 0) : NULL);   /* FIXME: inode */
+    return (rc != 0 ? vfs_dirent_init (NULL, mem, 0, DT_UNKNOWN) : NULL);  // FIXME: inode
 }
 
 /* --------------------------------------------------------------------------------------------- */

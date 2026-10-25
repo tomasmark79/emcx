@@ -8,12 +8,16 @@
   glib,
   libzip,
   wl-clipboard,
+  upstreamSource,
 }:
 mc.overrideAttrs (old: {
-  version = lib.removeSuffix "\n" (builtins.readFile ../dotname/VERSION);
-  src = lib.cleanSource ../.;
-  # The fork source tree already includes the custom changes.
-  patches = [ ];
+  version =
+    lib.removeSuffix "\n" (builtins.readFile ../dotname/VERSION)
+    + "-${upstreamSource.shortRev or "unknown"}";
+  # Build upstream master directly, then apply only the Modern customizations.
+  # The lock records the exact upstream revision for reproducible builds.
+  src = upstreamSource;
+  patches = [ ./patches/modern.patch ];
   buildInputs = (old.buildInputs or [ ]) ++ [ libzip ];
   nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [
     autoreconfHook
@@ -22,6 +26,8 @@ mc.overrideAttrs (old: {
   postPatch =
     (old.postPatch or "")
     + ''
+      mkdir -p dotname
+      printf '%s\n' "$version" > dotname/VERSION
       substituteInPlace misc/mc-clipboard.py \
         --replace-fail '/usr/bin/env python3' '${python3}/bin/python3'
     ''

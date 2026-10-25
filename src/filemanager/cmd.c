@@ -2,7 +2,7 @@
    Routines invoked by a function key
    They normally operate on the current panel.
 
-   Copyright (C) 1994-2025
+   Copyright (C) 1994-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -21,7 +21,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 /** \file cmd.c
@@ -48,23 +48,23 @@
 
 #include "lib/global.h"
 
-#include "lib/tty/tty.h"        /* LINES, tty_touch_screen() */
-#include "lib/tty/key.h"        /* ALT() macro */
+#include "lib/tty/tty.h"  // LINES, tty_touch_screen()
+#include "lib/tty/key.h"  // ALT() macro
 #include "lib/mcconfig.h"
-#include "lib/filehighlight.h"  /* MC_FHL_INI_FILE */
+#include "lib/filehighlight.h"  // MC_FHL_INI_FILE
 #include "lib/vfs/vfs.h"
 #include "lib/fileloc.h"
 #include "lib/strutil.h"
 #include "lib/file-entry.h"
 #include "lib/util.h"
 #include "lib/widget.h"
-#include "lib/keybind.h"        /* CK_Down, CK_History */
-#include "lib/event.h"          /* mc_event_raise() */
+#include "lib/keybind.h"  // CK_Down, CK_History
+#include "lib/event.h"    // mc_event_raise()
 
 #include "src/setup.h"
-#include "src/execute.h"        /* toggle_panels() */
+#include "src/execute.h"  // toggle_panels()
 #include "src/history.h"
-#include "src/util.h"           /* check_for_default() */
+#include "src/util.h"  // check_for_default(), file_error_message()
 
 #include "src/viewer/mcviewer.h"
 
@@ -77,19 +77,18 @@
 #endif
 
 #include "filegui.h"
-#include "filenot.h"
-#include "hotlist.h"            /* hotlist_show() */
-#include "tree.h"               /* tree_chdir() */
-#include "filemanager.h"        /* change_panel() */
-#include "command.h"            /* cmdline */
-#include "layout.h"             /* get_current_type() */
-#include "ext.h"                /* regex_command() */
-#include "boxes.h"              /* cd_box() */
+#include "hotlist.h"      // hotlist_show()
+#include "tree.h"         // tree_chdir()
+#include "filemanager.h"  // change_panel()
+#include "command.h"      // the_cmdline
+#include "layout.h"       // get_current_type()
+#include "ext.h"          // regex_command()
+#include "boxes.h"        // cd_box()
 #include "dir.h"
 #include "cd.h"
-#include "ioblksize.h"          /* IO_BUFSIZE */
+#include "ioblksize.h"  // IO_BUFSIZE
 
-#include "cmd.h"                /* Our definitions */
+#include "cmd.h"  // Our definitions
 
 /*** global variables ****************************************************************************/
 
@@ -109,8 +108,8 @@ enum CompareMode
 /*** file scope variables ************************************************************************/
 
 #ifdef ENABLE_VFS_NET
-static const char *machine_str = N_("Enter machine name (F1 for details):");
-#endif /* ENABLE_VFS_NET */
+static const char *machine_str = N_ ("Enter machine name (F1 for details):");
+#endif
 
 /* --------------------------------------------------------------------------------------------- */
 /*** file scope functions ************************************************************************/
@@ -128,14 +127,15 @@ do_view_cmd (WPanel *panel, gboolean plain_view)
     if (fe == NULL)
         return;
 
-    /* Directories are viewed by changing to them */
+    // Directories are viewed by changing to them
     if (S_ISDIR (fe->st.st_mode) || link_isdir (fe))
     {
         vfs_path_t *fname_vpath;
 
-        if (confirm_view_dir && (panel->marked != 0 || panel->dirs_marked != 0) &&
-            query_dialog (_("Confirmation"), _("Files tagged, want to cd?"), D_NORMAL, 2,
-                          _("&Yes"), _("&No")) != 0)
+        if (confirm_view_dir && (panel->marked != 0 || panel->dirs_marked != 0)
+            && query_dialog (_ ("Confirmation"), _ ("Files tagged, want to cd?"), D_NORMAL, 2,
+                             _ ("&Yes"), _ ("&No"))
+                != 0)
             return;
 
         fname_vpath = vfs_path_from_str (fe->fname->str);
@@ -169,7 +169,7 @@ static int
 compare_files (const vfs_path_t *vpath1, const vfs_path_t *vpath2, off_t size)
 {
     int file1;
-    int result = -1;            /* Different by default */
+    int result = -1;  // Different by default
 
     if (size == 0)
         return 0;
@@ -194,7 +194,7 @@ compare_files (const vfs_path_t *vpath1, const vfs_path_t *vpath2, off_t size)
                     ;
             }
             while (n1 == n2 && n1 == sizeof (buf1) && memcmp (buf1, buf2, sizeof (buf1)) == 0);
-            result = (n1 != n2) || (memcmp (buf1, buf2, n1) != 0);
+            result = (n1 != n2) || (memcmp (buf1, buf2, MIN ((size_t) n1, sizeof (buf1))) != 0);
             rotate_dash (FALSE);
 
             close (file2);
@@ -212,21 +212,21 @@ compare_dir (WPanel *panel, const WPanel *other, enum CompareMode mode)
 {
     int i, j;
 
-    /* No marks by default */
+    // No marks by default
     panel->marked = 0;
     panel->total = 0;
     panel->dirs_marked = 0;
 
-    /* Handle all files in the panel */
+    // Handle all files in the panel
     for (i = 0; i < panel->dir.len; i++)
     {
         file_entry_t *source = &panel->dir.list[i];
         const char *source_fname;
 
-        /* Default: unmarked */
+        // Default: unmarked
         file_mark (panel, i, 0);
 
-        /* Skip directories */
+        // Skip directories
         if (S_ISDIR (source->st.st_mode))
             continue;
 
@@ -234,7 +234,7 @@ compare_dir (WPanel *panel, const WPanel *other, enum CompareMode mode)
         if (panel->is_panelized)
             source_fname = x_basename (source_fname);
 
-        /* Search the corresponding entry from the other panel */
+        // Search the corresponding entry from the other panel
         for (j = 0; j < other->dir.len; j++)
         {
             const char *other_fname;
@@ -248,19 +248,19 @@ compare_dir (WPanel *panel, const WPanel *other, enum CompareMode mode)
         }
 
         if (j >= other->dir.len)
-            /* Not found -> mark */
+            // Not found -> mark
             do_file_mark (panel, i, 1);
         else
         {
-            /* Found */
+            // Found
             file_entry_t *target = &other->dir.list[j];
 
             if (mode != compare_size_only)
-                /* Older version is not marked */
+                // Older version is not marked
                 if (source->st.st_mtime < target->st.st_mtime)
                     continue;
 
-            /* Newer version with different size is marked */
+            // Newer version with different size is marked
             if (source->st.st_size != target->st.st_size)
             {
                 do_file_mark (panel, i, 1);
@@ -272,15 +272,15 @@ compare_dir (WPanel *panel, const WPanel *other, enum CompareMode mode)
 
             if (mode == compare_quick)
             {
-                /* Thorough compare off, compare only time stamps */
-                /* Mark newer version, don't mark version with the same date */
+                // Thorough compare off, compare only time stamps
+                // Mark newer version, don't mark version with the same date
                 if (source->st.st_mtime > target->st.st_mtime)
                     do_file_mark (panel, i, 1);
 
                 continue;
             }
 
-            /* Thorough compare on, do byte-by-byte comparison */
+            // Thorough compare on, do byte-by-byte comparison
             {
                 vfs_path_t *src_name, *dst_name;
 
@@ -294,7 +294,7 @@ compare_dir (WPanel *panel, const WPanel *other, enum CompareMode mode)
                 vfs_path_free (dst_name, TRUE);
             }
         }
-    }                           /* for (i ...) */
+    }  // for (i ...)
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -309,9 +309,9 @@ do_link (link_type_t link_type, const char *fname)
     {
         vfs_path_t *fname_vpath;
 
-        src = g_strdup_printf (_("Link %s to:"), str_trunc (fname, 46));
+        src = g_strdup_printf (_ ("Link %s to:"), str_trunc (fname, 46));
         dest =
-            input_expand_dialog (_("Link"), src, MC_HISTORY_FM_LINK, "", INPUT_COMPLETE_FILENAMES);
+            input_expand_dialog (_ ("Link"), src, MC_HISTORY_FM_LINK, "", INPUT_COMPLETE_FILENAMES);
         if (dest == NULL || *dest == '\0')
             goto cleanup;
 
@@ -320,7 +320,7 @@ do_link (link_type_t link_type, const char *fname)
         fname_vpath = vfs_path_from_str (fname);
         dest_vpath = vfs_path_from_str (dest);
         if (mc_link (fname_vpath, dest_vpath) == -1)
-            message (D_ERROR, MSG_ERROR, _("link: %s"), unix_error_string (errno));
+            file_error_message (_ ("Cannot create link\n%s"), dest);
         vfs_path_free (fname_vpath, TRUE);
     }
     else
@@ -359,14 +359,14 @@ do_link (link_type_t link_type, const char *fname)
 
         s = vfs_path_from_str (src);
         if (mc_symlink (dest_vpath, s) == -1)
-            message (D_ERROR, MSG_ERROR, _("symlink: %s"), unix_error_string (errno));
+            file_error_message (_ ("Cannot create symbolic link\n%s"), dest);
         vfs_path_free (s, TRUE);
     }
 
     update_panels (UP_OPTIMIZE, UP_KEEPSEL);
     repaint_screen ();
 
-  cleanup:
+cleanup:
     vfs_path_free (dest_vpath, TRUE);
     g_free (src);
     g_free (dest);
@@ -374,23 +374,22 @@ do_link (link_type_t link_type, const char *fname)
 
 /* --------------------------------------------------------------------------------------------- */
 
-#if defined(ENABLE_VFS_UNDELFS) || defined(ENABLE_VFS_NET)
+#if defined(ENABLE_VFS_NET)
 static void
-nice_cd (const char *text, const char *xtext, const char *help,
-         const char *history_name, const char *prefix, int to_home, gboolean strip_password)
+nice_cd (const char *text, const char *xtext, const char *help, const char *history_name,
+         const char *prefix, int to_home, gboolean strip_password)
 {
     char *machine;
     char *cd_path;
 
-    machine =
-        input_dialog_help (text, xtext, help, history_name, INPUT_LAST_TEXT, strip_password,
-                           INPUT_COMPLETE_FILENAMES | INPUT_COMPLETE_CD | INPUT_COMPLETE_HOSTNAMES |
-                           INPUT_COMPLETE_USERNAMES);
+    machine = input_dialog_help (text, xtext, help, history_name, INPUT_LAST_TEXT, strip_password,
+                                 INPUT_COMPLETE_FILENAMES | INPUT_COMPLETE_CD
+                                     | INPUT_COMPLETE_HOSTNAMES | INPUT_COMPLETE_USERNAMES);
     if (machine == NULL)
         return;
 
-    to_home = 0;                /* FIXME: how to solve going to home nicely? /~/ is
-                                   ugly as hell and leads to problems in vfs layer */
+    to_home = 0; /* FIXME: how to solve going to home nicely? /~/ is
+                    ugly as hell and leads to problems in vfs layer */
 
     if (strncmp (prefix, machine, strlen (prefix)) == 0)
         cd_path = g_strconcat (machine, to_home ? "/~/" : (char *) NULL, (char *) NULL);
@@ -428,11 +427,11 @@ nice_cd (const char *text, const char *xtext, const char *help,
     }
     g_free (cd_path);
 
-    /* In case of passive panel, restore current VFS directory that was changed in panel_do_cd() */
+    // In case of passive panel, restore current VFS directory that was changed in panel_do_cd()
     if (MENU_PANEL != current_panel)
         (void) mc_chdir (current_panel->cwd_vpath);
 }
-#endif /* ENABLE_VFS_UNDELFS || ENABLE_VFS_NET */
+#endif
 
 /* --------------------------------------------------------------------------------------------- */
 
@@ -562,7 +561,6 @@ view_file (const vfs_path_t *filename_vpath, gboolean plain_view, gboolean inter
     return view_file_at_line (filename_vpath, plain_view, internal, 0, 0, 0);
 }
 
-
 /* --------------------------------------------------------------------------------------------- */
 /** Run user's preferred viewer on the current file */
 
@@ -586,9 +584,8 @@ view_file_cmd (const WPanel *panel)
     if (fe == NULL)
         return;
 
-    filename =
-        input_expand_dialog (_("View file"), _("Filename:"), MC_HISTORY_FM_VIEW_FILE, fe->fname->str,
-                             INPUT_COMPLETE_FILENAMES);
+    filename = input_expand_dialog (_ ("View file"), _ ("Filename:"), MC_HISTORY_FM_VIEW_FILE,
+                                    fe->fname->str, INPUT_COMPLETE_FILENAMES);
     if (filename == NULL)
         return;
 
@@ -614,7 +611,7 @@ view_filtered_cmd (const WPanel *panel)
     char *command;
     const char *initial_command;
 
-    if (input_is_empty (cmdline))
+    if (input_is_empty (the_cmdline))
     {
         const file_entry_t *fe;
 
@@ -625,13 +622,11 @@ view_filtered_cmd (const WPanel *panel)
         initial_command = fe->fname->str;
     }
     else
-        initial_command = input_get_ctext (cmdline);
+        initial_command = input_get_ctext (the_cmdline);
 
-    command =
-        input_dialog (_("Filtered view"),
-                      _("Filter command and arguments:"),
-                      MC_HISTORY_FM_FILTERED_VIEW, initial_command,
-                      INPUT_COMPLETE_FILENAMES | INPUT_COMPLETE_COMMANDS);
+    command = input_dialog (_ ("Filtered view"), _ ("Filter command and arguments:"),
+                            MC_HISTORY_FM_FILTERED_VIEW, initial_command,
+                            INPUT_COMPLETE_FILENAMES | INPUT_COMPLETE_COMMANDS);
 
     if (command != NULL)
     {
@@ -646,16 +641,16 @@ view_filtered_cmd (const WPanel *panel)
 void
 edit_file_at_line (const vfs_path_t *what_vpath, gboolean internal, long start_line)
 {
-
 #ifdef USE_INTERNAL_EDIT
     if (internal)
     {
         const edit_arg_t arg = { (vfs_path_t *) what_vpath, start_line };
 
         edit_file (&arg);
+        dialog_switch_process_pending ();
     }
     else
-#endif /* USE_INTERNAL_EDIT */
+#endif
     {
         static const char *editor = NULL;
 
@@ -670,16 +665,6 @@ edit_file_at_line (const vfs_path_t *what_vpath, gboolean internal, long start_l
 
         execute_external_editor_or_viewer (editor, what_vpath, start_line);
     }
-
-    if (mc_global.mc_run_mode == MC_RUN_FULL)
-        update_panels (UP_OPTIMIZE, UP_KEEPSEL);
-
-#ifdef USE_INTERNAL_EDIT
-    if (use_internal_edit)
-        dialog_switch_process_pending ();
-    else
-#endif /* USE_INTERNAL_EDIT */
-        repaint_screen ();
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -731,8 +716,8 @@ edit_cmd_new (void)
     {
         char *fname;
 
-        fname = input_expand_dialog (_("Edit file"), _("Enter file name:"),
-                                     MC_HISTORY_EDIT_LOAD, "", INPUT_COMPLETE_FILENAMES);
+        fname = input_expand_dialog (_ ("Edit file"), _ ("Enter file name:"), MC_HISTORY_EDIT_LOAD,
+                                     "", INPUT_COMPLETE_FILENAMES);
         if (fname == NULL)
             return;
 
@@ -742,9 +727,7 @@ edit_cmd_new (void)
         g_free (fname);
     }
 
-#ifdef HAVE_CHARSET
     mc_global.source_codepage = default_source_codepage;
-#endif
     do_edit (fname_vpath);
 
     vfs_path_free (fname_vpath, TRUE);
@@ -763,14 +746,12 @@ mkdir_cmd (WPanel *panel)
     if (fe == NULL)
         return;
 
-    /* If 'on' then automatically fills name with current item name */
+    // If 'on' then automatically fills name with current item name
     if (auto_fill_mkdir_name && !DIR_IS_DOTDOT (fe->fname->str))
         name = fe->fname->str;
 
-    dir =
-        input_expand_dialog (_("Create a new Directory"),
-                             _("Enter directory name:"), MC_HISTORY_FM_MKDIR, name,
-                             INPUT_COMPLETE_FILENAMES);
+    dir = input_expand_dialog (_ ("Create a new Directory"), _ ("Enter directory name:"),
+                               MC_HISTORY_FM_MKDIR, name, INPUT_COMPLETE_FILENAMES);
 
     if (dir != NULL && *dir != '\0')
     {
@@ -780,8 +761,8 @@ mkdir_cmd (WPanel *panel)
             absdir = vfs_path_from_str (dir);
         else
         {
-            /* possible escaped '~' */
-            /* allow create directory with name '~' */
+            // possible escaped '~'
+            // allow create directory with name '~'
             char *tmpdir = dir;
 
             if (dir[0] == '\\' && dir[1] == '~')
@@ -792,8 +773,8 @@ mkdir_cmd (WPanel *panel)
 
         save_cwds_stat ();
 
-        if (my_mkdir (absdir, 0777) != 0)
-            message (D_ERROR, MSG_ERROR, "%s", unix_error_string (errno));
+        if (mc_mkdir (absdir, 0777) != 0)
+            file_error_message (_ ("Cannot create directory\n%s"), vfs_path_as_str (absdir));
         else
         {
             update_panels (UP_OPTIMIZE, dir);
@@ -813,8 +794,8 @@ reread_cmd (void)
 {
     panel_update_flags_t flag = UP_ONLY_CURRENT;
 
-    if (get_current_type () == view_listing && get_other_type () == view_listing &&
-        vfs_path_equal (current_panel->cwd_vpath, other_panel->cwd_vpath))
+    if (get_current_type () == view_listing && get_other_type () == view_listing
+        && vfs_path_equal (current_panel->cwd_vpath, other_panel->cwd_vpath))
         flag = UP_OPTIMIZE;
 
     update_panels (UP_RELOAD | flag, UP_KEEPSEL);
@@ -830,9 +811,8 @@ ext_cmd (void)
     int dir = 0;
 
     if (geteuid () == 0)
-        dir = query_dialog (_("Extension file edit"),
-                            _("Which extension file you want to edit?"), D_NORMAL, 2,
-                            _("&User"), _("&System Wide"));
+        dir = query_dialog (_ ("Extension file edit"), _ ("Which extension file you want to edit?"),
+                            D_NORMAL, 2, _ ("&User"), _ ("&System Wide"));
 
     extdir_vpath = vfs_path_build_filename (mc_global.sysconfig_dir, MC_EXT_FILE, (char *) NULL);
 
@@ -871,9 +851,8 @@ edit_mc_menu_cmd (void)
     int dir = 0;
 
     query_set_sel (1);
-    dir = query_dialog (_("Menu edit"),
-                        _("Which menu file do you want to edit?"),
-                        D_NORMAL, geteuid ()? 2 : 3, _("&Local"), _("&User"), _("&System Wide"));
+    dir = query_dialog (_ ("Menu edit"), _ ("Which menu file do you want to edit?"), D_NORMAL,
+                        geteuid () ? 2 : 3, _ ("&Local"), _ ("&User"), _ ("&System Wide"));
 
     menufile_vpath =
         vfs_path_build_filename (mc_global.sysconfig_dir, MC_GLOBAL_MENU, (char *) NULL);
@@ -929,9 +908,9 @@ edit_fhl_cmd (void)
     int dir = 0;
 
     if (geteuid () == 0)
-        dir = query_dialog (_("Highlighting groups file edit"),
-                            _("Which highlighting file you want to edit?"), D_NORMAL, 2,
-                            _("&User"), _("&System Wide"));
+        dir = query_dialog (_ ("Highlighting groups file edit"),
+                            _ ("Which highlighting file you want to edit?"), D_NORMAL, 2,
+                            _ ("&User"), _ ("&System Wide"));
 
     fhlfile_vpath =
         vfs_path_build_filename (mc_global.sysconfig_dir, MC_FHL_INI_FILE, (char *) NULL);
@@ -957,7 +936,7 @@ edit_fhl_cmd (void)
     }
 
     vfs_path_free (fhlfile_vpath, TRUE);
-    /* refresh highlighting rules */
+    // refresh highlighting rules
     mc_fhl_free (&mc_filehighlight);
     mc_filehighlight = mc_fhl_new (TRUE);
 }
@@ -1014,7 +993,7 @@ vfs_list (WPanel *panel)
     vfs_path_free (target_vpath, TRUE);
     g_free (target);
 }
-#endif /* ENABLE_VFS */
+#endif
 
 /* --------------------------------------------------------------------------------------------- */
 
@@ -1024,10 +1003,8 @@ compare_dirs_cmd (void)
     int choice;
     enum CompareMode thorough_flag;
 
-    choice =
-        query_dialog (_("Compare directories"),
-                      _("Select compare method:"), D_NORMAL, 4,
-                      _("&Quick"), _("&Size only"), _("&Thorough"), _("&Cancel"));
+    choice = query_dialog (_ ("Compare directories"), _ ("Select compare method:"), D_NORMAL, 4,
+                           _ ("&Quick"), _ ("&Size only"), _ ("&Thorough"), _ ("&Cancel"));
 
     if (choice < 0 || choice > 2)
         return;
@@ -1041,7 +1018,7 @@ compare_dirs_cmd (void)
     }
     else
         message (D_ERROR, MSG_ERROR,
-                 _("Both panels should be in the listing mode\nto use this command"));
+                 _ ("Both panels should be in the listing mode\nto use this command"));
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1050,7 +1027,7 @@ compare_dirs_cmd (void)
 void
 diff_view_cmd (void)
 {
-    /* both panels must be in the list mode */
+    // both panels must be in the list mode
     if (get_current_type () == view_listing && get_other_type () == view_listing)
     {
         if (get_current_index () == 0)
@@ -1103,7 +1080,7 @@ edit_symlink_cmd (void)
     p = fe->fname->str;
 
     if (!S_ISLNK (fe->st.st_mode))
-        message (D_ERROR, MSG_ERROR, _("'%s' is not a symbolic link"), p);
+        message (D_ERROR, MSG_ERROR, _ ("'%s' is not a symbolic link"), p);
     else
     {
         char buffer[MC_MAXPATHLEN];
@@ -1116,10 +1093,9 @@ edit_symlink_cmd (void)
 
             buffer[i] = '\0';
 
-            q = g_strdup_printf (_("Symlink '%s\' points to:"), str_trunc (p, 32));
-            dest =
-                input_expand_dialog (_("Edit symlink"), q, MC_HISTORY_FM_EDIT_LINK, buffer,
-                                     INPUT_COMPLETE_FILENAMES);
+            q = g_strdup_printf (_ ("Symlink '%s\' points to:"), str_trunc (p, 32));
+            dest = input_expand_dialog (_ ("Edit symlink"), q, MC_HISTORY_FM_EDIT_LINK, buffer,
+                                        INPUT_COMPLETE_FILENAMES);
             g_free (q);
 
             if (dest != NULL && *dest != '\0' && strcmp (buffer, dest) != 0)
@@ -1131,16 +1107,15 @@ edit_symlink_cmd (void)
                 save_cwds_stat ();
 
                 if (mc_unlink (p_vpath) == -1)
-                    message (D_ERROR, MSG_ERROR, _("edit symlink, unable to remove %s: %s"), p,
-                             unix_error_string (errno));
+                    file_error_message (_ ("Edit symlink, unable to remove\n%s"), p);
                 else
                 {
                     vfs_path_t *dest_vpath;
 
                     dest_vpath = vfs_path_from_str_flags (dest, VPF_NO_CANON);
                     if (mc_symlink (dest_vpath, p_vpath) == -1)
-                        message (D_ERROR, MSG_ERROR, _("edit symlink: %s"),
-                                 unix_error_string (errno));
+                        file_error_message (_ ("Cannot edit symlink\n%s"),
+                                            vfs_path_as_str (dest_vpath));
                     vfs_path_free (dest_vpath, TRUE);
                 }
 
@@ -1176,10 +1151,10 @@ help_cmd (void)
 void
 ftplink_cmd (void)
 {
-    nice_cd (_("FTP to machine"), _(machine_str),
-             "[FTP File System]", ":ftplink_cmd: FTP to machine ", "ftp://", 1, TRUE);
+    nice_cd (_ ("FTP to machine"), _ (machine_str), "[FTP File System]",
+             ":ftplink_cmd: FTP to machine ", "ftp://", 1, TRUE);
 }
-#endif /* ENABLE_VFS_FTP */
+#endif
 
 /* --------------------------------------------------------------------------------------------- */
 
@@ -1187,11 +1162,11 @@ ftplink_cmd (void)
 void
 sftplink_cmd (void)
 {
-    nice_cd (_("SFTP to machine"), _(machine_str),
-             "[SFTP (SSH File Transfer Protocol) filesystem]",
-             ":sftplink_cmd: SFTP to machine ", "sftp://", 1, TRUE);
+    nice_cd (_ ("SFTP to machine"), _ (machine_str),
+             "[SFTP (SSH File Transfer Protocol) filesystem]", ":sftplink_cmd: SFTP to machine ",
+             "sftp://", 1, TRUE);
 }
-#endif /* ENABLE_VFS_SFTP */
+#endif
 
 /* --------------------------------------------------------------------------------------------- */
 
@@ -1199,23 +1174,10 @@ sftplink_cmd (void)
 void
 shelllink_cmd (void)
 {
-    nice_cd (_("Shell link to machine"), _(machine_str),
-             "[FIle transfer over SHell filesystem]", ":fishlink_cmd: Shell link to machine ",
-             "sh://", 1, TRUE);
+    nice_cd (_ ("Shell link to machine"), _ (machine_str), "[FIle transfer over SHell filesystem]",
+             ":fishlink_cmd: Shell link to machine ", "sh://", 1, TRUE);
 }
-#endif /* ENABLE_VFS_SHELL */
-
-/* --------------------------------------------------------------------------------------------- */
-
-#ifdef ENABLE_VFS_UNDELFS
-void
-undelete_cmd (void)
-{
-    nice_cd (_("Undelete files on an ext2 file system"),
-             _("Enter device (without /dev/) to undelete\nfiles on: (F1 for details)"),
-             "[Undelete File System]", ":undelete_cmd: Undel on ext2 fs ", "undel://", 0, FALSE);
-}
-#endif /* ENABLE_VFS_UNDELFS */
+#endif
 
 /* --------------------------------------------------------------------------------------------- */
 
@@ -1274,7 +1236,7 @@ single_dirsize_cmd (WPanel *panel)
         p = vfs_path_from_str (entry->fname->str);
 
         memset (&dsm, 0, sizeof (dsm));
-        status_msg_init (STATUS_MSG (&dsm), _("Directory scanning"), 0, dirsize_status_init_cb,
+        status_msg_init (STATUS_MSG (&dsm), _ ("Directory scanning"), 0, dirsize_status_init_cb,
                          dirsize_status_update_cb, dirsize_status_deinit_cb);
 
         if (compute_dir_size (p, &dsm, &dir_count, &count, &total, FALSE) == FILE_CONT)
@@ -1308,13 +1270,14 @@ dirsizes_cmd (WPanel *panel)
     dirsize_status_msg_t dsm;
 
     memset (&dsm, 0, sizeof (dsm));
-    status_msg_init (STATUS_MSG (&dsm), _("Directory scanning"), 0, dirsize_status_init_cb,
+    status_msg_init (STATUS_MSG (&dsm), _ ("Directory scanning"), 0, dirsize_status_init_cb,
                      dirsize_status_update_cb, dirsize_status_deinit_cb);
 
     for (i = 0; i < panel->dir.len; i++)
         if (S_ISDIR (panel->dir.list[i].st.st_mode)
             && ((panel->dirs_marked != 0 && panel->dir.list[i].f.marked != 0)
-                || panel->dirs_marked == 0) && !DIR_IS_DOTDOT (panel->dir.list[i].fname->str))
+                || panel->dirs_marked == 0)
+            && !DIR_IS_DOTDOT (panel->dir.list[i].fname->str))
         {
             vfs_path_t *p;
             size_t dir_count = 0;
@@ -1354,9 +1317,9 @@ save_setup_cmd (void)
     path = vfs_path_as_str (vpath);
 
     if (save_setup (TRUE, TRUE))
-        message (D_NORMAL, _("Setup"), _("Setup saved to %s"), path);
+        message (D_NORMAL, _ ("Setup"), _ ("Setup saved to %s"), path);
     else
-        message (D_ERROR, _("Setup"), _("Unable to save setup to %s"), path);
+        message (D_ERROR, _ ("Setup"), _ ("Unable to save setup to %s"), path);
 
     vfs_path_free (vpath, TRUE);
 }
@@ -1399,7 +1362,7 @@ listing_cmd (void)
     p = PANEL (get_panel_widget (MENU_PANEL_IDX));
 
     p->is_panelized = FALSE;
-    panel_set_filter (p, NULL); /* including panel reload */
+    panel_set_filter (p, NULL);  // including panel reload
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1455,13 +1418,11 @@ quick_view_cmd (void)
 
 /* --------------------------------------------------------------------------------------------- */
 
-#ifdef HAVE_CHARSET
 void
 encoding_cmd (void)
 {
     if (SELECTED_IS_PANEL)
         panel_change_encoding (MENU_PANEL);
 }
-#endif
 
 /* --------------------------------------------------------------------------------------------- */

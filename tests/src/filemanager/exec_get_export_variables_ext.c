@@ -1,7 +1,7 @@
 /*
    src/filemanager - filemanager functions
 
-   Copyright (C) 2011-2025
+   Copyright (C) 2011-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -20,7 +20,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #define TEST_SUITE_NAME "/src/filemanager"
@@ -28,17 +28,14 @@
 #include "tests/mctest.h"
 
 #include "lib/file-entry.h"
+#include "src/filemanager/filemanager.h"
 
 #include "src/vfs/local/local.c"
 
-#include "src/filemanager/filemanager.c"
-
-#include "src/filemanager/ext.c"
+MC_TESTABLE GString *exec_get_export_variables (const vfs_path_t *filename_vpath);
 
 /* --------------------------------------------------------------------------------------------- */
 /* mocked functions */
-
-
 /* --------------------------------------------------------------------------------------------- */
 
 static void
@@ -67,11 +64,9 @@ teardown (void)
 
 /* --------------------------------------------------------------------------------------------- */
 
-/* *INDENT-OFF* */
 START_TEST (sanitize_variables)
-/* *INDENT-ON* */
 {
-    /* given */
+    // given
     vfs_path_t *filename_vpath;
     GString *actual_string;
     const char *expected_string;
@@ -84,12 +79,12 @@ START_TEST (sanitize_variables)
     current_panel->dir.list[2].fname = g_string_new ("tagged file2.txt");
     current_panel->dir.list[2].f.marked = 1;
 
-    /* when */
+    // when
     filename_vpath = vfs_path_from_str ("/tmp/blabla.txt");
     actual_string = exec_get_export_variables (filename_vpath);
     vfs_path_free (filename_vpath, TRUE);
 
-    /* then */
+    // then
     expected_string = "\
 MC_EXT_FILENAME=/tmp/blabla.txt\n\
 export MC_EXT_FILENAME\n\
@@ -109,9 +104,7 @@ export MC_EXT_ONLYTAGGED\n";
     g_string_free (current_panel->dir.list[1].fname, TRUE);
     g_string_free (current_panel->dir.list[2].fname, TRUE);
 }
-/* *INDENT-OFF* */
 END_TEST
-/* *INDENT-ON* */
 
 /* --------------------------------------------------------------------------------------------- */
 
@@ -124,9 +117,9 @@ main (void)
 
     tcase_add_checked_fixture (tc_core, setup, teardown);
 
-    /* Add new tests here: *************** */
+    // Add new tests here: ***************
     tcase_add_test (tc_core, sanitize_variables);
-    /* *********************************** */
+    // ***********************************
 
     return mctest_run_all (tc_core);
 }

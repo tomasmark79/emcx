@@ -1,7 +1,7 @@
 /*
    Text conversion from one charset to another.
 
-   Copyright (C) 2001-2025
+   Copyright (C) 2001-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -20,7 +20,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 /** \file charsets.c
@@ -29,14 +29,15 @@
 
 #include <config.h>
 
+#include <limits.h>  // MB_LEN_MAX
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "lib/global.h"
-#include "lib/strutil.h"        /* utf-8 functions */
+#include "lib/strutil.h"  // utf-8 functions
 #include "lib/fileloc.h"
-#include "lib/util.h"           /* whitespace() */
+#include "lib/util.h"  // whitespace()
 
 #include "lib/charsets.h"
 
@@ -54,13 +55,19 @@ const char *cp_source = NULL;
 
 #define UNKNCHAR '\001'
 
-#define OTHER_8BIT "Other_8_bit"
-
 /*** file scope type declarations ****************************************************************/
+
+typedef struct
+{
+    char *id;
+    char *name;
+} codepage_desc;
 
 /*** forward declarations (file scope functions) *************************************************/
 
 /*** file scope variables ************************************************************************/
+
+static const char NO_TRANSLATION[] = N_ ("No translation");
 
 /* --------------------------------------------------------------------------------------------- */
 /*** file scope functions ************************************************************************/
@@ -106,7 +113,7 @@ load_codepages_list_from_file (GPtrArray **list, const char *fname)
 
     while (fgets (buf, sizeof buf, f) != NULL)
     {
-        /* split string into id and cpname */
+        // split string into id and cpname
         char *p = buf;
         size_t buflen;
 
@@ -142,8 +149,8 @@ load_codepages_list_from_file (GPtrArray **list, const char *fname)
             {
                 unsigned int i;
 
-                /* whether id is already present in list */
-                /* if yes, overwrite description */
+                // whether id is already present in list
+                // if yes, overwrite description
                 for (i = 0; i < (*list)->len; i++)
                 {
                     codepage_desc *desc;
@@ -152,14 +159,14 @@ load_codepages_list_from_file (GPtrArray **list, const char *fname)
 
                     if (strcmp (id, desc->id) == 0)
                     {
-                        /* found */
+                        // found
                         g_free (desc->name);
                         desc->name = g_strdup (p);
                         break;
                     }
                 }
 
-                /* not found */
+                // not found
                 if (i == (*list)->len)
                     g_ptr_array_add (*list, new_codepage_desc (id, p));
             }
@@ -172,7 +179,7 @@ load_codepages_list_from_file (GPtrArray **list, const char *fname)
         g_free (default_codepage);
     }
 
-  fail:
+fail:
     fclose (f);
 }
 
@@ -203,23 +210,23 @@ load_codepages_list (void)
 {
     char *fname;
 
-    /* 1: try load /usr/share/mc/mc.charsets */
+    // 1: try load /usr/share/mc/mc.charsets
     fname = g_build_filename (mc_global.share_data_dir, CHARSETS_LIST, (char *) NULL);
     load_codepages_list_from_file (&codepages, fname);
     g_free (fname);
 
-    /* 2: try load /etc/mc/mc.charsets */
+    // 2: try load /etc/mc/mc.charsets
     fname = g_build_filename (mc_global.sysconfig_dir, CHARSETS_LIST, (char *) NULL);
     load_codepages_list_from_file (&codepages, fname);
     g_free (fname);
 
     if (codepages == NULL)
     {
-        /* files are not found, add default codepage */
-        fprintf (stderr, "%s\n", _("Warning: cannot load codepages list"));
+        // files are not found, add default codepage
+        fprintf (stderr, "%s\n", _ ("Warning: cannot load codepages list"));
 
         codepages = g_ptr_array_new_with_free_func (free_codepage_desc);
-        g_ptr_array_add (codepages, new_codepage_desc (DEFAULT_CHARSET, _("7-bit ASCII")));
+        g_ptr_array_add (codepages, new_codepage_desc (DEFAULT_CHARSET, _ ("7-bit ASCII")));
     }
 }
 
@@ -229,7 +236,7 @@ void
 free_codepages_list (void)
 {
     g_ptr_array_free (codepages, TRUE);
-    /* NULL-ize pointer to make unit tests happy */
+    // NULL-ize pointer to make unit tests happy
     codepages = NULL;
 }
 
@@ -238,7 +245,16 @@ free_codepages_list (void)
 const char *
 get_codepage_id (const int n)
 {
-    return (n < 0) ? OTHER_8BIT : ((codepage_desc *) g_ptr_array_index (codepages, n))->id;
+    return (n < 0) ? NO_TRANSLATION : ((codepage_desc *) g_ptr_array_index (codepages, n))->id;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+const char *
+get_codepage_name (const int n)
+{
+    return (n < 0) ? _ (NO_TRANSLATION)
+                   : ((codepage_desc *) g_ptr_array_index (codepages, n))->name;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -246,15 +262,13 @@ get_codepage_id (const int n)
 int
 get_codepage_index (const char *id)
 {
-    size_t i;
-
     if (codepages == NULL)
         return -1;
-    if (strcmp (id, OTHER_8BIT) == 0)
+    if (strcmp (id, NO_TRANSLATION) == 0)
         return -1;
-    for (i = 0; i < codepages->len; i++)
-        if (strcmp (id, ((codepage_desc *) g_ptr_array_index (codepages, i))->id) == 0)
-            return i;
+    for (guint i = 0; i < codepages->len; i++)
+        if (strcmp (id, get_codepage_id (i)) == 0)
+            return (int) i;
     return -1;
 }
 
@@ -288,7 +302,7 @@ init_translation_table (int cpsource, int cpdisplay)
     int i;
     GIConv cd;
 
-    /* Fill input <-> display tables */
+    // Fill input <-> display tables
 
     if (cpsource < 0 || cpdisplay < 0 || cpsource == cpdisplay)
     {
@@ -306,25 +320,26 @@ init_translation_table (int cpsource, int cpdisplay)
         conv_displ[i] = i;
         conv_input[i] = i;
     }
-    cp_source = ((codepage_desc *) g_ptr_array_index (codepages, cpsource))->id;
-    cp_display = ((codepage_desc *) g_ptr_array_index (codepages, cpdisplay))->id;
 
-    /* display <- inpit table */
+    cp_source = get_codepage_id (cpsource);
+    cp_display = get_codepage_id (cpdisplay);
+
+    // display <- input table
 
     cd = g_iconv_open (cp_display, cp_source);
     if (cd == INVALID_CONV)
-        return g_strdup_printf (_("Cannot translate from %s to %s"), cp_source, cp_display);
+        return g_strdup_printf (_ ("Cannot translate from %s to %s"), cp_source, cp_display);
 
     for (i = 128; i <= 255; ++i)
         conv_displ[i] = translate_character (cd, i);
 
     g_iconv_close (cd);
 
-    /* inpit <- display table */
+    // input <- display table
 
     cd = g_iconv_open (cp_source, cp_display);
     if (cd == INVALID_CONV)
-        return g_strdup_printf (_("Cannot translate from %s to %s"), cp_display, cp_source);
+        return g_strdup_printf (_ ("Cannot translate from %s to %s"), cp_display, cp_source);
 
     for (i = 128; i <= 255; ++i)
     {
@@ -336,16 +351,6 @@ init_translation_table (int cpsource, int cpdisplay)
     g_iconv_close (cd);
 
     return NULL;
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-void
-convert_to_display (char *str)
-{
-    if (str != NULL)
-        for (; *str != '\0'; str++)
-            *str = conv_displ[(unsigned char) *str];
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -370,16 +375,6 @@ str_nconvert_to_display (const char *str, int len)
     str_nconvert (conv, str, len, buff);
     str_close_conv (conv);
     return buff;
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-void
-convert_from_input (char *str)
-{
-    if (str != NULL)
-        for (; *str != '\0'; str++)
-            *str = conv_input[(unsigned char) *str];
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -411,7 +406,7 @@ str_nconvert_to_input (const char *str, int len)
 unsigned char
 convert_from_utf_to_current (const char *str)
 {
-    unsigned char buf_ch[UTF8_CHAR_LEN + 1];
+    unsigned char buf_ch[MB_LEN_MAX + 1];
     unsigned char ch = '.';
     GIConv conv;
     const char *cp_to;
@@ -447,8 +442,8 @@ convert_from_utf_to_current (const char *str)
 unsigned char
 convert_from_utf_to_current_c (int input_char, GIConv conv)
 {
-    unsigned char str[UTF8_CHAR_LEN + 1];
-    unsigned char buf_ch[UTF8_CHAR_LEN + 1];
+    unsigned char str[MB_LEN_MAX + 1];
+    unsigned char buf_ch[MB_LEN_MAX + 1];
     unsigned char ch = '.';
     int res;
 
@@ -480,7 +475,7 @@ int
 convert_from_8bit_to_utf_c (char input_char, GIConv conv)
 {
     unsigned char str[2];
-    unsigned char buf_ch[UTF8_CHAR_LEN + 1];
+    unsigned char buf_ch[MB_LEN_MAX + 1];
     int ch;
 
     str[0] = (unsigned char) input_char;
@@ -489,13 +484,13 @@ convert_from_8bit_to_utf_c (char input_char, GIConv conv)
     switch (str_translate_char (conv, (char *) str, -1, (char *) buf_ch, sizeof (buf_ch)))
     {
     case ESTR_SUCCESS:
-        {
-            int res;
+    {
+        int res;
 
-            res = g_utf8_get_char_validated ((char *) buf_ch, -1);
-            ch = res >= 0 ? res : buf_ch[0];
-            break;
-        }
+        res = g_utf8_get_char_validated ((char *) buf_ch, -1);
+        ch = res >= 0 ? res : buf_ch[0];
+        break;
+    }
     case ESTR_PROBLEM:
     case ESTR_FAILURE:
     default:

@@ -1,6 +1,6 @@
 /* lib/vfs - tests for vfspath_len() function.
 
-   Copyright (C) 2011-2025
+   Copyright (C) 2011-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -19,16 +19,14 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #define TEST_SUITE_NAME "/lib/vfs"
 
 #include "tests/mctest.h"
 
-#ifdef HAVE_CHARSET
 #include "lib/charsets.h"
-#endif
 
 #include "lib/strutil.h"
 #include "lib/vfs/xdirentry.h"
@@ -48,10 +46,8 @@ setup (void)
     vfs_init_localfs ();
     vfs_setup_work_dir ();
 
-#ifdef HAVE_CHARSET
     mc_global.sysconfig_dir = (char *) TEST_SHARE_DIR;
     load_codepages_list ();
-#endif
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -60,55 +56,49 @@ setup (void)
 static void
 teardown (void)
 {
-#ifdef HAVE_CHARSET
     free_codepages_list ();
-#endif
-
     vfs_shut ();
     str_uninit_strings ();
 }
 
 /* --------------------------------------------------------------------------------------------- */
 /* @DataSource("test_path_length_ds") */
-/* *INDENT-OFF* */
 static const struct test_path_length_ds
 {
     const char *input_path;
     const size_t expected_length_element_encoding;
     const size_t expected_length_terminal_encoding;
-} test_path_length_ds[] =
-{
-    { /* 0. */
+} test_path_length_ds[] = {
+    {
+        // 0.
         NULL,
         0,
-        0
+        0,
     },
-    { /* 1. */
+    {
+        // 1.
         "/",
         1,
-        1
+        1,
     },
-    { /* 2. */
+    {
+        // 2.
         "/тестовый/путь",
         26,
-        26
+        26,
     },
-#ifdef HAVE_CHARSET
-    { /* 3. */
+    {
+        // 3.
         "/#enc:KOI8-R/тестовый/путь",
         14,
         38,
     },
-#endif /* HAVE_CHARSET */
 };
-/* *INDENT-ON* */
 
 /* @Test(dataSource = "test_path_length_ds") */
-/* *INDENT-OFF* */
 START_PARAMETRIZED_TEST (test_path_length, test_path_length_ds)
-/* *INDENT-ON* */
 {
-    /* given */
+    // given
     vfs_path_t *vpath;
     char *path;
     size_t actual_length_terminal_encoding, actual_length_element_encoding;
@@ -116,19 +106,17 @@ START_PARAMETRIZED_TEST (test_path_length, test_path_length_ds)
     vpath = vfs_path_from_str (data->input_path);
     path = vpath != NULL ? vfs_path_get_by_index (vpath, 0)->path : NULL;
 
-    /* when */
+    // when
     actual_length_terminal_encoding = vfs_path_len (vpath);
     actual_length_element_encoding = path != NULL ? strlen (path) : 0;
 
-    /* then */
+    // then
     ck_assert_int_eq (actual_length_terminal_encoding, data->expected_length_terminal_encoding);
     ck_assert_int_eq (actual_length_element_encoding, data->expected_length_element_encoding);
 
     vfs_path_free (vpath, TRUE);
 }
-/* *INDENT-OFF* */
 END_PARAMETRIZED_TEST
-/* *INDENT-ON* */
 
 /* --------------------------------------------------------------------------------------------- */
 
@@ -141,9 +129,9 @@ main (void)
 
     tcase_add_checked_fixture (tc_core, setup, teardown);
 
-    /* Add new tests here: *************** */
+    // Add new tests here: ***************
     mctest_add_parameterized_test (tc_core, test_path_length, test_path_length_ds);
-    /* *********************************** */
+    // ***********************************
 
     return mctest_run_all (tc_core);
 }

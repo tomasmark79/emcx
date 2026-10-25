@@ -1,7 +1,7 @@
 /*
    lib - mc_build_filename() function testing
 
-   Copyright (C) 2011-2025
+   Copyright (C) 2011-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -20,33 +20,15 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #define TEST_SUITE_NAME "/lib/util"
 
 #include "tests/mctest.h"
 
-#include <stdio.h>
-
 #include "lib/strutil.h"
 #include "lib/util.h"
-
-/* --------------------------------------------------------------------------------------------- */
-
-/* @Before */
-static void
-setup (void)
-{
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-/* @After */
-static void
-teardown (void)
-{
-}
 
 /* --------------------------------------------------------------------------------------------- */
 
@@ -87,47 +69,40 @@ run_mc_build_filename (int iteration)
 }
 
 /* @DataSource("test_mc_build_filename_ds") */
-/* *INDENT-OFF* */
 static const struct test_mc_build_filename_ds
 {
     const char *expected_result;
-} test_mc_build_filename_ds[] =
-{
-    {"test/path"},
-    {"/test/path"},
-    {"/test/pa/th"},
-    {"/test/#vfsprefix:/path  "},
-    {"/test/vfsprefix://path  "},
-    {"/test/prefix://p\\/ath"},
-    {"/test/test/path"},
-    {"path"},
-    {"path"},
-    {"path"},
-    {"/path"},
-    {"pa/th"},
-    {"/pa/th"},
+} test_mc_build_filename_ds[] = {
+    { "test/path" },
+    { "/test/path" },
+    { "/test/pa/th" },
+    { "/test/#vfsprefix:/path  " },
+    { "/test/vfsprefix://path  " },
+    { "/test/prefix://p\\/ath" },
+    { "/test/test/path" },
+    { "path" },
+    { "path" },
+    { "path" },
+    { "/path" },
+    { "pa/th" },
+    { "/pa/th" },
 };
-/* *INDENT-ON* */
 
 /* @Test(dataSource = "test_mc_build_filename_ds") */
-/* *INDENT-OFF* */
 START_PARAMETRIZED_TEST (test_mc_build_filename, test_mc_build_filename_ds)
-/* *INDENT-ON* */
 {
-    /* given */
+    // given
     char *actual_result;
 
-    /* when */
+    // when
     actual_result = run_mc_build_filename (_i);
 
-    /* then */
+    // then
     mctest_assert_str_eq (actual_result, data->expected_result);
 
     g_free (actual_result);
 }
-/* *INDENT-OFF* */
 END_PARAMETRIZED_TEST
-/* *INDENT-ON* */
 
 /* --------------------------------------------------------------------------------------------- */
 
@@ -138,11 +113,9 @@ main (void)
 
     tc_core = tcase_create ("Core");
 
-    tcase_add_checked_fixture (tc_core, setup, teardown);
-
-    /* Add new tests here: *************** */
+    // Add new tests here: ***************
     mctest_add_parameterized_test (tc_core, test_mc_build_filename, test_mc_build_filename_ds);
-    /* *********************************** */
+    // ***********************************
 
     return mctest_run_all (tc_core);
 }

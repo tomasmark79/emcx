@@ -11,11 +11,11 @@
 #ifndef MC_UNIXCOMPAT_H
 #define MC_UNIXCOMPAT_H
 
-#include <fcntl.h>              /* O_* macros */
-#include <signal.h>             /* sig_atomic_t */
+#include <fcntl.h>   // O_* macros
+#include <signal.h>  // sig_atomic_t
 #include <unistd.h>
 
-#include <sys/types.h>          /* BSD */
+#include <sys/types.h>  // BSD
 
 #ifdef MAJOR_IN_MKDEV
 #include <sys/mkdev.h>
@@ -25,13 +25,13 @@
 
 #if defined(HAVE_STRING_H)
 #include <string.h>
-   /* An ANSI string.h and pre-ANSI memory.h might conflict */
+// An ANSI string.h and pre-ANSI memory.h might conflict
 #elif defined(HAVE_MEMORY_H)
 #include <memory.h>
 #else
 #include <strings.h>
-    /* memory and strings.h conflict on other systems */
-#endif /* !STDC_HEADERS & !HAVE_STRING_H */
+// memory and strings.h conflict on other systems
+#endif
 
 #if defined(__QNX__) && !defined(__QNXNTO__)
 /* exec*() from <process.h> */
@@ -52,7 +52,7 @@
 
 #ifndef makedev
 #warning makedev() is undefined. Device numbers will not be shown correctly.
-#define makedev(major,minor) ((((major) & 0xff) << 8) | ((minor) & 0xff))
+#define makedev(major, minor) ((((major) & 0xff) << 8) | ((minor) & 0xff))
 #endif
 
 #ifndef STDIN_FILENO
@@ -67,13 +67,19 @@
 #define STDERR_FILENO 2
 #endif
 
+#ifndef HAVE_STRUCT_DIRENT_D_TYPE
+#define DT_UNKNOWN 0
+#define DT_DIR     101  // the value doesn't matter, just needs to be different from DT_UNKNOWN
+#define DT_LNK     102  // ditto
+#endif
+
 /* The O_BINARY definition was taken from gettext */
 #if !defined O_BINARY && defined _O_BINARY
-  /* For MSC-compatible compilers.  */
+// For MSC-compatible compilers.
 #define O_BINARY _O_BINARY
 #endif
 #ifdef __BEOS__
-  /* BeOS 5 has O_BINARY, but it has no effect.  */
+// BeOS 5 has O_BINARY, but it has no effect.
 #undef O_BINARY
 #endif
 /* On reasonable systems, binary I/O is the default.  */
@@ -83,12 +89,12 @@
 
 /* Replacement for O_NONBLOCK */
 #ifndef O_NONBLOCK
-#ifdef O_NDELAY                 /* SYSV */
+#ifdef O_NDELAY  // SYSV
 #define O_NONBLOCK O_NDELAY
-#else /* BSD */
+#else  // BSD
 #define O_NONBLOCK FNDELAY
-#endif /* !O_NDELAY */
-#endif /* !O_NONBLOCK */
+#endif
+#endif
 
 /* Solaris9 doesn't have PRIXMAX */
 #ifndef PRIXMAX
@@ -104,13 +110,13 @@
 #define ESC_STR  "\033"
 
 /* OS specific defines */
-#define PATH_SEP '/'
-#define PATH_SEP_STR "/"
-#define IS_PATH_SEP(c) ((c) == PATH_SEP)
-#define PATH_ENV_SEP ':'
-#define TMPDIR_DEFAULT "/tmp"
-#define SCRIPT_SUFFIX ""
-#define get_default_editor() "vi"
+#define PATH_SEP                       '/'
+#define PATH_SEP_STR                   "/"
+#define IS_PATH_SEP(c)                 ((c) == PATH_SEP)
+#define PATH_ENV_SEP                   ':'
+#define TMPDIR_DEFAULT                 "/tmp"
+#define SCRIPT_SUFFIX                  ""
+#define get_default_editor()           "vi"
 #define OS_SORT_CASE_SENSITIVE_DEFAULT TRUE
 
 /*** enums ***************************************************************************************/

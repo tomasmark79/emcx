@@ -2,7 +2,7 @@
    Handle  events in application.
    Interface functions: init/deinit; start/stop
 
-   Copyright (C) 2011-2025
+   Copyright (C) 2011-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -21,7 +21,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -54,17 +54,16 @@ mc_event_init (GError **mcerror)
 
     if (mc_event_grouplist != NULL)
     {
-        mc_propagate_error (mcerror, 0, "%s", _("Event system already initialized"));
+        mc_propagate_error (mcerror, 0, "%s", _ ("Event system already initialized"));
         return FALSE;
     }
 
-    mc_event_grouplist =
-        g_tree_new_full ((GCompareDataFunc) g_ascii_strcasecmp,
-                         NULL, (GDestroyNotify) g_free, (GDestroyNotify) g_tree_destroy);
+    mc_event_grouplist = g_tree_new_full ((GCompareDataFunc) g_ascii_strcasecmp, NULL,
+                                          (GDestroyNotify) g_free, (GDestroyNotify) g_tree_destroy);
 
     if (mc_event_grouplist == NULL)
     {
-        mc_propagate_error (mcerror, 0, "%s", _("Failed to initialize event system"));
+        mc_propagate_error (mcerror, 0, "%s", _ ("Failed to initialize event system"));
         return FALSE;
     }
 
@@ -80,7 +79,7 @@ mc_event_deinit (GError **mcerror)
 
     if (mc_event_grouplist == NULL)
     {
-        mc_propagate_error (mcerror, 0, "%s", _("Event system not initialized"));
+        mc_propagate_error (mcerror, 0, "%s", _ ("Event system not initialized"));
         return FALSE;
     }
 
@@ -100,8 +99,7 @@ mc_event_mass_add (const event_init_t *events, GError **mcerror)
 
     for (array_index = 0; events[array_index].event_group_name != NULL; array_index++)
     {
-        if (!mc_event_add (events[array_index].event_group_name,
-                           events[array_index].event_name,
+        if (!mc_event_add (events[array_index].event_group_name, events[array_index].event_name,
                            events[array_index].cb, events[array_index].init_data, mcerror))
         {
             return FALSE;

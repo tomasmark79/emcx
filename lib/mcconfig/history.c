@@ -1,7 +1,7 @@
 /*
    Configure module for the Midnight Commander
 
-   Copyright (C) 1994-2025
+   Copyright (C) 1994-2026
    Free Software Foundation, Inc.
 
    Authors:
@@ -25,7 +25,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 /** \file history.c
@@ -39,9 +39,9 @@
 
 #include "lib/global.h"
 
-#include "lib/fileloc.h"        /* MC_HISTORY_FILE */
+#include "lib/fileloc.h"  // MC_HISTORY_FILE
 #include "lib/strutil.h"
-#include "lib/util.h"           /* list_append_unique */
+#include "lib/util.h"  // list_append_unique
 
 #include "lib/mcconfig.h"
 
@@ -76,7 +76,7 @@ mc_config_history_get (const char *name)
     char *profile;
     mc_config_t *cfg;
 
-    if (num_history_items_recorded == 0)        /* this is how to disable */
+    if (num_history_items_recorded == 0)  // this is how to disable
         return NULL;
     if (name == NULL || *name == '\0')
         return NULL;
@@ -109,7 +109,7 @@ mc_config_history_get_recent_item (const char *name)
     history = mc_config_history_get (name);
     if (history != NULL)
     {
-        /* FIXME: can history->data be NULL? */
+        // FIXME: can history->data be NULL?
         item = (char *) history->data;
         history->data = NULL;
         history = g_list_first (history);
@@ -137,7 +137,7 @@ mc_config_history_load (mc_config_t *cfg, const char *name)
     if (name == NULL || *name == '\0')
         return NULL;
 
-    /* get number of keys */
+    // get number of keys
     keys = mc_config_get_keys (cfg, name, &keys_num);
     g_strfreev (keys);
 
@@ -178,15 +178,19 @@ mc_config_history_load (mc_config_t *cfg, const char *name)
     if (conv != INVALID_CONV)
         str_close_conv (conv);
 
-    /* return pointer to the last entry in the list */
+    // return pointer to the last entry in the list
     return g_list_last (hist);
 }
 
 /* --------------------------------------------------------------------------------------------- */
 
 /**
-  * Save history to the mc_config, but don't save config to file
-  */
+ * Save history to the mc_config, but don't save config to file
+ *
+ * @param cfg mc_config_t object where history is stored in
+ * @param name history name
+ * @param h history. If NULL, then the @name group will be removed from @cfg
+ */
 void
 mc_config_history_save (mc_config_t *cfg, const char *name, GList *h)
 {
@@ -194,17 +198,20 @@ mc_config_history_save (mc_config_t *cfg, const char *name, GList *h)
     GString *buffer;
     int i;
 
-    if (name == NULL || *name == '\0' || h == NULL)
+    if (name == NULL || *name == '\0')
         return;
 
-    /* go to end of list */
+    mc_config_del_group (cfg, name);
+
+    if (h == NULL)
+        return;
+
+    // go to end of list
     h = g_list_last (h);
 
-    /* go back 60 places */
+    // go back 60 places
     for (i = 0; (i < num_history_items_recorded - 1) && (h->prev != NULL); i++)
         h = g_list_previous (h);
-
-    mc_config_del_group (cfg, name);
 
     /* create charset conversion handler to convert strings
        from system codepage to UTF-8 */
@@ -213,13 +220,13 @@ mc_config_history_save (mc_config_t *cfg, const char *name, GList *h)
 
     buffer = g_string_sized_new (64);
 
-    /* dump history into profile */
+    // dump history into profile
     for (i = 0; h != NULL; h = g_list_next (h))
     {
         char key[BUF_TINY];
         char *text = (char *) h->data;
 
-        /* We shouldn't have null entries, but let's be sure */
+        // We shouldn't have null entries, but let's be sure
         if (text == NULL)
             continue;
 

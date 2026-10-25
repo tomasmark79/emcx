@@ -6,12 +6,16 @@ on:
 jobs:
   build-alpine:
     runs-on: ubuntu-latest
-    container:
-      image: alpine:latest
     timeout-minutes: 5
 
+    container:
+      image: alpine:latest
+
+    permissions:
+      contents: read
+
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install dependencies
         run: |
@@ -29,7 +33,6 @@ jobs:
           su - test -c ' \
             ./configure \
               --prefix="$(pwd)/install-prefix" \
-              --enable-mclib \
               --enable-aspell \
               --enable-werror \
               && \
@@ -39,7 +42,7 @@ jobs:
             make install \
           '
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: test-suite-logs-alpine

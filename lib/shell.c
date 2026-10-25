@@ -1,7 +1,7 @@
 /*
    Provides a functions for working with shell.
 
-   Copyright (C) 2006-2025
+   Copyright (C) 2006-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -20,7 +20,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 /** \file shell.c
@@ -29,7 +29,7 @@
 
 #include <config.h>
 
-#include <pwd.h>                /* for username in xterm title */
+#include <pwd.h>  // for username in xterm title
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -65,7 +65,7 @@ mc_shell_get_installed_in_system (void)
 
     mc_shell = g_new0 (mc_shell_t, 1);
 
-    /* 3rd choice: look for existing shells supported as MC subshells.  */
+    // 3rd choice: look for existing shells supported as MC subshells.
     if (access ("/bin/bash", X_OK) == 0)
         mc_shell->path = g_strdup ("/bin/bash");
     else if (access ("/bin/zsh", X_OK) == 0)
@@ -88,6 +88,8 @@ mc_shell_get_installed_in_system (void)
         mc_shell->path = g_strdup ("/bin/csh");
     else if (access ("/bin/mksh", X_OK) == 0)
         mc_shell->path = g_strdup ("/bin/mksh");
+    else if (access ("/bin/lksh", X_OK) == 0)
+        mc_shell->path = g_strdup ("/bin/lksh");
     /* No fish as fallback because it is so much different from other shells and
      * in a way exotic (even though user-friendly by name) that we should not
      * present it as a subshell without the user's explicit intention. We rather
@@ -96,7 +98,7 @@ mc_shell_get_installed_in_system (void)
      *     mc_global.tty.shell = g_strdup ("/bin/fish");
      */
     else
-        /* Fallback and last resort: system default shell */
+        // Fallback and last resort: system default shell
         mc_shell->path = g_strdup ("/bin/sh");
 
     return mc_shell;
@@ -107,21 +109,19 @@ mc_shell_get_installed_in_system (void)
 static char *
 mc_shell_get_name_env (void)
 {
-    const char *shell_env;
     char *shell_name = NULL;
+    const char *shell_env = g_getenv ("SHELL");
 
-    shell_env = g_getenv ("SHELL");
     if ((shell_env == NULL) || (shell_env[0] == '\0'))
     {
-        /* 2nd choice: user login shell */
-        struct passwd *pwd;
+        // 2nd choice: user login shell
+        const struct passwd *pwd = getpwuid (geteuid ());
 
-        pwd = getpwuid (geteuid ());
         if (pwd != NULL)
             shell_name = g_strdup (pwd->pw_shell);
     }
     else
-        /* 1st choice: SHELL environment variable */
+        // 1st choice: SHELL environment variable
         shell_name = g_strdup (shell_env);
 
     return shell_name;
@@ -132,19 +132,19 @@ mc_shell_get_name_env (void)
 static mc_shell_t *
 mc_shell_get_from_env (void)
 {
-    mc_shell_t *mc_shell = NULL;
-
     char *shell_name;
 
     shell_name = mc_shell_get_name_env ();
-
     if (shell_name != NULL)
     {
+        mc_shell_t *mc_shell;
+
         mc_shell = g_new0 (mc_shell_t, 1);
         mc_shell->path = shell_name;
+        return mc_shell;
     }
 
-    return mc_shell;
+    return NULL;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -155,14 +155,14 @@ mc_shell_recognize_real_path (mc_shell_t *mc_shell)
     if (strstr (mc_shell->path, "/zsh") != NULL || strstr (mc_shell->real_path, "/zsh") != NULL
         || getenv ("ZSH_VERSION") != NULL)
     {
-        /* Also detects ksh symlinked to zsh */
+        // Also detects ksh symlinked to zsh
         mc_shell->type = SHELL_ZSH;
         mc_shell->name = "zsh";
     }
     else if (strstr (mc_shell->path, "/tcsh") != NULL
              || strstr (mc_shell->real_path, "/tcsh") != NULL)
     {
-        /* Also detects csh symlinked to tcsh */
+        // Also detects csh symlinked to tcsh
         mc_shell->type = SHELL_TCSH;
         mc_shell->name = "tcsh";
     }
@@ -181,7 +181,7 @@ mc_shell_recognize_real_path (mc_shell_t *mc_shell)
     else if (strstr (mc_shell->path, "/dash") != NULL
              || strstr (mc_shell->real_path, "/dash") != NULL)
     {
-        /* Debian ash (also found if symlinked to by ash/sh) */
+        // Debian ash (also found if symlinked to by ash/sh)
         mc_shell->type = SHELL_DASH;
         mc_shell->name = "dash";
     }
@@ -197,8 +197,7 @@ mc_shell_recognize_real_path (mc_shell_t *mc_shell)
         mc_shell->type = SHELL_ASH_BUSYBOX;
         mc_shell->name = mc_shell->path;
     }
-    else if (strstr (mc_shell->path, "/ksh") != NULL
-             || strstr (mc_shell->real_path, "/ksh") != NULL
+    else if (strstr (mc_shell->path, "/ksh") != NULL || strstr (mc_shell->real_path, "/ksh") != NULL
              || strstr (mc_shell->path, "/ksh93") != NULL
              || strstr (mc_shell->real_path, "/ksh93") != NULL
              || strstr (mc_shell->path, "/oksh") != NULL
@@ -208,8 +207,13 @@ mc_shell_recognize_real_path (mc_shell_t *mc_shell)
         mc_shell->name = "ksh";
     }
     else if (strstr (mc_shell->path, "/mksh") != NULL
-             || strstr (mc_shell->real_path, "/mksh") != NULL)
+             || strstr (mc_shell->real_path, "/mksh") != NULL
+             || strstr (mc_shell->path, "/lksh") != NULL
+             || strstr (mc_shell->real_path, "/lksh") != NULL)
     {
+        /* lksh is present on many systems (all Debian derivatives, plus others) and is an mksh
+         * binary built with POSIX semantics where they cannot be made a run-time option (such as
+         * the width of the arithmetic data type); see #4634 */
         mc_shell->type = SHELL_MKSH;
         mc_shell->name = "mksh";
     }
@@ -222,7 +226,7 @@ mc_shell_recognize_real_path (mc_shell_t *mc_shell)
 static void
 mc_shell_recognize_path (mc_shell_t *mc_shell)
 {
-    /* If shell is not symlinked to busybox, it is safe to assume it is a real shell */
+    // If shell is not symlinked to busybox, it is safe to assume it is a real shell
     if (strstr (mc_shell->path, "/bash") != NULL || getenv ("BASH_VERSION") != NULL)
     {
         mc_shell->type = SHELL_BASH;
@@ -238,8 +242,7 @@ mc_shell_recognize_path (mc_shell_t *mc_shell)
         mc_shell->type = SHELL_ASH_BUSYBOX;
         mc_shell->name = "ash";
     }
-    else if (strstr (mc_shell->path, "/ksh") != NULL
-             || strstr (mc_shell->path, "/ksh93") != NULL
+    else if (strstr (mc_shell->path, "/ksh") != NULL || strstr (mc_shell->path, "/ksh93") != NULL
              || strstr (mc_shell->path, "/oksh") != NULL
              || (getenv ("KSH_VERSION") != NULL
                  && strstr (getenv ("KSH_VERSION"), "PD KSH") != NULL))
@@ -247,7 +250,7 @@ mc_shell_recognize_path (mc_shell_t *mc_shell)
         mc_shell->type = SHELL_KSH;
         mc_shell->name = "ksh";
     }
-    else if (strstr (mc_shell->path, "/mksh") != NULL
+    else if (strstr (mc_shell->path, "/mksh") != NULL || strstr (mc_shell->path, "/lksh") != NULL
              || (getenv ("KSH_VERSION") != NULL
                  && strstr (getenv ("KSH_VERSION"), "MIRBSD KSH") != NULL))
     {
@@ -268,7 +271,6 @@ mc_shell_init (void)
     mc_shell_t *mc_shell;
 
     mc_shell = mc_shell_get_from_env ();
-
     if (mc_shell == NULL)
         mc_shell = mc_shell_get_installed_in_system ();
 
@@ -276,7 +278,6 @@ mc_shell_init (void)
 
     /* Find out what type of shell we have. Also consider real paths (resolved symlinks)
      * because e.g. csh might point to tcsh, ash to dash or busybox, sh to anything. */
-
     if (mc_shell->real_path != NULL)
         mc_shell_recognize_real_path (mc_shell);
 

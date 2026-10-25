@@ -2,7 +2,7 @@
    Search text engine.
    Plain search
 
-   Copyright (C) 2009-2025
+   Copyright (C) 2009-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -21,7 +21,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -93,8 +93,8 @@ mc_search__cond_struct_new_init_normal (const char *charset, mc_search_t *lc_mc_
 /* --------------------------------------------------------------------------------------------- */
 
 gboolean
-mc_search__run_normal (mc_search_t *lc_mc_search, const void *user_data,
-                       off_t start_search, off_t end_search, gsize *found_len)
+mc_search__run_normal (mc_search_t *lc_mc_search, const void *user_data, off_t start_search,
+                       off_t end_search, gsize *found_len)
 {
     return mc_search__run_regex (lc_mc_search, user_data, start_search, end_search, found_len);
 }

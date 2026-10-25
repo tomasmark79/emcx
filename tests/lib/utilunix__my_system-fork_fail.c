@@ -1,7 +1,7 @@
 /*
    lib - tests lib/utilinux:my_system() function
 
-   Copyright (C) 2013-2025
+   Copyright (C) 2013-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -20,7 +20,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #define TEST_SUITE_NAME "/lib/utilunix"
@@ -36,28 +36,24 @@
 
 /* --------------------------------------------------------------------------------------------- */
 
-/* *INDENT-OFF* */
 START_TEST (fork_fail)
-/* *INDENT-ON* */
 {
     int actual_value;
 
-    /* given */
+    // given
     fork__return_value = -1;
 
-    /* when */
+    // when
     actual_value = my_system (0, NULL, NULL);
 
-    /* then */
+    // then
     ck_assert_int_eq (actual_value, -1);
 
     VERIFY_SIGACTION_CALLS ();
 
     ck_assert_int_eq (signal_signum__captured->len, 0);
 }
-/* *INDENT-OFF* */
 END_TEST
-/* *INDENT-ON* */
 
 /* --------------------------------------------------------------------------------------------- */
 
@@ -70,9 +66,9 @@ main (void)
 
     tcase_add_checked_fixture (tc_core, setup, teardown);
 
-    /* Add new tests here: *************** */
+    // Add new tests here: ***************
     tcase_add_test (tc_core, fork_fail);
-    /* *********************************** */
+    // ***********************************
 
     return mctest_run_all (tc_core);
 }

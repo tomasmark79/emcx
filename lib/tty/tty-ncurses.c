@@ -2,7 +2,7 @@
    Interface to the terminal controlling library.
    Ncurses wrapper.
 
-   Copyright (C) 2005-2025
+   Copyright (C) 2005-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -22,15 +22,16 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 /** \file
- *  \brief Source: NCurses-based tty layer of Midnight-commander
+ *  \brief Source: NCurses-based tty layer of Midnight Commander
  */
 
 #include <config.h>
 
+#include <limits.h>  // MB_LEN_MAX
 #include <stdlib.h>
 #include <stdarg.h>
 #include <signal.h>
@@ -40,31 +41,29 @@
 #include <termios.h>
 
 #include "lib/global.h"
-#include "lib/strutil.h"        /* str_term_form */
+#include "lib/strutil.h"  // str_term_form
 #include "lib/util.h"
 
-#ifndef WANT_TERM_H
-#define WANT_TERM_H
-#endif
-
-#include "tty-internal.h"       /* mc_tty_normalize_from_utf8() */
+#include "tty-internal.h"
 #include "tty.h"
-#include "color.h"              /* tty_setcolor */
+#include "color.h"  // tty_setcolor
 #include "color-internal.h"
 #include "key.h"
 #include "mouse.h"
 #include "win.h"
 
 /* include at last !!! */
-#ifdef WANT_TERM_H
-#ifdef HAVE_NCURSES_TERM_H
+#ifdef HAVE_NCURSESW_TERM_H
+#include <ncursesw/term.h>
+#elif defined HAVE_NCURSES_TERM_H
 #include <ncurses/term.h>
 #else
 #include <term.h>
-#endif /* HAVE_NCURSES_TERM_H */
-#endif /* WANT_TERM_H */
+#endif
 
 /*** global variables ****************************************************************************/
+
+gboolean ncurses_koi8r_double_line_bug;
 
 /*** file scope macro definitions ****************************************************************/
 
@@ -72,8 +71,7 @@
 #define CTRL(x) ((x) & 0x1f)
 #endif
 
-#define yx_in_screen(y, x) \
-    (y >= 0 && y < LINES && x >= 0 && x < COLS)
+#define yx_in_screen(y, x) (y >= 0 && y < LINES && x >= 0 && x < COLS)
 
 /*** global variables ****************************************************************************/
 
@@ -94,7 +92,7 @@ static int mc_curs_row, mc_curs_col;
 static void
 tty_setup_sigwinch (void (*handler) (int))
 {
-#if (NCURSES_VERSION_MAJOR >= 4) && defined (SIGWINCH)
+#if (NCURSES_VERSION_MAJOR >= 4) && defined(SIGWINCH)
     struct sigaction act, oact;
 
     memset (&act, 0, sizeof (act));
@@ -102,9 +100,9 @@ tty_setup_sigwinch (void (*handler) (int))
     sigemptyset (&act.sa_mask);
 #ifdef SA_RESTART
     act.sa_flags = SA_RESTART;
-#endif /* SA_RESTART */
+#endif
     my_sigaction (SIGWINCH, &act, &oact);
-#endif /* SIGWINCH */
+#endif
 
     tty_create_winch_pipe ();
 }
@@ -124,115 +122,111 @@ sigwinch_handler (int dummy)
 
 /* --------------------------------------------------------------------------------------------- */
 
-/**
- * Get visible part of area.
- *
- * @returns TRUE if any part of area is in screen bounds, FALSE otherwise.
- */
-static gboolean
-tty_clip (int *y, int *x, int *rows, int *cols)
+static chtype
+get_maybe_acs (mc_tty_char_t ch)
 {
-    if (*y < 0)
+    switch (ch)
     {
-        *rows += *y;
+    case MC_ACS_HLINE:
+        return ACS_HLINE;
+    case MC_ACS_VLINE:
+        return ACS_VLINE;
+    case MC_ACS_ULCORNER:
+        return ACS_ULCORNER;
+    case MC_ACS_URCORNER:
+        return ACS_URCORNER;
+    case MC_ACS_LLCORNER:
+        return ACS_LLCORNER;
+    case MC_ACS_LRCORNER:
+        return ACS_LRCORNER;
+    case MC_ACS_LTEE:
+        return ACS_LTEE;
+    case MC_ACS_RTEE:
+        return ACS_RTEE;
+    case MC_ACS_TTEE:
+        return ACS_TTEE;
+    case MC_ACS_BTEE:
+        return ACS_BTEE;
+    case MC_ACS_PLUS:
+        return ACS_PLUS;
 
-        if (*rows <= 0)
-            return FALSE;
-
-        *y = 0;
+    default:
+        return ch;
     }
+}
 
-    if (*x < 0)
+/* --------------------------------------------------------------------------------------------- */
+
+static inline void
+addch_maybe_acs (mc_tty_char_t ch)
+{
+#ifdef HAVE_NCURSES_WIDECHAR
+    if (mc_global.utf8_display)
     {
-        *cols += *x;
+        wchar_t wch[2] = { ch, 0 };
+        cchar_t ctext;
 
-        if (*cols <= 0)
-            return FALSE;
-
-        *x = 0;
+        setcchar (&ctext, wch, 0, 0, NULL);
+        add_wch (&ctext);
     }
+    else
+#endif
+        addch (get_maybe_acs (ch));
+}
 
-    if (*y + *rows > LINES)
-        *rows = LINES - *y;
+/* --------------------------------------------------------------------------------------------- */
 
-    if (*rows <= 0)
-        return FALSE;
+static inline void
+hline_maybe_acs (mc_tty_char_t ch, int len)
+{
+#ifdef HAVE_NCURSES_WIDECHAR
+    if (mc_global.utf8_display)
+    {
+        wchar_t wch[2] = { ch, 0 };
+        cchar_t ctext;
 
-    if (*x + *cols > COLS)
-        *cols = COLS - *x;
+        setcchar (&ctext, wch, 0, 0, NULL);
+        hline_set (&ctext, len);
+    }
+    else
+#endif
+        hline (get_maybe_acs (ch), len);
+}
 
-    if (*cols <= 0)
-        return FALSE;
+/* --------------------------------------------------------------------------------------------- */
 
-    return TRUE;
+static inline void
+vline_maybe_acs (mc_tty_char_t ch, int len)
+{
+#ifdef HAVE_NCURSES_WIDECHAR
+    if (mc_global.utf8_display)
+    {
+        wchar_t wch[2] = { ch, 0 };
+        cchar_t ctext;
+
+        setcchar (&ctext, wch, 0, 0, NULL);
+        vline_set (&ctext, len);
+    }
+    else
+#endif
+        vline (get_maybe_acs (ch), len);
 }
 
 /* --------------------------------------------------------------------------------------------- */
 /*** public functions ****************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
-int
-mc_tty_normalize_lines_char (const char *ch)
-{
-    char *str2;
-    int res;
-
-    struct mc_tty_lines_struct
-    {
-        const char *line;
-        int line_code;
-    } const lines_codes[] = {
-        {"\342\224\230", ACS_LRCORNER}, /* ┌ */
-        {"\342\224\224", ACS_LLCORNER}, /* └ */
-        {"\342\224\220", ACS_URCORNER}, /* ┐ */
-        {"\342\224\214", ACS_ULCORNER}, /* ┘ */
-        {"\342\224\234", ACS_LTEE},     /* ├ */
-        {"\342\224\244", ACS_RTEE},     /* ┤ */
-        {"\342\224\254", ACS_TTEE},     /* ┬ */
-        {"\342\224\264", ACS_BTEE},     /* ┴ */
-        {"\342\224\200", ACS_HLINE},    /* ─ */
-        {"\342\224\202", ACS_VLINE},    /* │ */
-        {"\342\224\274", ACS_PLUS},     /* ┼ */
-
-        {"\342\225\235", ACS_LRCORNER | A_BOLD},        /* ╔ */
-        {"\342\225\232", ACS_LLCORNER | A_BOLD},        /* ╚ */
-        {"\342\225\227", ACS_URCORNER | A_BOLD},        /* ╗ */
-        {"\342\225\224", ACS_ULCORNER | A_BOLD},        /* ╝ */
-        {"\342\225\237", ACS_LTEE | A_BOLD},    /* ╟ */
-        {"\342\225\242", ACS_RTEE | A_BOLD},    /* ╢ */
-        {"\342\225\244", ACS_TTEE | A_BOLD},    /* ╤ */
-        {"\342\225\247", ACS_BTEE | A_BOLD},    /* ╧ */
-        {"\342\225\220", ACS_HLINE | A_BOLD},   /* ═ */
-        {"\342\225\221", ACS_VLINE | A_BOLD},   /* ║ */
-
-        {NULL, 0}
-    };
-
-    if (ch == NULL)
-        return (int) ' ';
-
-    for (res = 0; lines_codes[res].line; res++)
-    {
-        if (strcmp (ch, lines_codes[res].line) == 0)
-            return lines_codes[res].line_code;
-    }
-
-    str2 = mc_tty_normalize_from_utf8 (ch);
-    res = g_utf8_get_char_validated (str2, -1);
-
-    if (res < 0)
-        res = (unsigned char) str2[0];
-    g_free (str2);
-
-    return res;
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
 void
 tty_init (gboolean mouse_enable, gboolean is_xterm)
 {
     struct termios mode;
+
+    // ncurses versions before 6.5-20251115 are buggy in KOI8-R locale, see mc #4799.
+    // Note: This check will fail at ncurses version 10. We can surely remove this workaround then.
+    const char *ncurses_ver = curses_version ();
+
+    ncurses_koi8r_double_line_bug =
+        (strncmp (ncurses_ver, "ncurses ", 8) == 0 && strcmp (ncurses_ver + 8, "6.5.20251115") < 0);
 
     initscr ();
 
@@ -247,23 +241,23 @@ tty_init (gboolean mouse_enable, gboolean is_xterm)
      * them in the "Learn Keys" dialog.  The value is in milliseconds.
      */
     ESCDELAY = 200;
-#endif /* HAVE_ESCDELAY */
+#endif
 
     tcgetattr (STDIN_FILENO, &mode);
-    /* use Ctrl-g to generate SIGINT */
-    mode.c_cc[VINTR] = CTRL ('g');      /* ^g */
-    /* disable SIGQUIT to allow use Ctrl-\ key */
+    // use Ctrl-g to generate SIGINT
+    mode.c_cc[VINTR] = CTRL ('g');  // ^g
+    // disable SIGQUIT to allow use Ctrl-\ key
     mode.c_cc[VQUIT] = NULL_VALUE;
     tcsetattr (STDIN_FILENO, TCSANOW, &mode);
 
-    /* curses remembers the "in-program" modes after this call */
+    // curses remembers the "in-program" modes after this call
     def_prog_mode ();
 
     tty_start_interrupt_key ();
 
     if (!mouse_enable)
         use_mouse_p = MOUSE_DISABLED;
-    tty_init_xterm_support (is_xterm);  /* do it before tty_enter_ca_mode() call */
+    tty_init_xterm_support (is_xterm);  // do it before tty_enter_ca_mode() call
     tty_enter_ca_mode ();
     tty_raw_mode ();
     noecho ();
@@ -293,7 +287,7 @@ tty_enter_ca_mode (void)
 {
     if (mc_global.tty.xterm_flag && smcup != NULL)
     {
-        fprintf (stdout, /* ESC_STR ")0" */ ESC_STR "7" ESC_STR "[?47h");
+        fprintf (stdout, ESC_STR "7" ESC_STR "[?47h");
         fflush (stdout);
     }
 }
@@ -325,19 +319,19 @@ tty_change_screen_size (void)
     tty_reset_screen ();
 #endif
 
-    /* Ioctl on the STDIN_FILENO */
+    // Ioctl on the STDIN_FILENO
     ioctl (fileno (stdout), TIOCGWINSZ, &winsz);
     if (winsz.ws_col != 0 && winsz.ws_row != 0)
     {
 #if defined(NCURSES_VERSION) && defined(HAVE_RESIZETERM)
         resizeterm (winsz.ws_row, winsz.ws_col);
-        clearok (stdscr, TRUE); /* sigwinch's should use a semaphore! */
+        clearok (stdscr, TRUE);  // sigwinch's should use a semaphore!
 #else
         COLS = winsz.ws_col;
         LINES = winsz.ws_row;
 #endif
     }
-#endif /* defined(TIOCGWINSZ) || NCURSES_VERSION_MAJOR >= 4 */
+#endif
 
 #ifdef ENABLE_SUBSHELL
     if (mc_global.tty.use_subshell)
@@ -366,7 +360,7 @@ tty_reset_shell_mode (void)
 void
 tty_raw_mode (void)
 {
-    raw ();                     /* FIXME: unneeded? */
+    raw ();  // FIXME: unneeded?
     cbreak ();
 }
 
@@ -375,7 +369,7 @@ tty_raw_mode (void)
 void
 tty_noraw_mode (void)
 {
-    nocbreak ();                /* FIXME: unneeded? */
+    nocbreak ();  // FIXME: unneeded?
     noraw ();
 }
 
@@ -476,7 +470,7 @@ tty_getyx (int *py, int *px)
 /* --------------------------------------------------------------------------------------------- */
 
 void
-tty_draw_hline (int y, int x, int ch, int len)
+tty_draw_hline (int y, int x, mc_tty_char_t ch, int len)
 {
     int x1;
 
@@ -493,11 +487,8 @@ tty_draw_hline (int y, int x, int ch, int len)
         x = 0;
     }
 
-    if ((chtype) ch == ACS_HLINE)
-        ch = mc_tty_frm[MC_TTY_FRM_HORIZ];
-
     move (y, x);
-    hline (ch, len);
+    hline_maybe_acs (ch, len);
     move (y, x1);
 
     mc_curs_row = y;
@@ -507,7 +498,7 @@ tty_draw_hline (int y, int x, int ch, int len)
 /* --------------------------------------------------------------------------------------------- */
 
 void
-tty_draw_vline (int y, int x, int ch, int len)
+tty_draw_vline (int y, int x, mc_tty_char_t ch, int len)
 {
     int y1;
 
@@ -524,15 +515,57 @@ tty_draw_vline (int y, int x, int ch, int len)
         y = 0;
     }
 
-    if ((chtype) ch == ACS_VLINE)
-        ch = mc_tty_frm[MC_TTY_FRM_VERT];
-
     move (y, x);
-    vline (ch, len);
+    vline_maybe_acs (ch, len);
     move (y1, x);
 
     mc_curs_row = y1;
     mc_curs_col = x;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+/**
+ * Get visible part of area.
+ *
+ * @return TRUE if any part of area is in screen bounds, FALSE otherwise.
+ */
+gboolean
+tty_clip (int *y, int *x, int *rows, int *cols)
+{
+    if (*y < 0)
+    {
+        *rows += *y;
+
+        if (*rows <= 0)
+            return FALSE;
+
+        *y = 0;
+    }
+
+    if (*x < 0)
+    {
+        *cols += *x;
+
+        if (*cols <= 0)
+            return FALSE;
+
+        *x = 0;
+    }
+
+    if (*y + *rows > LINES)
+        *rows = LINES - *y;
+
+    if (*rows <= 0)
+        return FALSE;
+
+    if (*x + *cols > COLS)
+        *cols = COLS - *x;
+
+    if (*cols <= 0)
+        return FALSE;
+
+    return TRUE;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -560,54 +593,6 @@ tty_fill_region (int y, int x, int rows, int cols, unsigned char ch)
 /* --------------------------------------------------------------------------------------------- */
 
 void
-tty_colorize_area (int y, int x, int rows, int cols, int color)
-{
-#ifdef ENABLE_SHADOWS
-    cchar_t *ctext;
-    wchar_t wch[10];            /* TODO not sure if the length is correct */
-    attr_t attrs;
-    short color_pair;
-
-    if (!use_colors || !tty_clip (&y, &x, &rows, &cols))
-        return;
-
-    tty_setcolor (color);
-    ctext = g_malloc (sizeof (cchar_t) * (cols + 1));
-
-    for (int row = 0; row < rows; row++)
-    {
-        mvin_wchnstr (y + row, x, ctext, cols);
-
-        for (int col = 0; col < cols; col++)
-        {
-            getcchar (&ctext[col], wch, &attrs, &color_pair, NULL);
-            setcchar (&ctext[col], wch, attrs, color, NULL);
-        }
-
-        mvadd_wchnstr (y + row, x, ctext, cols);
-    }
-
-    g_free (ctext);
-#else
-    (void) y;
-    (void) x;
-    (void) rows;
-    (void) cols;
-    (void) color;
-#endif /* ENABLE_SHADOWS */
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-void
-tty_set_alt_charset (gboolean alt_charset)
-{
-    (void) alt_charset;
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-void
 tty_display_8bit (gboolean what)
 {
     meta (stdscr, (int) what);
@@ -616,28 +601,28 @@ tty_display_8bit (gboolean what)
 /* --------------------------------------------------------------------------------------------- */
 
 void
-tty_print_char (int c)
+tty_print_char (mc_tty_char_t c)
 {
     if (yx_in_screen (mc_curs_row, mc_curs_col))
-        addch (c);
+        addch_maybe_acs (c);
     mc_curs_col++;
 }
 
 /* --------------------------------------------------------------------------------------------- */
 
 void
-tty_print_anychar (int c)
+tty_print_anychar (mc_tty_char_t c)
 {
     if (mc_global.utf8_display || c > 255)
     {
         int res;
-        unsigned char str[UTF8_CHAR_LEN + 1];
+        unsigned char str[MB_LEN_MAX + 1];
 
         res = g_unichar_to_utf8 (c, (char *) str);
         if (res == 0)
         {
             if (yx_in_screen (mc_curs_row, mc_curs_col))
-                addch ('.');
+                addch_maybe_acs ('.');
             mc_curs_col++;
         }
         else
@@ -659,41 +644,9 @@ tty_print_anychar (int c)
     else
     {
         if (yx_in_screen (mc_curs_row, mc_curs_col))
-            addch (c);
+            addch_maybe_acs (c);
         mc_curs_col++;
     }
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-void
-tty_print_alt_char (int c, gboolean single)
-{
-    if (yx_in_screen (mc_curs_row, mc_curs_col))
-    {
-        if ((chtype) c == ACS_VLINE)
-            c = mc_tty_frm[single ? MC_TTY_FRM_VERT : MC_TTY_FRM_DVERT];
-        else if ((chtype) c == ACS_HLINE)
-            c = mc_tty_frm[single ? MC_TTY_FRM_HORIZ : MC_TTY_FRM_DHORIZ];
-        else if ((chtype) c == ACS_LTEE)
-            c = mc_tty_frm[single ? MC_TTY_FRM_LEFTMIDDLE : MC_TTY_FRM_DLEFTMIDDLE];
-        else if ((chtype) c == ACS_RTEE)
-            c = mc_tty_frm[single ? MC_TTY_FRM_RIGHTMIDDLE : MC_TTY_FRM_DRIGHTMIDDLE];
-        else if ((chtype) c == ACS_ULCORNER)
-            c = mc_tty_frm[single ? MC_TTY_FRM_LEFTTOP : MC_TTY_FRM_DLEFTTOP];
-        else if ((chtype) c == ACS_LLCORNER)
-            c = mc_tty_frm[single ? MC_TTY_FRM_LEFTBOTTOM : MC_TTY_FRM_DLEFTBOTTOM];
-        else if ((chtype) c == ACS_URCORNER)
-            c = mc_tty_frm[single ? MC_TTY_FRM_RIGHTTOP : MC_TTY_FRM_DRIGHTTOP];
-        else if ((chtype) c == ACS_LRCORNER)
-            c = mc_tty_frm[single ? MC_TTY_FRM_RIGHTBOTTOM : MC_TTY_FRM_DRIGHTBOTTOM];
-        else if ((chtype) c == ACS_PLUS)
-            c = mc_tty_frm[MC_TTY_FRM_CROSS];
-
-        addch (c);
-    }
-
-    mc_curs_col++;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -707,14 +660,14 @@ tty_print_string (const char *s)
     s = str_term_form (s);
     len = str_term_width1 (s);
 
-    /* line is upper or below the screen or entire line is before or after screen */
+    // line is upper or below the screen or entire line is before or after screen
     if (mc_curs_row < 0 || mc_curs_row >= LINES || mc_curs_col + len <= 0 || mc_curs_col >= COLS)
     {
         mc_curs_col += len;
         return;
     }
 
-    /* skip invisible left part */
+    // skip invisible left part
     if (mc_curs_col < 0)
     {
         start = -mc_curs_col;
@@ -735,7 +688,7 @@ void
 tty_printf (const char *fmt, ...)
 {
     va_list args;
-    char buf[BUF_1K];           /* FIXME: is it enough? */
+    char buf[BUF_1K];  // FIXME: is it enough?
 
     va_start (args, fmt);
     g_vsnprintf (buf, sizeof (buf), fmt, args);
@@ -745,12 +698,26 @@ tty_printf (const char *fmt, ...)
 
 /* --------------------------------------------------------------------------------------------- */
 
-char *
-tty_tgetstr (const char *cap)
+int
+tty_tigetflag (const char *terminfo_cap, MC_UNUSED const char *termcap_cap)
 {
-    char *unused = NULL;
+    return tigetflag ((NCURSES_CONST char *) terminfo_cap);
+}
 
-    return tgetstr ((NCURSES_CONST char *) cap, &unused);
+/* --------------------------------------------------------------------------------------------- */
+
+int
+tty_tigetnum (const char *terminfo_cap, MC_UNUSED const char *termcap_cap)
+{
+    return tigetnum ((NCURSES_CONST char *) terminfo_cap);
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+char *
+tty_tigetstr (const char *terminfo_cap, MC_UNUSED const char *termcap_cap)
+{
+    return tigetstr ((NCURSES_CONST char *) terminfo_cap);
 }
 
 /* --------------------------------------------------------------------------------------------- */

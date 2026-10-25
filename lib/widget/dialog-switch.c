@@ -3,7 +3,7 @@
 
    Original idea and code: Oleg "Olegarch" Konovalov <olegarch@linuxinside.com>
 
-   Copyright (C) 2009-2025
+   Copyright (C) 2009-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -23,7 +23,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 /** \file dialog-switch.c
@@ -33,8 +33,7 @@
 #include <config.h>
 
 #include "lib/global.h"
-#include "lib/tty/tty.h"        /* LINES, COLS */
-#include "lib/tty/color.h"      /* tty_set_normal_attrs() */
+#include "lib/tty/tty.h"  // LINES, COLS
 #include "lib/widget.h"
 #include "lib/event.h"
 
@@ -43,10 +42,6 @@
 /* Primitive way to check if the the current dialog is our dialog */
 /* This is needed by async routines like load_prompt */
 GList *top_dlg = NULL;
-
-/* If set then dialogs just clean the screen when refreshing, else */
-/* they do a complete refresh, refreshing all the parts of the program */
-gboolean fast_refresh = FALSE;
 
 WDialog *filemanager = NULL;
 
@@ -99,22 +94,22 @@ dialog_switch_goto (GList *dlg)
 
         if (old == filemanager)
         {
-            /* switch from panels to another dialog (editor, viewer, etc) */
+            // switch from panels to another dialog (editor, viewer, etc)
             dialog_switch_pending = TRUE;
             dialog_switch_process_pending ();
         }
         else
         {
-            /* switch from editor, viewer, etc to another dialog */
+            // switch from editor, viewer, etc to another dialog
             widget_set_state (WIDGET (old), WST_SUSPENDED, TRUE);
 
             if (DIALOG (dlg->data) != filemanager)
-                /* switch to another editor, viewer, etc */
-                /* return to panels before run the required dialog */
+                // switch to another editor, viewer, etc
+                // return to panels before run the required dialog
                 dialog_switch_pending = TRUE;
             else
             {
-                /* switch to panels */
+                // switch to panels
                 widget_set_state (WIDGET (filemanager), WST_ACTIVE, TRUE);
                 do_refresh ();
             }
@@ -152,7 +147,7 @@ dialog_switch_add (WDialog *h)
         mc_current = mc_dialogs;
     }
 
-    /* suspend forced all other screens */
+    // suspend forced all other screens
     g_list_foreach (mc_dialogs, dialog_switch_suspend, NULL);
 }
 
@@ -170,13 +165,13 @@ dialog_switch_remove (WDialog *h)
 
     mc_dialogs = g_list_delete_link (mc_dialogs, this);
 
-    /* adjust current dialog */
+    // adjust current dialog
     if (top_dlg != NULL)
         mc_current = g_list_find (mc_dialogs, DIALOG (top_dlg->data));
     else
         mc_current = mc_dialogs;
 
-    /* resume forced the current screen */
+    // resume forced the current screen
     if (mc_current != NULL)
         widget_set_state (WIDGET (mc_current->data), WST_ACTIVE, TRUE);
 }
@@ -240,7 +235,7 @@ dialog_switch_list (void)
     lines = MIN ((size_t) (LINES * 2 / 3), dlg_num);
     cols = COLS * 2 / 3;
 
-    listbox = listbox_window_new (lines, cols, _("Screens"), "[Screen selector]");
+    listbox = listbox_window_new (lines, cols, _ ("Screens"), "[Screen selector]");
 
     for (h = mc_dialogs; h != NULL; h = g_list_next (h))
     {
@@ -268,26 +263,38 @@ dialog_switch_process_pending (void)
 {
     int ret = 0;
 
-    while (dialog_switch_pending)
+    if (mc_current == NULL)
+        return ret;
+
+    if (!dialog_switch_pending)
     {
         WDialog *h = DIALOG (mc_current->data);
-        Widget *wh = WIDGET (h);
 
-        dialog_switch_pending = FALSE;
-        widget_set_state (wh, WST_SUSPENDED, TRUE);
-        ret = dlg_run (h);
-        if (widget_get_state (wh, WST_CLOSED))
+        // return to panels and reload them forced
+        if (mc_global.mc_run_mode == MC_RUN_FULL && h == filemanager)
+            mc_event_raise (MCEVENT_GROUP_FILEMANAGER, "update_panels", NULL);
+    }
+    else
+        while (dialog_switch_pending)
         {
-            widget_destroy (wh);
+            WDialog *h = DIALOG (mc_current->data);
+            Widget *wh = WIDGET (h);
 
-            /* return to panels */
-            if (mc_global.mc_run_mode == MC_RUN_FULL)
+            dialog_switch_pending = FALSE;
+            widget_set_state (wh, WST_SUSPENDED, TRUE);
+            ret = dlg_run (h);
+            if (widget_get_state (wh, WST_CLOSED))
             {
-                mc_current = g_list_find (mc_dialogs, filemanager);
-                mc_event_raise (MCEVENT_GROUP_FILEMANAGER, "update_panels", NULL);
+                widget_destroy (wh);
+
+                // return to panels
+                if (mc_global.mc_run_mode == MC_RUN_FULL)
+                {
+                    mc_current = g_list_find (mc_dialogs, filemanager);
+                    mc_event_raise (MCEVENT_GROUP_FILEMANAGER, "update_panels", NULL);
+                }
             }
         }
-    }
 
     repaint_screen ();
 
@@ -327,27 +334,19 @@ do_refresh (void)
 {
     GList *d = top_dlg;
 
-    if (fast_refresh)
-    {
-        if (d != NULL)
-            widget_draw (WIDGET (d->data));
-    }
-    else
-    {
-        /* Search first fullscreen dialog */
-        for (; d != NULL; d = g_list_next (d))
-            if ((WIDGET (d->data)->pos_flags & WPOS_FULLSCREEN) != 0)
-                break;
+    // Search first fullscreen dialog
+    for (; d != NULL; d = g_list_next (d))
+        if ((WIDGET (d->data)->pos_flags & WPOS_FULLSCREEN) != 0)
+            break;
 
-        /* when small dialog (i.e. error message) is created first,
-           there is no fullscreen dialog in the stack */
-        if (d == NULL)
-            d = g_list_last (top_dlg);
+    /* when small dialog (i.e. error message) is created first,
+       there is no fullscreen dialog in the stack */
+    if (d == NULL)
+        d = g_list_last (top_dlg);
 
-        /* back to top dialog */
-        for (; d != NULL; d = g_list_previous (d))
-            widget_draw (WIDGET (d->data));
-    }
+    // back to top dialog
+    for (; d != NULL; d = g_list_previous (d))
+        widget_draw (WIDGET (d->data));
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -367,7 +366,7 @@ mc_refresh (void)
 #ifdef ENABLE_BACKGROUND
     if (mc_global.we_are_background)
         return;
-#endif /* ENABLE_BACKGROUND */
+#endif
 
     if (!tty_got_winch ())
         tty_refresh ();
@@ -386,6 +385,14 @@ dialog_change_screen_size (void)
 {
     GList *d;
 
+    /* On startup, when mc reads directories top_dlg isn't created yet. If window is resized
+     * at this time, SIGWINCH can be missed because tty_flush_winch() is called here before
+     * a first tty_got_winch() call in frontend_dlg_run().
+     *
+     * Keep SIGWINCH events in pipe if top_dlg isn't created yet. */
+    if (top_dlg == NULL)
+        return;
+
     tty_flush_winch ();
     tty_change_screen_size ();
 
@@ -394,14 +401,14 @@ dialog_change_screen_size (void)
     tty_nodelay (FALSE);
 #endif
 
-    /* Inform all suspending dialogs */
+    // Inform all suspending dialogs
     dialog_switch_got_winch ();
 
-    /* Inform all running dialogs from first to last */
+    // Inform all running dialogs from first to last
     for (d = g_list_last (top_dlg); d != NULL; d = g_list_previous (d))
         dialog_switch_resize (DIALOG (d->data));
 
-    /* Now, force the redraw */
+    // Now, force the redraw
     repaint_screen ();
 }
 

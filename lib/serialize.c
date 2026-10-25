@@ -1,7 +1,7 @@
 /*
    Provides a serialize/unserialize functionality for INI-like formats.
 
-   Copyright (C) 2011-2025
+   Copyright (C) 2011-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -20,7 +20,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 /** \file lib/serialize.c
@@ -54,8 +54,7 @@
 /*** file scope functions ************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
-static void
-G_GNUC_PRINTF (2, 3)
+static void G_GNUC_PRINTF (2, 3)
 prepend_error_message (GError **error, const char *format, ...)
 {
     char *prepend_str;
@@ -81,10 +80,10 @@ static const char *
 go_to_end_of_serialized_string (const char *non_serialized_data,
                                 const char *already_serialized_part, size_t *offset)
 {
-    size_t calculated_offset;
     const char *semi_ptr = strchr (non_serialized_data + 1, SRLZ_DELIM_C);
+    const size_t calculated_offset =
+        (semi_ptr - non_serialized_data) + 1 + strlen (already_serialized_part);
 
-    calculated_offset = (semi_ptr - non_serialized_data) + 1 + strlen (already_serialized_part);
     if (calculated_offset >= strlen (non_serialized_data))
         return NULL;
 
@@ -150,17 +149,16 @@ mc_deserialize_str (const char prefix, const char *data, GError **error)
 
     {
         char buffer[BUF_TINY];
-        char *semi_ptr;
-        size_t semi_offset;
 
-        semi_ptr = strchr (data + 1, SRLZ_DELIM_C);
+        const char *semi_ptr = strchr (data + 1, SRLZ_DELIM_C);
         if (semi_ptr == NULL)
         {
-            g_set_error (error, MC_ERROR, 0,
-                         FUNC_NAME ": Length delimiter '%c' doesn't exists", SRLZ_DELIM_C);
+            g_set_error (error, MC_ERROR, 0, FUNC_NAME ": Length delimiter '%c' doesn't exists",
+                         SRLZ_DELIM_C);
             return NULL;
         }
-        semi_offset = semi_ptr - (data + 1);
+
+        const size_t semi_offset = semi_ptr - (data + 1);
         if (semi_offset >= BUF_TINY)
         {
             g_set_error (error, MC_ERROR, 0, FUNC_NAME ": Too big string length");
@@ -271,11 +269,12 @@ mc_serialize_config (mc_config_t *data, GError **error)
  */
 
 #define FUNC_NAME "mc_deserialize_config()"
-#define prepend_error_and_exit() { \
-    prepend_error_message (error, FUNC_NAME " at %zu", current_position + 1); \
-                mc_config_deinit (ret_data); \
-                return NULL; \
-}
+#define prepend_error_and_exit()                                                                   \
+    {                                                                                              \
+        prepend_error_message (error, FUNC_NAME " at %zu", current_position + 1);                  \
+        mc_config_deinit (ret_data);                                                               \
+        return NULL;                                                                               \
+    }
 
 mc_config_t *
 mc_deserialize_config (const char *data, GError **error)

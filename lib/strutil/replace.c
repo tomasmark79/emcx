@@ -1,7 +1,7 @@
 /*
    Functions for replacing substrings in strings.
 
-   Copyright (C) 2013-2025
+   Copyright (C) 2013-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -20,7 +20,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -61,7 +61,7 @@ str_replace_all (const char *haystack, const char *needle, const char *replaceme
 {
     size_t needle_len, replacement_len;
     GString *return_str = NULL;
-    char *needle_in_str;
+    const char *needle_in_str;
 
     needle_len = strlen (needle);
     replacement_len = strlen (replacement);
@@ -73,7 +73,7 @@ str_replace_all (const char *haystack, const char *needle, const char *replaceme
 
         if (str_is_char_escaped (haystack, needle_in_str))
         {
-            char *backslash = needle_in_str - 1;
+            const char *backslash = needle_in_str - 1;
 
             if (haystack != backslash)
                 g_string_append_len (return_str, haystack, backslash - haystack);
@@ -92,7 +92,7 @@ str_replace_all (const char *haystack, const char *needle, const char *replaceme
     if (*haystack != '\0')
     {
         if (return_str == NULL)
-            return strdup (haystack);
+            return g_strdup (haystack);
 
         g_string_append (return_str, haystack);
     }

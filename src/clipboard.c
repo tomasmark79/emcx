@@ -1,7 +1,7 @@
 /*
    Util for external clipboard.
 
-   Copyright (C) 2009-2025
+   Copyright (C) 2009-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -21,7 +21,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -113,7 +113,7 @@ clipboard_file_from_ext_clip (const gchar *event_group_name, const gchar *event_
 
     p = mc_popen (clipboard_paste_path, TRUE, TRUE, NULL);
     if (p == NULL)
-        return TRUE;            /* don't show error message */
+        return TRUE;  // don't show error message
 
     p->out.null_term = FALSE;
     p->err.null_term = TRUE;
@@ -129,12 +129,12 @@ clipboard_file_from_ext_clip (const gchar *event_group_name, const gchar *event_
 
         if (error != NULL)
         {
-            /* don't show error message */
+            // don't show error message
             g_error_free (error);
             break;
         }
 
-        /* ignore stderr and get stdout */
+        // ignore stderr and get stdout
         if (p->out.len == MC_PIPE_STREAM_EOF || p->out.len == MC_PIPE_ERROR_READ)
             break;
 
@@ -171,8 +171,8 @@ clipboard_file_from_ext_clip (const gchar *event_group_name, const gchar *event_
 
 /* event callback */
 gboolean
-clipboard_text_to_file (const gchar *event_group_name, const gchar *event_name,
-                        gpointer init_data, gpointer data)
+clipboard_text_to_file (const gchar *event_group_name, const gchar *event_name, gpointer init_data,
+                        gpointer data)
 {
     int file;
     vfs_path_t *fname_vpath = NULL;
@@ -250,7 +250,7 @@ clipboard_text_from_file (const gchar *event_group_name, const gchar *event_name
             }
             else
             {
-                /* remove \n on EOL */
+                // remove \n on EOL
                 char *tmp;
 
                 tmp = g_strconcat (*(event_data->text), " ", buf, (char *) NULL);

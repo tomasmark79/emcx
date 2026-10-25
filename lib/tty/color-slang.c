@@ -1,7 +1,7 @@
 /*
    Color setup for S_Lang screen library
 
-   Copyright (C) 1994-2025
+   Copyright (C) 1994-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -21,7 +21,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 /** \file color-slang.c
@@ -33,13 +33,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>          /* size_t */
+#include <sys/types.h>  // size_t
 
 #include "lib/global.h"
-#include "lib/util.h"           /* whitespace() */
+#include "lib/util.h"  // whitespace()
 
+#include "tty.h"
 #include "tty-slang.h"
-#include "color.h"              /* variables */
+#include "color.h"  // variables
 #include "color-internal.h"
 
 /*** global variables ****************************************************************************/
@@ -61,7 +62,10 @@ has_colors (gboolean disable, gboolean force)
 {
     mc_tty_color_disable = disable;
 
-    if (force || (getenv ("COLORTERM") != NULL))
+    // S-Lang enables color if the setaf/setab/setf/setb terminfo capabilities are set or
+    // the COLORTERM environment variable is set
+
+    if (force)
         SLtt_Use_Ansi_Colors = 1;
 
     if (!mc_tty_color_disable)
@@ -70,7 +74,7 @@ has_colors (gboolean disable, gboolean force)
         const size_t len = strlen (terminal);
         char *cts = mc_global.tty.color_terminal_string;
 
-        /* check mc_global.tty.color_terminal_string */
+        // check mc_global.tty.color_terminal_string
         while (*cts != '\0')
         {
             char *s;
@@ -97,30 +101,6 @@ has_colors (gboolean disable, gboolean force)
 }
 
 /* --------------------------------------------------------------------------------------------- */
-
-static void
-mc_tty_color_pair_init_special (tty_color_lib_pair_t *mc_color_pair,
-                                const char *fg1, const char *bg1,
-                                const char *fg2, const char *bg2, SLtt_Char_Type mask)
-{
-    if (SLtt_Use_Ansi_Colors != 0)
-    {
-        if (!mc_tty_color_disable)
-        {
-            SLtt_set_color (mc_color_pair->pair_index, (char *) "", (char *) fg1, (char *) bg1);
-        }
-        else
-        {
-            SLtt_set_color (mc_color_pair->pair_index, (char *) "", (char *) fg2, (char *) bg2);
-        }
-    }
-    else
-    {
-        SLtt_set_mono (mc_color_pair->pair_index, NULL, mask);
-    }
-}
-
-/* --------------------------------------------------------------------------------------------- */
 /*** public functions ****************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
@@ -132,6 +112,10 @@ tty_color_init_lib (gboolean disable, gboolean force)
     if (has_colors (disable, force) && !disable)
     {
         use_colors = TRUE;
+
+        // Extended color mode detection routines must first be called before loading any skin
+        tty_use_256colors (NULL);
+        tty_use_truecolors (NULL);
     }
 }
 
@@ -147,32 +131,15 @@ tty_color_deinit_lib (void)
 void
 tty_color_try_alloc_lib_pair (tty_color_lib_pair_t *mc_color_pair)
 {
-    if (mc_color_pair->fg <= (int) SPEC_A_REVERSE)
-    {
-        switch (mc_color_pair->fg)
-        {
-        case SPEC_A_REVERSE:
-            mc_tty_color_pair_init_special (mc_color_pair,
-                                            "black", "white", "black", "lightgray", SLTT_REV_MASK);
-            break;
-        case SPEC_A_BOLD:
-            mc_tty_color_pair_init_special (mc_color_pair,
-                                            "white", "black", "white", "black", SLTT_BOLD_MASK);
-            break;
-        case SPEC_A_BOLD_REVERSE:
-            mc_tty_color_pair_init_special (mc_color_pair,
-                                            "white", "white",
-                                            "white", "white", SLTT_BOLD_MASK | SLTT_REV_MASK);
-            break;
-        case SPEC_A_UNDERLINE:
-            mc_tty_color_pair_init_special (mc_color_pair,
-                                            "white", "black", "white", "black", SLTT_ULINE_MASK);
-            break;
-        default:
-            break;
-        }
-    }
-    else
+    /*
+     * According to the S-Lang Library C Programmer's Guide (v2.3.0)
+     * (https://www.jedsoft.org/slang/doc/pdf/cslang.pdf), §7.4.4:
+     *
+     * "[for SLtt_set_color] When the SLtt_Use_Ansi_Colors variable is zero, all objects with
+     * numbers greater than one will be displayed in inverse video." Footnote: "This behavior can be
+     * modifed by using the SLtt_set_mono function call."
+     */
+    if (SLtt_Use_Ansi_Colors)
     {
         const char *fg, *bg;
 
@@ -181,6 +148,8 @@ tty_color_try_alloc_lib_pair (tty_color_lib_pair_t *mc_color_pair)
         SLtt_set_color (mc_color_pair->pair_index, (char *) "", (char *) fg, (char *) bg);
         SLtt_add_color_attribute (mc_color_pair->pair_index, mc_color_pair->attr);
     }
+    else
+        SLtt_set_mono (mc_color_pair->pair_index, NULL, mc_color_pair->attr);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -188,18 +157,8 @@ tty_color_try_alloc_lib_pair (tty_color_lib_pair_t *mc_color_pair)
 void
 tty_setcolor (int color)
 {
+    color = tty_maybe_map_color (color);
     SLsmg_set_color (color);
-}
-
-/* --------------------------------------------------------------------------------------------- */
-/**
- * Set colorpair by index, don't interpret S-Lang "emulated attributes"
- */
-
-void
-tty_lowlevel_setcolor (int color)
-{
-    SLsmg_set_color (color & 0x7F);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -215,15 +174,27 @@ tty_set_normal_attrs (void)
 gboolean
 tty_use_256colors (GError **error)
 {
-    gboolean ret;
+    int colors, overlay_colors;
 
-    ret = (SLtt_Use_Ansi_Colors && SLtt_tgetnum ((char *) "Co") == 256);
+    colors = tty_tigetnum ("colors", "Co");
+    overlay_colors = tty_tigetnum ("CO", NULL);
 
-    if (!ret)
-        g_set_error (error, MC_ERROR, -1,
-                     _("Your terminal doesn't even seem to support 256 colors."));
+    if (SLtt_Use_Ansi_Colors && (colors == 256 || (colors > 256 && overlay_colors == 256)))
+        return TRUE;
 
-    return ret;
+    if (tty_use_truecolors (NULL))
+    {
+        need_convert_256color = TRUE;
+        return TRUE;
+    }
+
+    g_set_error (error, MC_ERROR, -1,
+                 _ ("\nIf your terminal supports 256 colors, you need to set your TERM\n"
+                    "environment variable to match your terminal, perhaps using\n"
+                    "a *-256color or *-direct256 variant. Use the 'toe -a'\n"
+                    "command to list all available variants on your system.\n"));
+
+    return FALSE;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -235,26 +206,42 @@ tty_use_truecolors (GError **error)
 
     /* True color is supported since slang-2.3.1 on 64-bit machines,
        and expected to be supported from slang-3 on 32-bit machines:
-       http://lists.jedsoft.org/lists/slang-users/2016/0000014.html.
+       https://lists.jedsoft.org/lists/slang-users/2016/0000014.html
        Check for sizeof (long) being 8, exactly as slang does. */
     if (SLang_Version < 20301 || (sizeof (long) != 8 && SLang_Version < 30000))
     {
-        g_set_error (error, MC_ERROR, -1, _("True color not supported in this slang version."));
+        g_set_error (error, MC_ERROR, -1, _ ("True color not supported in this slang version."));
         return FALSE;
     }
 
     /* Duplicate slang's check so that we can pop up an error message
        rather than silently use wrong colors. */
     colorterm = getenv ("COLORTERM");
-    if (colorterm == NULL
-        || (strcmp (colorterm, "truecolor") != 0 && strcmp (colorterm, "24bit") != 0))
+    if (!((tty_tigetflag ("RGB", NULL) && tty_tigetnum ("colors", "Co") == COLORS_TRUECOLOR)
+          || (colorterm != NULL
+              && (strcmp (colorterm, "truecolor") == 0 || strcmp (colorterm, "24bit") == 0))))
     {
         g_set_error (error, MC_ERROR, -1,
-                     _("Set COLORTERM=truecolor if your terminal really supports true colors."));
+                     _ ("\nIf your terminal supports true colors, you need to set your TERM\n"
+                        "environment variable to a *-direct256, *-direct16, or *-direct variant.\n"
+                        "Use the 'toe -a' command to list all available variants on your system.\n"
+                        "Alternatively, you can set COLORTERM=truecolor.\n"));
         return FALSE;
     }
 
     return TRUE;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+void
+tty_colorize_area (int y, int x, int rows, int cols, int color)
+{
+    if (use_colors)
+    {
+        color = tty_maybe_map_color (color);
+        SLsmg_set_color_in_region (color, y, x, rows, cols);
+    }
 }
 
 /* --------------------------------------------------------------------------------------------- */

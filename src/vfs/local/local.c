@@ -1,7 +1,7 @@
 /*
    Virtual File System: local file system.
 
-   Copyright (C) 1995-2025
+   Copyright (C) 1995-2026
    Free Software Foundation, Inc.
 
    This file is part of the Midnight Commander.
@@ -17,7 +17,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 /**
@@ -33,12 +33,12 @@
 #include <stdio.h>
 #include <string.h>
 #ifdef ENABLE_EXT2FS_ATTR
-#include <e2p/e2p.h>            /* fgetflags(), fsetflags() */
+#include <e2p/e2p.h>  // fgetflags(), fsetflags()
 #endif
 
 #include "lib/global.h"
 
-#include "lib/vfs/xdirentry.h"  /* vfs_s_subclass */
+#include "lib/vfs/xdirentry.h"  // vfs_s_subclass
 #include "lib/vfs/utilvfs.h"
 
 #include "local.h"
@@ -70,7 +70,7 @@ local_open (const vfs_path_t *vpath, int flags, mode_t mode)
     path = vfs_path_get_last_path_str (vpath);
     fd = open (path, NO_LINEAR (flags), mode);
     if (fd == -1)
-        return 0;
+        return NULL;
 
     local_info = g_new (int, 1);
     *local_info = fd;
@@ -83,22 +83,38 @@ local_open (const vfs_path_t *vpath, int flags, mode_t mode)
 static void *
 local_opendir (const vfs_path_t *vpath)
 {
-    DIR **local_info;
     DIR *dir = NULL;
-    const char *path;
 
-    path = vfs_path_get_last_path_str (vpath);
+    const char *path = vfs_path_get_last_path_str (vpath);
 
-    /* On Linux >= 5.1, MC sometimes shows empty directories on mounted CIFS shares.
-     * Rereading directory restores the directory content.
+    /* According to POSIX, `opendir` and `readdir` can't return EINTR (unlike `closedir`).
      *
-     * Reopen directory, if first readdir() returns NULL and errno == EINTR.
+     * Unfortunately, in practice, at least `readdir` is known to return EINTR on Linux >= 5.1 on
+     * networked filesystems such as CIFS. Networked FUSE-based systems appear to be affected as
+     * well. What's worse is that when you retry `readdir`, the file list still comes out empty.
+     *
+     * So our only option seems to be to try `readdir` immediately after `opendir` and reopen the
+     * directory if it failed with EINTR, which usually leads to correct file listing, or use
+     * `rewinddir` otherwise, even if `readdir` failed, since FreeBSD and macOS may have advanced
+     * the stream anyway.
+     *
+     * However, this has caused problems on FUSE-based systems that do not properly implement
+     * `rewinddir` in the past. No silver bullet...
      */
     while (dir == NULL)
     {
         dir = opendir (path);
         if (dir == NULL)
+        {
+            // Unlike readdir(), opendir() always sets errno on failure, so no reset is needed
+            if (errno == EINTR)
+                continue;
+
             return NULL;
+        }
+
+        // Reset errno before readdir to avoid reading a stale EINTR (#5156)
+        errno = 0;
 
         if (readdir (dir) == NULL && errno == EINTR)
         {
@@ -109,7 +125,7 @@ local_opendir (const vfs_path_t *vpath)
             rewinddir (dir);
     }
 
-    local_info = (DIR **) g_new (DIR *, 1);
+    DIR **local_info = (DIR **) g_new (DIR *, 1);
     *local_info = dir;
 
     return local_info;
@@ -121,10 +137,28 @@ static struct vfs_dirent *
 local_readdir (void *data)
 {
     struct dirent *d;
+    unsigned char type;
 
-    d = readdir (*(DIR **) data);
+    // Retry if interrupted, resetting errno to avoid reading a stale EINTR (#5156). FreeBSD and
+    // macOS may lose the entries read before the interruption, but rewinding would repeat the
+    // ones already returned.
+    do
+    {
+        errno = 0;
+        d = readdir (*(DIR **) data);
+    }
+    while (d == NULL && errno == EINTR);
 
-    return (d != NULL ? vfs_dirent_init (NULL, d->d_name, d->d_ino) : NULL);
+    if (d == NULL)
+        return NULL;
+
+#ifdef HAVE_STRUCT_DIRENT_D_TYPE
+    type = d->d_type;
+#else
+    type = DT_UNKNOWN;
+#endif
+
+    return vfs_dirent_init (NULL, d->d_name, d->d_ino, type);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -211,7 +245,7 @@ local_fsetflags (const vfs_path_t *vpath, unsigned long flags)
     return fsetflags (path, flags);
 }
 
-#endif /* ENABLE_EXT2FS_ATTR */
+#endif
 
 /* --------------------------------------------------------------------------------------------- */
 
@@ -380,7 +414,7 @@ local_which (struct vfs_class *me, const char *path)
     (void) me;
     (void) path;
 
-    return 0;                   /* Every path which other systems do not like is expected to be ours */
+    return 0;  // Every path which other systems do not like is expected to be ours
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -473,7 +507,7 @@ local_nothingisopen (vfsid id)
 void
 vfs_init_localfs (void)
 {
-    /* NULLize vfs_s_subclass members */
+    // NULLize vfs_s_subclass members
     memset (&local_subclass, 0, sizeof (local_subclass));
 
     vfs_init_class (vfs_local_ops, "localfs", VFSF_LOCAL, NULL);

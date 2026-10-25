@@ -1,7 +1,7 @@
 /*
    Interface to the terminal controlling library.
 
-   Copyright (C) 2005-2025
+   Copyright (C) 2005-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -21,7 +21,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 /** \file tty.c
@@ -34,7 +34,7 @@
 #include <signal.h>
 #include <stdarg.h>
 #include <stdlib.h>
-#include <string.h>             /* memset() */
+#include <string.h>  // memset()
 
 #ifdef HAVE_SYS_SELECT_H
 #include <sys/select.h>
@@ -42,7 +42,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #endif
-#include <unistd.h>             /* exit() */
+#include <unistd.h>  // exit()
 
 #ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
@@ -57,13 +57,14 @@
 
 #include "tty.h"
 #include "tty-internal.h"
-#include "color.h"              /* tty_set_normal_attrs() */
-#include "mouse.h"              /* use_mouse_p */
+#include "color-internal.h"
+#include "color.h"  // tty_set_normal_attrs()
+#include "mouse.h"  // use_mouse_p
 #include "win.h"
 
 /*** global variables ****************************************************************************/
 
-int mc_tty_frm[MC_TTY_FRM_MAX];
+mc_tty_char_t mc_tty_frm[MC_TTY_FRM_MAX];
 
 /*** file scope macro definitions ****************************************************************/
 
@@ -96,44 +97,52 @@ sigintr_handler (int signo)
  * @param force_xterm Set forced the XTerm type
  *
  * @return true if @param force_xterm is true or value of $TERM is one of following:
- *         term*
+ *         alacritty*
+ *         contour*
+ *         dtterm
+ *         Eterm
+ *         foot*
  *         konsole*
  *         rxvt*
- *         Eterm
- *         dtterm
- *         alacritty*
- *         foot*
  *         screen*
+ *         term*
  *         tmux*
- *         contour*
  */
 gboolean
-tty_check_term (gboolean force_xterm)
+tty_check_xterm_compat (const gboolean force_xterm)
 {
-    const char *termvalue;
+    static const char *xterm_compatible_terminals[] = {
+        "alacritty",  //
+        "contour",    //
+        "dtterm",     //
+        "Eterm",      //
+        "foot",       //
+        "konsole",    //
+        "rxvt",       //
+        "screen",     //
+        "tmux",       //
+        "xterm",      //
+        NULL,
+    };
 
-    termvalue = getenv ("TERM");
+    const char *termvalue = getenv ("TERM");
     if (termvalue == NULL || *termvalue == '\0')
     {
-        fputs (_("The TERM environment variable is unset!\n"), stderr);
-        exit (EXIT_FAILURE);
+        fputs (_ ("The TERM environment variable is unset!\n"), stderr);
+        my_exit (EXIT_FAILURE);
+        // my_exit() must terminate this function. Required for test_tty_check_term_unset().
+        return FALSE;
     }
 
-    /* *INDENT-OFF* */
-    return force_xterm
-        || strncmp (termvalue, "xterm", 5) == 0
-        || strncmp (termvalue, "konsole", 7) == 0
-        || strncmp (termvalue, "rxvt", 4) == 0
-        || strcmp (termvalue, "Eterm") == 0
-        || strcmp (termvalue, "dtterm") == 0
-        || strncmp (termvalue, "alacritty", 9) == 0
-        || strncmp (termvalue, "foot", 4) == 0
-        || strncmp (termvalue, "screen", 6) == 0
-        || strncmp (termvalue, "tmux", 4) == 0
-        || strncmp (termvalue, "contour", 7) == 0;
-    /* *INDENT-ON* */
-}
+    if (force_xterm)
+        return TRUE;
 
+    for (const char **p = xterm_compatible_terminals; *p != NULL; p++)
+        if (strncmp (termvalue, *p, strlen (*p)) == 0)
+            return TRUE;
+
+    return FALSE;
+}
 /* --------------------------------------------------------------------------------------------- */
 
 extern void
@@ -146,7 +155,7 @@ tty_start_interrupt_key (void)
     sigemptyset (&act.sa_mask);
 #ifdef SA_RESTART
     act.sa_flags = SA_RESTART;
-#endif /* SA_RESTART */
+#endif
     my_sigaction (SIGINT, &act, NULL);
 }
 
@@ -195,10 +204,8 @@ gboolean
 tty_got_winch (void)
 {
     fd_set fdset;
-    /* *INDENT-OFF* */
-    /* instant timeout */
+    // instant timeout
     struct timeval timeout = { .tv_sec = 0, .tv_usec = 0 };
-    /* *INDENT-ON* */
     int ok;
 
     FD_ZERO (&fdset);
@@ -207,7 +214,7 @@ tty_got_winch (void)
     while ((ok = select (sigwinch_pipe[0] + 1, &fdset, NULL, NULL, &timeout)) < 0)
         if (errno != EINTR)
         {
-            perror (_("Cannot check SIGWINCH pipe"));
+            perror (_ ("Cannot check SIGWINCH pipe"));
             exit (EXIT_FAILURE);
         }
 
@@ -216,20 +223,27 @@ tty_got_winch (void)
 
 /* --------------------------------------------------------------------------------------------- */
 
-void
+gboolean
 tty_flush_winch (void)
 {
     ssize_t n;
+    gboolean ret = FALSE;
 
-    /* merge all SIGWINCH events raised to this moment */
+    // merge all SIGWINCH events raised to this moment
     do
     {
         char x[16];
 
-        /* read multiple events at a time  */
+        // read multiple events at a time
         n = read (sigwinch_pipe[0], &x, sizeof (x));
+
+        // at least one SIGWINCH came
+        if (n > 0)
+            ret = TRUE;
     }
     while (n > 0 || (n == -1 && errno == EINTR));
+
+    return ret;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -237,7 +251,7 @@ tty_flush_winch (void)
 void
 tty_print_one_hline (gboolean single)
 {
-    tty_print_alt_char (ACS_HLINE, single);
+    tty_print_char (mc_tty_frm[single ? MC_TTY_FRM_HORIZ : MC_TTY_FRM_DHORIZ]);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -245,7 +259,7 @@ tty_print_one_hline (gboolean single)
 void
 tty_print_one_vline (gboolean single)
 {
-    tty_print_alt_char (ACS_VLINE, single);
+    tty_print_char (mc_tty_frm[single ? MC_TTY_FRM_VERT : MC_TTY_FRM_DVERT]);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -269,13 +283,13 @@ tty_draw_box (int y, int x, int ys, int xs, gboolean single)
     tty_draw_hline (y, x, mc_tty_frm[single ? MC_TTY_FRM_HORIZ : MC_TTY_FRM_DHORIZ], xs);
     tty_draw_hline (y2, x, mc_tty_frm[single ? MC_TTY_FRM_HORIZ : MC_TTY_FRM_DHORIZ], xs);
     tty_gotoyx (y, x);
-    tty_print_alt_char (ACS_ULCORNER, single);
+    tty_print_char (mc_tty_frm[single ? MC_TTY_FRM_LEFTTOP : MC_TTY_FRM_DLEFTTOP]);
     tty_gotoyx (y2, x);
-    tty_print_alt_char (ACS_LLCORNER, single);
+    tty_print_char (mc_tty_frm[single ? MC_TTY_FRM_LEFTBOTTOM : MC_TTY_FRM_DLEFTBOTTOM]);
     tty_gotoyx (y, x2);
-    tty_print_alt_char (ACS_URCORNER, single);
+    tty_print_char (mc_tty_frm[single ? MC_TTY_FRM_RIGHTTOP : MC_TTY_FRM_DRIGHTTOP]);
     tty_gotoyx (y2, x2);
-    tty_print_alt_char (ACS_LRCORNER, single);
+    tty_print_char (mc_tty_frm[single ? MC_TTY_FRM_RIGHTBOTTOM : MC_TTY_FRM_DRIGHTBOTTOM]);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -283,9 +297,9 @@ tty_draw_box (int y, int x, int ys, int xs, gboolean single)
 void
 tty_draw_box_shadow (int y, int x, int rows, int cols, int shadow_color)
 {
-    /* draw right shadow */
+    // draw right shadow
     tty_colorize_area (y + 1, x + cols, rows - 1, 2, shadow_color);
-    /* draw bottom shadow */
+    // draw bottom shadow
     tty_colorize_area (y + rows, x + 2, 1, cols, shadow_color);
 }
 
@@ -327,10 +341,10 @@ tty_resize (int fd)
 #if defined TIOCSWINSZ
     struct winsize tty_size;
 
-    tty_size.ws_row = LINES;
-    tty_size.ws_col = COLS;
-    tty_size.ws_xpixel = tty_size.ws_ypixel = 0;
-
+    /* Make sure to copy to the inner terminal all the fields, even the ones we don't care about,
+     * including ws_xpixel and ws_ypixel. */
+    if (ioctl (STDOUT_FILENO, TIOCGWINSZ, &tty_size) == -1)
+        return -1;
     return ioctl (fd, TIOCSWINSZ, &tty_size);
 #else
     return 0;
@@ -357,19 +371,12 @@ tty_init_xterm_support (gboolean is_xterm)
 
     termvalue = getenv ("TERM");
 
-    /* Check mouse and ca capabilities */
+    // Check mouse and ca capabilities
     /* terminfo/termcap structures have been already initialized,
        in slang_init() or/and init_curses()  */
-    /* Check terminfo at first, then check termcap */
-    xmouse_seq = tty_tgetstr ("kmous");
-    if (xmouse_seq == NULL)
-        xmouse_seq = tty_tgetstr ("Km");
-    smcup = tty_tgetstr ("smcup");
-    if (smcup == NULL)
-        smcup = tty_tgetstr ("ti");
-    rmcup = tty_tgetstr ("rmcup");
-    if (rmcup == NULL)
-        rmcup = tty_tgetstr ("te");
+    xmouse_seq = tty_tigetstr ("kmous", "Km");
+    smcup = tty_tigetstr ("smcup", "ti");
+    rmcup = tty_tigetstr ("rmcup", "te");
 
     if (strcmp (termvalue, "cygwin") == 0)
     {
@@ -379,22 +386,22 @@ tty_init_xterm_support (gboolean is_xterm)
 
     if (is_xterm)
     {
-        /* Default to the standard xterm sequence */
+        // Default to the standard xterm sequence
         if (xmouse_seq == NULL)
             xmouse_seq = ESC_STR "[M";
 
-        /* Enable mouse unless explicitly disabled by --nomouse */
+        // Enable mouse unless explicitly disabled by --nomouse
         if (use_mouse_p != MOUSE_DISABLED)
         {
             if (mc_global.tty.old_mouse)
                 use_mouse_p = MOUSE_XTERM_NORMAL_TRACKING;
             else
             {
-                /* FIXME: this dirty hack to set supported type of tracking the mouse */
+                // FIXME: this dirty hack to set supported type of tracking the mouse
                 const char *color_term = getenv ("COLORTERM");
-                if (strncmp (termvalue, "rxvt", 4) == 0 ||
-                    (color_term != NULL && strncmp (color_term, "rxvt", 4) == 0) ||
-                    strcmp (termvalue, "Eterm") == 0)
+                if (strncmp (termvalue, "rxvt", 4) == 0
+                    || (color_term != NULL && strncmp (color_term, "rxvt", 4) == 0)
+                    || strcmp (termvalue, "Eterm") == 0)
                     use_mouse_p = MOUSE_XTERM_NORMAL_TRACKING;
                 else
                     use_mouse_p = MOUSE_XTERM_BUTTON_EVENT_TRACKING;
@@ -408,7 +415,10 @@ tty_init_xterm_support (gboolean is_xterm)
     if (xmouse_seq != NULL)
     {
         if (strcmp (xmouse_seq, ESC_STR "[<") == 0)
+        {
             xmouse_seq = ESC_STR "[M";
+            ncurses_key_mouse_means_extended = TRUE;
+        }
 
         xmouse_extended_seq = ESC_STR "[<";
     }

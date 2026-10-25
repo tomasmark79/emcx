@@ -1,33 +1,29 @@
 PACKAGE_STRING = "/lib"
 
-SUBDIRS = . mcconfig search strutil vfs widget
+SUBDIRS = . mcconfig search strutil vfs widget skin
 
 AM_CPPFLAGS = $(GLIB_CFLAGS) -I$(top_srcdir) @CHECK_CFLAGS@
 
-LIBS = @CHECK_LIBS@ \
-	$(top_builddir)/lib/libmc.la
-
-if ENABLE_MCLIB
-LIBS += $(GLIB_LIBS) \
-	@E2P_LIBS@
-endif
+LDADD = \
+	$(top_builddir)/lib/libmc.la \
+	@CHECK_LIBS@
 
 EXTRA_DIST = utilunix__my_system-common.c
 
 TESTS = \
 	library_independ \
 	mc_build_filename \
+	mc_realpath \
 	name_quote \
 	serialize \
+	terminal \
+	tty \
+	util__keycode_to_cntrl \
 	utilunix__mc_pstream_get_string \
 	utilunix__my_system_fork_fail \
 	utilunix__my_system_fork_child_shell \
 	utilunix__my_system_fork_child \
 	x_basename
-
-if CHARSET
-TESTS += mc_realpath
-endif
 
 check_PROGRAMS = $(TESTS)
 
@@ -46,6 +42,15 @@ name_quote_SOURCES = \
 serialize_SOURCES = \
 	serialize.c
 
+terminal_SOURCES = \
+	terminal.c
+
+tty_SOURCES = \
+	tty.c
+
+util__keycode_to_cntrl_SOURCES = \
+	util__keycode_to_cntrl.c
+
 utilunix__mc_pstream_get_string_SOURCES = \
 	utilunix__mc_pstream_get_string.c
 
@@ -60,4 +65,3 @@ utilunix__my_system_fork_child_SOURCES = \
 
 x_basename_SOURCES = \
 	x_basename.c
-

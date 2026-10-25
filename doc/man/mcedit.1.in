@@ -25,16 +25,13 @@ sign and the number). Several line numbers are allowed but only the last one
 will be used, and it will be applied to the first file only.
 .TP
 .I "\-b"
-Force black and white display.
+Force black and white display. Setting the
+.B NO_COLOR
+environment variable to a nonempty value has the same effect.
 .TP
 .I "\-c"
 Force ANSI color mode on terminals that don't seem to have color
 support.
-.TP
-.I "\-C <keyword>=<fgcolor>,<bgcolor>,<attributes>:<keyword>= ..."
-Specify a different color set.  See the
-.B Colors
-section in mc(1) for more information.
 .TP
 .I "\-d"
 Disable mouse support.
@@ -42,6 +39,11 @@ Disable mouse support.
 .I "\-f"
 Display the compiled\-in search path for GNU Midnight Commander data
 files.
+.TP
+.I \-S arg, \-\-skin=arg
+Specify a name of skin in the command line.  See the
+.B Skins
+section in mc(1) for more information.
 .TP
 .I "\-t"
 Force using termcap database instead of terminfo.  This option is only
@@ -181,6 +183,13 @@ The currently tagged files.
 .I %T
 The tagged files in the unselected panel.
 .TP
+.IR %v " and " %V
+Similar to the
+.I %t
+and
+.I %T
+, but expands to full names of tagged files.
+.TP
 .IR %u " and " %U
 Similar to the
 .I %t
@@ -280,7 +289,7 @@ within a C comment.
 A trivial C programming section might look like this:
 .PP
 .nf
-file .\\*\\\\.c C\\sProgram\\sFile (#include|/\\\\\\*)
+file .\e*\e\e.c C\esProgram\esFile (#include|/\e\e\e*)
 
 wholechars abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_
 
@@ -301,18 +310,18 @@ context default
   keyword         '*'      green
 
 # C comments
-context /\\* \\*/ comment
+context /\e* \e*/ comment
 
 # C preprocessor directives
-context linestart # \\n red
-  keyword  \\\\\\n  brightred
+context linestart # \en red
+  keyword  \e\e\en  brightred
 
 # C string constants
 context " " green
   keyword  %d    brightgreen
   keyword  %s    brightgreen
   keyword  %c    brightgreen
-  keyword  \\\\"   brightgreen
+  keyword  \e\e"   brightgreen
 .fi
 .PP
 Each context starts with a line of the form:
@@ -376,9 +385,9 @@ Each rule is a line of the form:
 .RI [ attributes ]
 .PP
 Context or keyword strings are interpreted, so that you can include tabs
-and spaces with the sequences \\t and \\s.  Newlines and backslashes are
-specified with \\n and \\\\ respectively.  Since whitespace is used as a
-separator, it may not be used as is.  Also, \\* must be used to specify
+and spaces with the sequences \et and \es.  Newlines and backslashes are
+specified with \en and \e\e respectively.  Since whitespace is used as a
+separator, it may not be used as is.  Also, \e* must be used to specify
 an asterisk.  The * itself is a wildcard that matches any length of
 characters.  For example,
 .PP
@@ -400,7 +409,7 @@ or first character.
 Important to note is the line
 .PP
 .nf
-  keyword  \\\\\\n  brightgreen
+  keyword  \e\e\en  brightgreen
 .fi
 .PP
 This line defines a keyword containing the backslash and newline
@@ -459,19 +468,38 @@ can do rather than try to do things that this implementation cannot deal
 with.  Also remember that the aim of syntax highlighting is to make
 programming less prone to error, not to make code look pretty.
 .PP
-The syntax highlighting can be toggled using Ctrl\-s shortcut.
-.SH COLORS
-The default colors may be changed by appending to the
-.B MC_COLOR_TABLE
-environment variable.  Foreground and background colors pairs may be
-specified for example with:
+Special sequences interpreted by
+.B mcedit
+are listed below:
 .PP
 .nf
-MC_COLOR_TABLE="$MC_COLOR_TABLE:\\
-editnormal=lightgray,black:\\
-editbold=yellow,black:\\
-editmarked=black,cyan"
+mcedit    PCRE2 equivalent
+
+[a\-c]     \(rs[a\-c\(rs]        ([ ] has no special meaning)
+\(rs[a\-c\(rs]   (a|\-|c)*       ( \-  has no special meaning)
+{a\-c}     \(rs{a\-c\(rs}        ({ } has no special meaning)
+\(rs{a\-c\(rs}   [ac\-]          ( \-  has no special meaning)
+\&.         \(rs.
+(         \(rs(
+)         \(rs)
+*         .*
++         [^ \(rst]*
+?         \(rs?
+\(rs*        \(rs*
+\(rs+        \(rs+
+^         \(rs^
+$         \(rs$
+|         \(rs|
+\(rss        [ ]            (space only)
+\(rst        \(rst
+\(rsn        \(rsn
 .fi
+.PP
+The syntax highlighting can be toggled using Ctrl\-s shortcut.
+Pressing C\-s twice effectively reloads the syntax file, so you
+don't have to exit the editor, or
+.B mc
+itself, to test your syntax modifications.
 .SH OPTIONS
 Most options can be set from Options dialog box.  See the
 .B Options
@@ -602,17 +630,11 @@ in the [Misc] section.
 Set of characters to stop paragraph formatting. If one of those characters
 is found in the beginning of line, that line and all following lines of paragraph
 will be untouched. Default value is
-"\fB-\fR\fB+\fR\fB*\fR\fB\\\fR\fB,\fR\fB.\fR\fB;\fR\fB:\fR\fB&\fR\fB>\fR".
+"\fB-\fR\fB+\fR\fB*\fR\fB\e\fR\fB,\fR\fB.\fR\fB;\fR\fB:\fR\fB&\fR\fB>\fR".
 .TP
 .I editor_state_full_filename
 Show full path name in the status line. If disabled (default), only base name of the
 file is shown.
-.SH MISCELLANEOUS
-The editor also displays non\-us characters (160+).  When editing
-binary files, you should set
-.B display bits
-to 7 bits in Midnight Commander's options menu to keep the spacing
-clean.
 .SH FILES
 .I %pkgdatadir%/help/mc.hlp
 .IP
@@ -651,11 +673,12 @@ help of Midnight Commander for details on the License and the lack
 of warranty.
 .SH AVAILABILITY
 The latest version of this program can be found at
-http://ftp.midnight\-commander.org/.
+\X'tty: link https://ftp.osuosl.org/pub/midnightcommander/'https://ftp.osuosl.org/pub/midnightcommander/\X'tty: link' .
 .SH SEE ALSO
 cooledit(1), mc(1), gpm(1), terminfo(1), scanf(3).
 .SH AUTHORS
 Paul Sheer (psheer@obsidian.co.za) is the original author of
 Midnight Commander's internal editor.
 .SH BUGS
-Bugs should be reported to https://www.midnight\-commander.org/.
+Bugs should be reported to
+\X'tty: link https://github.com/MidnightCommander/mc/issues'https://github.com/MidnightCommander/mc/issues\X'tty: link' .

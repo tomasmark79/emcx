@@ -4,11 +4,8 @@ SUBDIRS = misc
 
 AM_CPPFLAGS = $(GLIB_CFLAGS) -I$(top_srcdir)
 
-LIBS = $(top_builddir)/lib/libmc.la
-
-if ENABLE_MCLIB
-LIBS += $(GLIB_LIBS)
-endif
+LDADD = \
+	$(top_builddir)/lib/libmc.la
 
 # Programs/scripts to build on 'make check'.
 check_PROGRAMS = mc_parse_ls_l
@@ -77,6 +74,12 @@ data_files_to_distribute = \
 	data/urar.v6,v5.env_vars \
 	data/urar.v6,v5.input \
 	data/urar.v6,v5.output \
+	data/usqfs.input \
+	data/usqfs.output \
+	data/uwim.README \
+	data/uwim.input \
+	data/uwim.output \
+	data/uwim.env_vars \
 	data/uzip.README \
 	data/uzip.with-zipinfo.env_vars \
 	data/uzip.with-zipinfo.input \

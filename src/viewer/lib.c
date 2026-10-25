@@ -2,7 +2,7 @@
    Internal file viewer for the Midnight Commander
    Common finctions (used from some other mcviewer functions)
 
-   Copyright (C) 1994-2025
+   Copyright (C) 1994-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -30,26 +30,23 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
 
-#include <string.h>             /* memset() */
+#include <string.h>  // memset()
 #include <sys/types.h>
 
 #include "lib/global.h"
 #include "lib/vfs/vfs.h"
 #include "lib/strutil.h"
-#include "lib/util.h"           /* save_file_position() */
+#include "lib/util.h"  // save_file_position()
 #include "lib/widget.h"
-#ifdef HAVE_CHARSET
 #include "lib/charsets.h"
-#endif
 
-#ifdef HAVE_CHARSET
 #include "src/selcodepage.h"
-#endif
+#include "src/util.h"  // file_error_message()
 
 #include "internal.h"
 
@@ -78,7 +75,7 @@ mcview_toggle_magic_mode (WView *view)
     mcview_altered_flags.magic = TRUE;
     view->mode_flags.magic = !view->mode_flags.magic;
 
-    /* reinit view */
+    // reinit view
     filename = g_strdup (vfs_path_as_str (view->filename_vpath));
     command = g_strdup (view->command);
     dir = view->dir;
@@ -161,7 +158,7 @@ mcview_init (WView *view)
     mcview_set_datasource_none (view);
 
     view->growbuf_in_use = FALSE;
-    /* leave the other growbuf fields uninitialized */
+    // leave the other growbuf fields uninitialized
 
     view->hexedit_lownibble = FALSE;
     view->locked = FALSE;
@@ -179,7 +176,7 @@ mcview_init (WView *view)
     view->cursor_row = 0;
     view->change_list = NULL;
 
-    /* {status,ruler,data}_area are left uninitialized */
+    // {status,ruler,data}_area are left uninitialized
 
     view->dirty = 0;
     view->dpy_bbar_dirty = TRUE;
@@ -203,7 +200,7 @@ mcview_init (WView *view)
 void
 mcview_done (WView *view)
 {
-    /* Save current file position */
+    // Save current file position
     if (mcview_remember_file_position && view->filename_vpath != NULL)
     {
         save_file_position (view->filename_vpath, -1, 0,
@@ -212,11 +209,11 @@ mcview_done (WView *view)
         view->saved_bookmarks = NULL;
     }
 
-    /* Write back the global viewer mode */
+    // Write back the global viewer mode
     mcview_global_flags = view->mode_flags;
 
-    /* Free memory used by the viewer */
-    /* view->widget needs no destructor */
+    // Free memory used by the viewer
+    // view->widget needs no destructor
     vfs_path_free (view->filename_vpath, TRUE);
     view->filename_vpath = NULL;
     vfs_path_free (view->workdir_vpath, TRUE);
@@ -224,7 +221,7 @@ mcview_done (WView *view)
     MC_PTR_FREE (view->command);
 
     mcview_close_datasource (view);
-    /* the growing buffer is freed with the datasource */
+    // the growing buffer is freed with the datasource
 
     if (view->coord_cache != NULL)
     {
@@ -248,7 +245,7 @@ mcview_done (WView *view)
 
     if (mc_global.mc_run_mode == MC_RUN_VIEWER && view->dir != NULL)
     {
-        /* mcviewer is the owner of file list */
+        // mcviewer is the owner of file list
         dir_list_free_list (view->dir);
         g_free (view->dir);
         g_free (view->dir_idx);
@@ -259,16 +256,14 @@ mcview_done (WView *view)
 
 /* --------------------------------------------------------------------------------------------- */
 
-#ifdef HAVE_CHARSET
 void
 mcview_set_codeset (WView *view)
 {
     const char *cp_id = NULL;
 
     view->utf8 = TRUE;
-    cp_id =
-        get_codepage_id (mc_global.source_codepage >=
-                         0 ? mc_global.source_codepage : mc_global.display_codepage);
+    cp_id = get_codepage_id (mc_global.source_codepage >= 0 ? mc_global.source_codepage
+                                                            : mc_global.display_codepage);
     if (cp_id != NULL)
     {
         GIConv conv;
@@ -292,17 +287,18 @@ mcview_select_encoding (WView *view)
     if (do_select_codepage ())
         mcview_set_codeset (view);
 }
-#endif /* HAVE_CHARSET */
 
 /* --------------------------------------------------------------------------------------------- */
 
 void
-mcview_show_error (WView *view, const char *msg)
+mcview_show_error (WView *view, const char *format, const char *filename)
 {
     if (mcview_is_in_panel (view))
-        mcview_set_datasource_string (view, msg);
+        mcview_set_datasource_string (view, filename);
+    else if (format != NULL)
+        file_error_message (format, filename);
     else
-        message (D_ERROR, MSG_ERROR, "%s", msg);
+        message (D_ERROR, MSG_ERROR, "%s", filename);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -379,25 +375,23 @@ mcview_eol (WView *view, off_t current)
 /* --------------------------------------------------------------------------------------------- */
 
 char *
-mcview_get_title (const WDialog *h, size_t len)
+mcview_get_title (const WDialog *h, const ssize_t width)
 {
     const WView *view;
     const char *modified;
     const char *file_label;
     const char *view_filename;
-    char *ret_str;
 
     view = (const WView *) widget_find_by_type (CONST_WIDGET (h), mcview_callback);
     modified = view->hexedit_mode && (view->change_list != NULL) ? "(*) " : "    ";
     view_filename = vfs_path_as_str (view->filename_vpath);
 
-    len -= 4;
+    const ssize_t width1 = width - 4;
 
     file_label = view_filename != NULL ? view_filename : view->command != NULL ? view->command : "";
-    file_label = str_term_trim (file_label, len - str_term_width1 (_("View: ")));
+    file_label = str_term_trim (file_label, width1 - str_term_width1 (_ ("View: ")));
 
-    ret_str = g_strconcat (_("View: "), modified, file_label, (char *) NULL);
-    return ret_str;
+    return g_strconcat (_ ("View: "), modified, file_label, (char *) NULL);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -416,7 +410,7 @@ mcview_calc_percent (WView *view, off_t p)
     filesize = mcview_get_filesize (view);
     if (view->mode_flags.hex && filesize > 0)
     {
-        /* p can't be beyond the last char, only over that. Compensate for this. */
+        // p can't be beyond the last char, only over that. Compensate for this.
         filesize--;
     }
 

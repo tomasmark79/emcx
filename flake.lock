@@ -1,5 +1,22 @@
 {
   "nodes": {
+    "mc-upstream": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1792861026,
+        "narHash": "sha256-GDZ3B3ZQfIfphez6ib4iWAe/wW6lOe0HxVEWas61LfQ=",
+        "owner": "MidnightCommander",
+        "repo": "mc",
+        "rev": "6cfdb0c10fc0a285ea1bd2efc4228637ecf6fb61",
+        "type": "github"
+      },
+      "original": {
+        "owner": "MidnightCommander",
+        "ref": "master",
+        "repo": "mc",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1790750587,
@@ -18,6 +35,7 @@
     },
     "root": {
       "inputs": {
+        "mc-upstream": "mc-upstream",
         "nixpkgs": "nixpkgs"
       }
     }

@@ -1,7 +1,7 @@
 /*
    Proxy functions for getting access to public variables into 'filemanager' module.
 
-   Copyright (C) 2015-2025
+   Copyright (C) 2015-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -20,22 +20,22 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
 
-#include <signal.h>             /* kill() */
+#include <signal.h>  // kill()
 #include <sys/types.h>
-#include <sys/wait.h>           /* waitpid() */
+#include <sys/wait.h>  // waitpid()
 
 #include "lib/global.h"
 
-#include "lib/vfs/vfs.h"        /* vfs_get_raw_current_dir() */
+#include "lib/vfs/vfs.h"  // vfs_get_raw_current_dir()
 
-#include "src/setup.h"          /* quit */
-#include "src/filemanager/filemanager.h"        /* current_panel */
-#include "src/consaver/cons.saver.h"    /* handle_console() */
+#include "src/setup.h"                    // quit
+#include "src/filemanager/filemanager.h"  // current_panel
+#include "src/consaver/cons.saver.h"      // handle_console()
 
 #include "internal.h"
 
@@ -60,7 +60,8 @@
 const vfs_path_t *
 subshell_get_cwd (void)
 {
-    if (mc_global.mc_run_mode == MC_RUN_FULL)
+    // Note: current_panel is NULL during subshell startup
+    if (mc_global.mc_run_mode == MC_RUN_FULL && current_panel != NULL)
         return current_panel->cwd_vpath;
 
     return vfs_get_raw_current_dir ();
@@ -81,17 +82,16 @@ subshell_handle_cons_saver (void)
     {
 
         if (WIFSTOPPED (status))
-            /* Someone has stopped cons.saver - restart it */
+            // Someone has stopped cons.saver - restart it
             kill (pid, SIGCONT);
         else
         {
-            /* cons.saver has died - disable console saving */
+            // cons.saver has died - disable console saving
             handle_console (CONSOLE_DONE);
             mc_global.tty.console_flag = '\0';
         }
-
     }
-#endif /* __linux__ */
+#endif
 }
 
 /* --------------------------------------------------------------------------------------------- */

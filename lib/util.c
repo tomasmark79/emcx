@@ -1,7 +1,7 @@
 /*
    Various utilities
 
-   Copyright (C) 1994-2025
+   Copyright (C) 1994-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -25,7 +25,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 /** \file lib/util.c
@@ -35,7 +35,7 @@
 #include <config.h>
 
 #include <ctype.h>
-#include <stddef.h>             /* ptrdiff_t */
+#include <stddef.h>  // ptrdiff_t
 #include <limits.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -51,24 +51,20 @@
 #include "lib/vfs/vfs.h"
 #include "lib/strutil.h"
 #include "lib/util.h"
+#include "lib/tty/key.h"  // KEY_M_CTRL
 
 /*** global variables ****************************************************************************/
 
 /*** file scope macro definitions ****************************************************************/
 
-#define ismode(n,m) ((n & m) == m)
+#define ismode(n, m) ((n & m) == m)
 
 /* Number of attempts to create a temporary file */
 #ifndef TMP_MAX
 #define TMP_MAX 16384
-#endif /* !TMP_MAX */
+#endif
 
 #define TMP_SUFFIX ".tmp"
-
-#define ASCII_A (0x40 + 1)
-#define ASCII_Z (0x40 + 26)
-#define ASCII_a (0x60 + 1)
-#define ASCII_z (0x60 + 26)
 
 /*** file scope type declarations ****************************************************************/
 
@@ -78,16 +74,6 @@
 
 /* --------------------------------------------------------------------------------------------- */
 /*** file scope functions ************************************************************************/
-/* --------------------------------------------------------------------------------------------- */
-
-#ifndef HAVE_CHARSET
-static inline int
-is_7bit_printable (unsigned char c)
-{
-    return (c > 31 && c < 127);
-}
-#endif
-
 /* --------------------------------------------------------------------------------------------- */
 
 static inline int
@@ -101,7 +87,7 @@ is_iso_printable (unsigned char c)
 static inline int
 is_8bit_printable (unsigned char c)
 {
-    /* "Full 8 bits output" doesn't work on xterm */
+    // "Full 8 bits output" doesn't work on xterm
     if (mc_global.tty.xterm_flag)
         return is_iso_printable (c);
 
@@ -163,7 +149,7 @@ resolve_symlinks (const vfs_path_t *vpath)
         canonicalize_pathname (buf);
         r = strchr (buf, '\0');
         if (*r == '\0' || !IS_PATH_SEP (r[-1]))
-            /* FIXME: this condition is always true because r points to the EOL */
+        // FIXME: this condition is always true because r points to the EOL
         {
             *r++ = PATH_SEP;
             *r = '\0';
@@ -178,7 +164,7 @@ resolve_symlinks (const vfs_path_t *vpath)
     else if (IS_PATH_SEP (r[-1]) && r != buf + 1)
         r[-1] = '\0';
 
-  ret:
+ret:
     g_free (buf2);
     g_free (p2);
     return buf;
@@ -207,15 +193,8 @@ mc_util_write_backup_content (const char *from_file_name, const char *to_file_na
     if (fwrite ((const void *) contents, 1, length, backup_fd) != length)
         ret1 = FALSE;
 
-    {
-        int ret2;
-
-        /* cppcheck-suppress redundantAssignment */
-        ret2 = fflush (backup_fd);
-        /* cppcheck-suppress redundantAssignment */
-        ret2 = fclose (backup_fd);
-        (void) ret2;
-    }
+    fflush (backup_fd);
+    fclose (backup_fd);
 
     g_free (contents);
     return ret1;
@@ -228,21 +207,7 @@ mc_util_write_backup_content (const char *from_file_name, const char *to_file_na
 int
 is_printable (int c)
 {
-    c &= 0xff;
-
-#ifdef HAVE_CHARSET
-    /* "Display bits" is ignored, since the user controls the output
-       by setting the output codepage */
-    return is_8bit_printable (c);
-#else
-    if (!mc_global.eight_bit_clean)
-        return is_7bit_printable (c);
-
-    if (mc_global.full_eight_bits)
-        return is_8bit_printable (c);
-
-    return is_iso_printable (c);
-#endif /* !HAVE_CHARSET */
+    return is_8bit_printable (c & 0xff);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -251,7 +216,7 @@ is_printable (int c)
  * line.  If quote_percent is TRUE, replace "%" with "%%" - the percent is
  * processed by the mc command line.
  */
-char *
+GString *
 name_quote (const char *s, gboolean quote_percent)
 {
     GString *ret;
@@ -305,37 +270,54 @@ name_quote (const char *s, gboolean quote_percent)
         default:
             break;
         }
+
         g_string_append_c (ret, *s);
     }
 
-    return g_string_free (ret, ret->len == 0);
+    if (ret->len != 0)
+        return ret;
+
+    g_string_free (ret, TRUE);
+    return NULL;
 }
 
 /* --------------------------------------------------------------------------------------------- */
 
-char *
+GString *
 fake_name_quote (const char *s, gboolean quote_percent)
 {
     (void) quote_percent;
 
-    return (s == NULL || *s == '\0' ? NULL : g_strdup (s));
+    return (s == NULL || *s == '\0' ? NULL : g_string_new (s));
 }
 
 /* --------------------------------------------------------------------------------------------- */
 /**
- * path_trunc() is the same as str_trunc() but
- * it deletes possible password from path for security
- * reasons.
+ * path_trunc() is the same as str_trunc() but it deletes possible password from path
+ * for security reasons.
+ *
+ * @param path file path to trancate
+ * @param width width (in characters) of truncation result. If negative, full path will be kept.
+ *
+ * @returns pointer to trancated path. It points to the internal static buffer, do not call
+            g_free() to free it.
  */
 
 const char *
-path_trunc (const char *path, size_t trunc_len)
+path_trunc (const char *path, const ssize_t width)
 {
     vfs_path_t *vpath;
     const char *ret;
 
     vpath = vfs_path_from_str_flags (path, VPF_STRIP_PASSWORD);
-    ret = str_trunc (vfs_path_as_str (vpath), trunc_len);
+
+    const char *p = vfs_path_as_str (vpath);
+
+    if (width < 0)
+        ret = str_trunc (p, -1);
+    else
+        ret = str_trunc (p, (size_t) width);
+
     vfs_path_free (vpath, TRUE);
 
     return ret;
@@ -348,22 +330,22 @@ size_trunc (uintmax_t size, gboolean use_si)
 {
     static char x[BUF_TINY];
     uintmax_t divisor = 1;
-    const char *xtra = _("B");
+    const char *xtra = _ ("B");
 
     if (size > 999999999UL)
     {
         divisor = use_si ? 1000 : 1024;
-        xtra = use_si ? _("kB") : _("KiB");
+        xtra = use_si ? _ ("kB") : _ ("KiB");
 
         if (size / divisor > 999999999UL)
         {
             divisor = use_si ? (1000 * 1000) : (1024 * 1024);
-            xtra = use_si ? _("MB") : _("MiB");
+            xtra = use_si ? _ ("MB") : _ ("MiB");
 
             if (size / divisor > 999999999UL)
             {
                 divisor = use_si ? (1000 * 1000 * 1000) : (1024 * 1024 * 1024);
-                xtra = use_si ? _("GB") : _("GiB");
+                xtra = use_si ? _ ("GB") : _ ("GiB");
             }
         }
     }
@@ -418,10 +400,9 @@ size_trunc_sep (uintmax_t size, gboolean use_si)
 void
 size_trunc_len (char *buffer, unsigned int len, uintmax_t size, int units, gboolean use_si)
 {
-    /* Avoid taking power for every file.  */
-    /* *INDENT-OFF* */
+    // Avoid taking power for every file.
     static const uintmax_t power10[] = {
-    /* we hope that size of uintmax_t is 4 bytes at least */
+        // we hope that size of uintmax_t is 4 bytes at least
         1ULL,
         10ULL,
         100ULL,
@@ -436,7 +417,7 @@ size_trunc_len (char *buffer, unsigned int len, uintmax_t size, int units, gbool
         4294967295
      */
 #if SIZEOF_UINTMAX_T == 8
-                     ,
+        ,
         10000000000ULL,
         100000000000ULL,
         1000000000000ULL,
@@ -446,18 +427,19 @@ size_trunc_len (char *buffer, unsigned int len, uintmax_t size, int units, gbool
         10000000000000000ULL,
         100000000000000000ULL,
         1000000000000000000ULL,
-        10000000000000000000ULL
+        10000000000000000000ULL,
     /* maximum value of uintmax_t (in case of 8 bytes) is
         18447644073710439615
      */
 #endif
     };
 
-    static const char *const suffix[] =
-        { "", "K", "M", "G", "T", "P", "E", "Z", "Y", "R", "Q", NULL };
-    static const char *const suffix_lc[] =
-        { "", "k", "m", "g", "t", "p", "e", "z", "y", "r", "q", NULL };
-    /* *INDENT-ON* */
+    static const char *const suffix[] = {
+        "", "K", "M", "G", "T", "P", "E", "Z", "Y", "R", "Q", NULL
+    };
+    static const char *const suffix_lc[] = {
+        "", "k", "m", "g", "t", "p", "e", "z", "y", "r", "q", NULL,
+    };
 
     static int sfx_last = -1;
 
@@ -475,11 +457,11 @@ size_trunc_len (char *buffer, unsigned int len, uintmax_t size, int units, gbool
     if (len == 0)
         len = 9;
 #if SIZEOF_UINTMAX_T == 8
-    /* 20 decimal digits are required to represent 8 bytes */
+    // 20 decimal digits are required to represent 8 bytes
     else if (len > 19)
         len = 19;
 #else
-    /* 10 decimal digits are required to represent 4 bytes */
+    // 10 decimal digits are required to represent 4 bytes
     else if (len > 9)
         len = 9;
 #endif
@@ -496,10 +478,10 @@ size_trunc_len (char *buffer, unsigned int len, uintmax_t size, int units, gbool
         {
             uintmax_t size_remain;
 
-            size_remain = ((size % 125) * 1024) / 1000; /* size mod 125, recalculated */
-            size /= 125;        /* 128/125 = 1024/1000 */
-            size *= 128;        /* This will convert size from multiple of 1024 to multiple of 1000 */
-            size += size_remain;        /* Re-add remainder lost by division/multiplication */
+            size_remain = ((size % 125) * 1024) / 1000;  // size mod 125, recalculated
+            size /= 125;                                 // 128/125 = 1024/1000
+            size *= 128;  // This will convert size from multiple of 1024 to multiple of 1000
+            size += size_remain;  // Re-add remainder lost by division/multiplication
         }
 
     for (j = units_safe; sfx[j] != NULL; j++)
@@ -508,12 +490,12 @@ size_trunc_len (char *buffer, unsigned int len, uintmax_t size, int units, gbool
         {
             if (j == units)
             {
-                /* Empty files will print "0" even with minimal width.  */
+                // Empty files will print "0" even with minimal width.
                 g_snprintf (buffer, len + 1, "%s", "0");
             }
             else
             {
-                /* Use "~K" or just "K" if len is 1.  Use "B" for bytes.  */
+                // Use "~K" or just "K" if len is 1.  Use "B" for bytes.
                 g_snprintf (buffer, len + 1, (len > 1) ? "~%s" : "%s", (j > 1) ? sfx[j - 1] : "B");
             }
             break;
@@ -525,7 +507,7 @@ size_trunc_len (char *buffer, unsigned int len, uintmax_t size, int units, gbool
             break;
         }
 
-        /* Powers of 1000 or 1024, with rounding.  */
+        // Powers of 1000 or 1024, with rounding.
         if (use_si)
             size = (size + 500) / 1000;
         else
@@ -578,15 +560,15 @@ string_perm (mode_t mode_bits)
 #ifdef S_ISUID
     if (ismode (mode_bits, S_ISUID))
         mode[3] = (mode[3] == 'x') ? 's' : 'S';
-#endif /* S_ISUID */
+#endif
 #ifdef S_ISGID
     if (ismode (mode_bits, S_ISGID))
         mode[6] = (mode[6] == 'x') ? 's' : 'S';
-#endif /* S_ISGID */
+#endif
 #ifdef S_ISVTX
     if (ismode (mode_bits, S_ISVTX))
         mode[9] = (mode[9] == 'x') ? 't' : 'T';
-#endif /* S_ISVTX */
+#endif
     return mode;
 }
 
@@ -618,7 +600,7 @@ load_mc_home_file (const char *from, const char *filename, char **allocated_file
     hintfile = g_strconcat (hintfile_base, ".", lang, (char *) NULL);
     if (!g_file_get_contents (hintfile, &data, length, NULL))
     {
-        /* Fall back to the two-letter language code */
+        // Fall back to the two-letter language code
         if (lang[0] != '\0' && lang[1] != '\0')
             lang[2] = '\0';
         g_free (hintfile);
@@ -678,11 +660,10 @@ x_basename (const char *s)
     if (path_sep == NULL)
         return s;
 
-    if (url_delim == NULL
-        || url_delim < path_sep - strlen (VFS_PATH_URL_DELIMITER)
+    if (url_delim == NULL || url_delim < path_sep - strlen (VFS_PATH_URL_DELIMITER)
         || url_delim - s + strlen (VFS_PATH_URL_DELIMITER) < strlen (s))
     {
-        /* avoid trailing PATH_SEP, if present */
+        // avoid trailing PATH_SEP, if present
         if (!IS_PATH_SEP (s[strlen (s) - 1]))
             return path_sep + 1;
 
@@ -743,106 +724,6 @@ skip_numbers (const char *s)
 }
 
 /* --------------------------------------------------------------------------------------------- */
-/**
- * Remove all control sequences from the argument string.  We define
- * "control sequence", in a sort of pidgin BNF, as follows:
- *
- * control-seq = Esc non-'['
- *             | Esc '[' (parameter-byte)* (intermediate-byte)* final-byte
- * parameter-byte = [\x30-\x3F]     # one of "0-9;:<=>?"
- * intermediate-byte = [\x20–\x2F]  # one of " !\"#$%&'()*+,-./"
- * final-byte = [\x40-\x7e]         # one of "@A–Z[\]^_`a–z{|}~"
- *
- * The 256-color and true-color escape sequences should allow either ';' or ':' inside as separator,
- * actually, ':' is the more correct according to ECMA-48.
- * Some terminal emulators (e.g. xterm, gnome-terminal) support this.
- *
- * Non-printable characters are also removed.
- */
-
-char *
-strip_ctrl_codes (char *s)
-{
-    char *w;                    /* Current position where the stripped data is written */
-    char *r;                    /* Current position where the original data is read */
-
-    if (s == NULL)
-        return NULL;
-
-    for (w = s, r = s; *r != '\0';)
-    {
-        if (*r == ESC_CHAR)
-        {
-            /* Skip the control sequence's arguments */ ;
-            /* '(' need to avoid strange 'B' letter in *Suse (if mc runs under root user) */
-            if (*(++r) == '[' || *r == '(')
-            {
-                /* strchr() matches trailing binary 0 */
-                while (*(++r) != '\0' && strchr ("0123456789;:<=>?", *r) != NULL)
-                    ;
-                while (*r != '\0' && (*r < 0x40 || *r > 0x7E))
-                    ++r;
-            }
-            else if (*r == ']')
-            {
-                /*
-                 * Skip xterm's OSC (Operating System Command)
-                 * http://www.xfree86.org/current/ctlseqs.html
-                 * OSC P s ; P t ST
-                 * OSC P s ; P t BEL
-                 */
-                char *new_r;
-
-                for (new_r = r; *new_r != '\0'; new_r++)
-                {
-                    switch (*new_r)
-                    {
-                        /* BEL */
-                    case '\a':
-                        r = new_r;
-                        goto osc_out;
-                    case ESC_CHAR:
-                        /* ST */
-                        if (new_r[1] == '\\')
-                        {
-                            r = new_r + 1;
-                            goto osc_out;
-                        }
-                        break;
-                    default:
-                        break;
-                    }
-                }
-              osc_out:
-                ;
-            }
-
-            /*
-             * Now we are at the last character of the sequence.
-             * Skip it unless it's binary 0.
-             */
-            if (*r != '\0')
-                r++;
-        }
-        else
-        {
-            char *n;
-
-            n = str_get_next_char (r);
-            if (str_isprint (r))
-            {
-                memmove (w, r, n - r);
-                w += n - r;
-            }
-            r = n;
-        }
-    }
-
-    *w = '\0';
-    return s;
-}
-
-/* --------------------------------------------------------------------------------------------- */
 
 enum compression_type
 get_compression_type (int fd, const char *name)
@@ -850,18 +731,18 @@ get_compression_type (int fd, const char *name)
     unsigned char magic[16];
     size_t str_len;
 
-    /* Read the magic signature */
+    // Read the magic signature
     if (mc_read (fd, (char *) magic, 4) != 4)
         return COMPRESSION_NONE;
 
-    /* GZIP_MAGIC and OLD_GZIP_MAGIC */
+    // GZIP_MAGIC and OLD_GZIP_MAGIC
     if (magic[0] == 0x1F && (magic[1] == 0x8B || magic[1] == 0x9E))
         return COMPRESSION_GZIP;
 
-    /* PKZIP_MAGIC */
+    // PKZIP_MAGIC
     if (magic[0] == 'P' && magic[1] == 'K' && magic[2] == 0x03 && magic[3] == 0x04)
     {
-        /* Read compression type */
+        // Read compression type
         mc_lseek (fd, 8, SEEK_SET);
         if (mc_read (fd, (char *) magic, 2) != 2)
             return COMPRESSION_NONE;
@@ -872,12 +753,12 @@ get_compression_type (int fd, const char *name)
         return COMPRESSION_ZIP;
     }
 
-    /* PACK_MAGIC and LZH_MAGIC and compress magic */
+    // PACK_MAGIC and LZH_MAGIC and compress magic
     if (magic[0] == 0x1F && (magic[1] == 0x1E || magic[1] == 0xA0 || magic[1] == 0x9D))
-        /* Compatible with gzip */
+        // Compatible with gzip
         return COMPRESSION_GZIP;
 
-    /* BZIP and BZIP2 files */
+    // BZIP and BZIP2 files
     if ((magic[0] == 'B') && (magic[1] == 'Z') && (magic[3] >= '1') && (magic[3] <= '9'))
         switch (magic[2])
         {
@@ -889,44 +770,41 @@ get_compression_type (int fd, const char *name)
             break;
         }
 
-    /* LZ4 format - v1.5.0 - 0x184D2204 (little endian) */
+    // LZ4 format - v1.5.0 - 0x184D2204 (little endian)
     if (magic[0] == 0x04 && magic[1] == 0x22 && magic[2] == 0x4d && magic[3] == 0x18)
         return COMPRESSION_LZ4;
 
     if (mc_read (fd, (char *) magic + 4, 2) != 2)
         return COMPRESSION_NONE;
 
-    /* LZIP files */
-    if (magic[0] == 'L'
-        && magic[1] == 'Z'
-        && magic[2] == 'I' && magic[3] == 'P' && (magic[4] == 0x00 || magic[4] == 0x01))
+    // LZIP files
+    if (magic[0] == 'L' && magic[1] == 'Z' && magic[2] == 'I' && magic[3] == 'P'
+        && (magic[4] == 0x00 || magic[4] == 0x01))
         return COMPRESSION_LZIP;
 
     /* Support for LZMA (only utils format with magic in header).
      * This is the default format of LZMA utils 4.32.1 and later. */
-    if (magic[0] == 0xFF
-        && magic[1] == 'L'
-        && magic[2] == 'Z' && magic[3] == 'M' && magic[4] == 'A' && magic[5] == 0x00)
+    if (magic[0] == 0xFF && magic[1] == 'L' && magic[2] == 'Z' && magic[3] == 'M' && magic[4] == 'A'
+        && magic[5] == 0x00)
         return COMPRESSION_LZMA;
 
-    /* LZO format - \x89\x4c\x5a\x4f\x00\x0d\x0a\x1a\x0a    lzop compressed data */
-    if (magic[0] == 0x89 && magic[1] == 0x4c &&
-        magic[2] == 0x5a && magic[3] == 0x4f && magic[4] == 0x00 && magic[5] == 0x0d)
+    // LZO format - \x89\x4c\x5a\x4f\x00\x0d\x0a\x1a\x0a    lzop compressed data
+    if (magic[0] == 0x89 && magic[1] == 0x4c && magic[2] == 0x5a && magic[3] == 0x4f
+        && magic[4] == 0x00 && magic[5] == 0x0d)
         return COMPRESSION_LZO;
 
-    /* XZ compression magic */
-    if (magic[0] == 0xFD
-        && magic[1] == 0x37
-        && magic[2] == 0x7A && magic[3] == 0x58 && magic[4] == 0x5A && magic[5] == 0x00)
+    // XZ compression magic
+    if (magic[0] == 0xFD && magic[1] == 0x37 && magic[2] == 0x7A && magic[3] == 0x58
+        && magic[4] == 0x5A && magic[5] == 0x00)
         return COMPRESSION_XZ;
 
     if (magic[0] == 0x28 && magic[1] == 0xB5 && magic[2] == 0x2F && magic[3] == 0xFD)
         return COMPRESSION_ZSTD;
 
     str_len = strlen (name);
-    /* HACK: we must believe to extension of LZMA file :) ... */
-    if ((str_len > 5 && strcmp (&name[str_len - 5], ".lzma") == 0) ||
-        (str_len > 4 && strcmp (&name[str_len - 4], ".tlz") == 0))
+    // HACK: we must believe to extension of LZMA file :) ...
+    if ((str_len > 5 && strcmp (&name[str_len - 5], ".lzma") == 0)
+        || (str_len > 4 && strcmp (&name[str_len - 4], ".tlz") == 0))
         return COMPRESSION_LZMA;
 
     return COMPRESSION_NONE;
@@ -962,7 +840,7 @@ decompress_extension (int type)
     default:
         break;
     }
-    /* Should never reach this place */
+    // Should never reach this place
     fprintf (stderr, "Fatal: decompress_extension called with an unknown argument\n");
     return 0;
 }
@@ -980,64 +858,6 @@ wipe_password (char *passwd)
             *p = '\0';
         g_free (passwd);
     }
-}
-
-/* --------------------------------------------------------------------------------------------- */
-/**
- * Convert "\E" -> esc character and ^x to control-x key and ^^ to ^ key
- *
- * @param p pointer to string
- *
- * @return newly allocated string
- */
-
-char *
-convert_controls (const char *p)
-{
-    char *valcopy;
-    char *q;
-
-    valcopy = g_strdup (p);
-
-    /* Parse the escape special character */
-    for (q = valcopy; *p != '\0';)
-        switch (*p)
-        {
-        case '\\':
-            p++;
-
-            if (*p == 'e' || *p == 'E')
-            {
-                p++;
-                *q++ = ESC_CHAR;
-            }
-            break;
-
-        case '^':
-            p++;
-            if (*p == '^')
-                *q++ = *p++;
-            else
-            {
-                char c;
-
-                c = *p | 0x20;
-                if (c >= 'a' && c <= 'z')
-                {
-                    *q++ = c - 'a' + 1;
-                    p++;
-                }
-                else if (*p != '\0')
-                    p++;
-            }
-            break;
-
-        default:
-            *q++ = *p++;
-        }
-
-    *q = '\0';
-    return valcopy;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1106,7 +926,7 @@ diff_two_paths (const vfs_path_t *vpath1, const vfs_path_t *vpath2)
         strcpy (p, q);
     }
 
-  ret:
+ret:
     g_free (my_first);
     g_free (my_second);
     return buf;
@@ -1161,41 +981,43 @@ void
 load_file_position (const vfs_path_t *filename_vpath, long *line, long *column, off_t *offset,
                     GArray **bookmarks)
 {
-    char *fn;
+    char *fn, *filename_str;
     FILE *f;
     char buf[MC_MAXPATHLEN + 100];
     const size_t len = vfs_path_len (filename_vpath);
 
-    /* defaults */
+    // defaults
     *line = 1;
     *column = 0;
     *offset = 0;
 
-    /* open file with positions */
+    // open file with positions
     fn = mc_config_get_full_path (MC_FILEPOS_FILE);
     f = fopen (fn, "r");
     g_free (fn);
     if (f == NULL)
         return;
 
-    /* prepare array for serialized bookmarks */
+    // prepare array for serialized bookmarks
     if (bookmarks != NULL)
         *bookmarks = g_array_sized_new (FALSE, FALSE, sizeof (size_t), MAX_SAVED_BOOKMARKS);
+
+    filename_str = str_escape (vfs_path_as_str (filename_vpath), -1, "", TRUE);
 
     while (fgets (buf, sizeof (buf), f) != NULL)
     {
         const char *p;
         gchar **pos_tokens;
 
-        /* check if the filename matches the beginning of string */
-        if (strncmp (buf, vfs_path_as_str (filename_vpath), len) != 0)
+        // check if the filename matches the beginning of string
+        if (strncmp (buf, filename_str, len) != 0)
             continue;
 
-        /* followed by single space */
+        // followed by single space
         if (buf[len] != ' ')
             continue;
 
-        /* and string without spaces */
+        // and string without spaces
         p = &buf[len + 1];
         if (strchr (p, ' ') != NULL)
             continue;
@@ -1240,6 +1062,7 @@ load_file_position (const vfs_path_t *filename_vpath, long *line, long *column, 
         g_strfreev (pos_tokens);
     }
 
+    g_free (filename_str);
     fclose (f);
 }
 
@@ -1254,6 +1077,7 @@ save_file_position (const vfs_path_t *filename_vpath, long line, long column, of
 {
     static size_t filepos_max_saved_entries = 0;
     char *fn, *tmp_fn;
+    char *filename_str = NULL;
     FILE *f, *tmp_f;
     char buf[MC_MAXPATHLEN + 100];
     size_t i;
@@ -1270,7 +1094,7 @@ save_file_position (const vfs_path_t *filename_vpath, long line, long column, of
 
     mc_util_make_backup_if_possible (fn, TMP_SUFFIX);
 
-    /* open file */
+    // open file
     f = fopen (fn, "w");
     if (f == NULL)
         goto open_target_error;
@@ -1283,17 +1107,17 @@ save_file_position (const vfs_path_t *filename_vpath, long line, long column, of
         goto open_source_error;
     }
 
-    /* put the new record */
+    filename_str = str_escape (vfs_path_as_str (filename_vpath), -1, "", TRUE);
+
+    // put the new record
     if (line != 1 || column != 0 || bookmarks != NULL)
     {
-        if (fprintf
-            (f, "%s %ld;%ld;%" PRIuMAX, vfs_path_as_str (filename_vpath), line, column,
-             (uintmax_t) offset) < 0)
+        if (fprintf (f, "%s %ld;%ld;%" PRIuMAX, filename_str, line, column, (uintmax_t) offset) < 0)
             goto write_position_error;
         if (bookmarks != NULL)
             for (i = 0; i < bookmarks->len && i < MAX_SAVED_BOOKMARKS; i++)
                 if (fprintf (f, ";%zu", g_array_index (bookmarks, size_t, i)) < 0)
-                      goto write_position_error;
+                    goto write_position_error;
 
         if (fprintf (f, "\n") < 0)
             goto write_position_error;
@@ -1302,7 +1126,7 @@ save_file_position (const vfs_path_t *filename_vpath, long line, long column, of
     i = 1;
     while (fgets (buf, sizeof (buf), tmp_f) != NULL)
     {
-        if (buf[len] == ' ' && strncmp (buf, vfs_path_as_str (filename_vpath), len) == 0
+        if (buf[len] == ' ' && strncmp (buf, filename_str, len) == 0
             && strchr (&buf[len + 1], ' ') == NULL)
             continue;
 
@@ -1311,31 +1135,46 @@ save_file_position (const vfs_path_t *filename_vpath, long line, long column, of
             break;
     }
 
-  write_position_error:
+write_position_error:
+    g_free (filename_str);
     fclose (tmp_f);
-  open_source_error:
+open_source_error:
     g_free (tmp_fn);
     fclose (f);
     if (src_error)
         mc_util_restore_from_backup_if_possible (fn, TMP_SUFFIX);
     else
         mc_util_unlink_backup_if_possible (fn, TMP_SUFFIX);
-  open_target_error:
+open_target_error:
     g_free (fn);
-  early_error:
+early_error:
     if (bookmarks != NULL)
         g_array_free (bookmarks, TRUE);
 }
 
 /* --------------------------------------------------------------------------------------------- */
 
-extern int
-ascii_alpha_to_cntrl (int ch)
+int
+keycode_to_cntrl (int ch)
 {
-    if ((ch >= ASCII_A && ch <= ASCII_Z) || (ch >= ASCII_a && ch <= ASCII_z))
-        ch &= 0x1f;
+    // Extended keys such as F_KEY(n), Page Up and Page Down are not allowed.
+    if ((ch & ~(KEY_M_CTRL | 0x7f)) != 0)
+        return -1;
 
-    return ch;
+    // User pressed Ctrl+(ch) or '\t', '\'n
+    if ((ch & KEY_M_CTRL) != 0 || ch < 0x1b)
+        return ch & 0x1f;
+
+    if (ch >= '@' && ch <= '_')
+        return ch - '@';
+
+    if (ch >= 'a' && ch <= 'z')
+        return ch - '`';
+
+    if (ch == '?')
+        return 0x7f;
+
+    return -1;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1345,7 +1184,7 @@ Q_ (const char *s)
 {
     const char *result, *sep;
 
-    result = _(s);
+    result = _ (s);
     sep = strchr (result, '|');
 
     return sep != NULL ? sep + 1 : result;
@@ -1370,7 +1209,7 @@ mc_util_make_backup_if_possible (const char *file_name, const char *backup_suffi
     ret = mc_util_write_backup_content (file_name, backup_path);
     if (ret)
     {
-        /* Backup file will have same ownership with main file. */
+        // Backup file will have same ownership with main file.
         if (stat (file_name, &stat_buf) == 0)
             chmod (backup_path, stat_buf.st_mode);
         else
@@ -1434,14 +1273,14 @@ char *
 guess_message_value (void)
 {
     static const char *const var[] = {
-        /* Setting of LC_ALL overwrites all other.  */
-        /* Do not use LANGUAGE for check user locale and drowing hints */
+        // Setting of LC_ALL overwrites all other.
+        // Do not use LANGUAGE for check user locale and drowing hints
         "LC_ALL",
-        /* Next comes the name of the desired category.  */
+        // Next comes the name of the desired category.
         "LC_MESSAGES",
-        /* Last possibility is the LANG environment variable.  */
+        // Last possibility is the LANG environment variable.
         "LANG",
-        /* NULL exit loops */
+        // NULL exit loops
         NULL
     };
 

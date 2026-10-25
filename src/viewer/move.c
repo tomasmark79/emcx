@@ -2,7 +2,7 @@
    Internal file viewer for the Midnight Commander
    Functions for handle cursor movement
 
-   Copyright (C) 1994-2025
+   Copyright (C) 1994-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -30,7 +30,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 /*
@@ -263,7 +263,7 @@ mcview_moveto_bottom (WView *view)
         view->dpy_paragraph_skip_lines = 0;
         view->dpy_wrap_dirty = TRUE;
         mcview_move_up (view, view->data_area.lines);
-        /* start backward search from EOF */
+        // start backward search from EOF
         view->search_start = filesize;
         view->search_end = view->search_start;
     }

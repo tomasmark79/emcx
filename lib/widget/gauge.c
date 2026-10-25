@@ -1,7 +1,7 @@
 /*
    Widgets for the Midnight Commander
 
-   Copyright (C) 1994-2025
+   Copyright (C) 1994-2026
    Free Software Foundation, Inc.
 
    Authors:
@@ -25,7 +25,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 /** \file gauge.c
@@ -94,14 +94,14 @@ gauge_callback (Widget *w, Widget *sender, widget_msg_t msg, int parm, void *dat
                 done /= 256;
             }
 
-            gauge_len = w->rect.cols - 7;       /* 7 positions for percentage */
+            gauge_len = w->rect.cols - 7;  // 7 positions for percentage
 
             percentage = (200 * done / total + 1) / 2;
             columns = (2 * gauge_len * done / total + 1) / 2;
             tty_print_char ('[');
             if (g->from_left_to_right)
             {
-                tty_setcolor (GAUGE_COLOR);
+                tty_setcolor (CORE_GAUGE_COLOR);
                 tty_printf ("%*s", columns, "");
                 tty_setcolor (colors[DLG_COLOR_NORMAL]);
                 tty_printf ("%*s] %3d%%", gauge_len - columns, "", percentage);
@@ -110,7 +110,7 @@ gauge_callback (Widget *w, Widget *sender, widget_msg_t msg, int parm, void *dat
             {
                 tty_setcolor (colors[DLG_COLOR_NORMAL]);
                 tty_printf ("%*s", gauge_len - columns, "");
-                tty_setcolor (GAUGE_COLOR);
+                tty_setcolor (CORE_GAUGE_COLOR);
                 tty_printf ("%*s", columns, "");
                 tty_setcolor (colors[DLG_COLOR_NORMAL]);
                 tty_printf ("] %3d%%", percentage);
@@ -140,7 +140,7 @@ gauge_new (int y, int x, int cols, gboolean shown, int max, int current)
 
     g->shown = shown;
     if (max == 0)
-        max = 1;                /* I do not like division by zero :) */
+        max = 1;  // I do not like division by zero :)
     g->max = max;
     g->current = current;
     g->from_left_to_right = TRUE;
@@ -154,10 +154,10 @@ void
 gauge_set_value (WGauge *g, int max, int current)
 {
     if (g->current == current && g->max == max)
-        return;                 /* Do not flicker */
+        return;  // Do not flicker
 
     if (max == 0)
-        max = 1;                /* I do not like division by zero :) */
+        max = 1;  // I do not like division by zero :)
     g->current = current;
     g->max = max;
     widget_draw (WIDGET (g));

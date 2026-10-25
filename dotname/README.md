@@ -69,8 +69,8 @@ Version `4.8.33-dotname.3` backports the upstream fix for
 (`b55cc075da84fd30d2c7d6a87264bc5cc29f7cb2`). When a cross-filesystem move is
 interrupted and Keep is selected, the original and the incomplete destination
 are preserved. Filesystem attribute failures must not turn an interrupted copy
-into a successful move and delete the original. The backport can be dropped
-when rebasing onto an upstream version containing that commit.
+into a successful move and delete the original. The current master-based package
+includes this fix directly from upstream; it is not part of the Modern patch set.
 
 ## Repeatable tests
 
@@ -80,7 +80,7 @@ Run this command from the repository directory as a regular user:
 nix run .#mc-tests
 ```
 
-Nix builds MC from this fork and supplies the test dependencies. It does not
+Nix builds upstream MC with the Modern patch set and supplies the test dependencies. It does not
 activate a system configuration. Run the tests after changing the customizations
 or updating MC. Success ends with `OK`; failures return a nonzero exit status.
 

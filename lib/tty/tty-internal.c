@@ -1,7 +1,7 @@
 /*
    Internal stuff of the terminal controlling library.
 
-   Copyright (C) 2019-2025
+   Copyright (C) 2019-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -20,7 +20,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 /** \file
@@ -68,8 +68,8 @@ tty_create_winch_pipe (void)
 
     if (!g_unix_open_pipe (sigwinch_pipe, FD_CLOEXEC, &mcerror))
     {
-        fprintf (stderr, _("\nCannot create pipe for SIGWINCH: %s (%d)\n"),
-                 mcerror->message, mcerror->code);
+        fprintf (stderr, _ ("\nCannot create pipe for SIGWINCH: %s (%d)\n"), mcerror->message,
+                 mcerror->code);
         g_error_free (mcerror);
         exit (EXIT_FAILURE);
     }
@@ -81,7 +81,7 @@ tty_create_winch_pipe (void)
      */
     if (!g_unix_set_fd_nonblocking (sigwinch_pipe[0], TRUE, &mcerror))
     {
-        fprintf (stderr, _("\nCannot configure write end of SIGWINCH pipe: %s (%d)\n"),
+        fprintf (stderr, _ ("\nCannot configure write end of SIGWINCH pipe: %s (%d)\n"),
                  mcerror->message, mcerror->code);
         g_error_free (mcerror);
         tty_destroy_winch_pipe ();
@@ -90,7 +90,7 @@ tty_create_winch_pipe (void)
 
     if (!g_unix_set_fd_nonblocking (sigwinch_pipe[1], TRUE, &mcerror))
     {
-        fprintf (stderr, _("\nCannot configure read end of SIGWINCH pipe: %s (%d)\n"),
+        fprintf (stderr, _ ("\nCannot configure read end of SIGWINCH pipe: %s (%d)\n"),
                  mcerror->message, mcerror->code);
         g_error_free (mcerror);
         tty_destroy_winch_pipe ();

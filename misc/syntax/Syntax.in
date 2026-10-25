@@ -96,7 +96,7 @@ include makefile.syntax
 file (CMakeLists.txt|.\*.cmake)$ CMake
 include cmake.syntax
 
-file meson\\.build$ Meson\sBuild\sFile
+file (meson\\.build|meson_options\\.txt)$ Meson\sBuild\sFile
 include meson.syntax
 
 file ..\*\\.(?i:pas|dpr|inc)$ Pascal\sProgram
@@ -162,10 +162,10 @@ include cs.syntax
 file ..\*\\.(?i:m?js)$ JavaScript\sProgram ^#!.\*[\s/](node|nodejs)\\b
 include js.syntax
 
-file ..\*\\.(?i:json)$ JSON\sFile
+file ..\*\\.(?i:json5?)$ JSON\sFile
 include json.syntax
 
-file ..\*\\.(?i:ts)$ TypeScript\sProgram
+file ..\*\\.(?i:e?ts)$ TypeScript\sProgram
 include ts.syntax
 
 file ..\*\\.(?i:as)$ ActionScript\sProgram
@@ -282,8 +282,14 @@ include named.syntax
 file ..\*\\.strace$ Strace\sdebug\soutput
 include strace.syntax
 
+file APKBUILD$ Alpine\spackage\sbuild\sscript
+include PKGBUILD.syntax
+
 file PKGBUILD$ Arch\spackage\sbuild\sscript
 include PKGBUILD.syntax
+
+file \\.?[Mm]uttrc$ Mutt\sconfig\sfile
+include muttrc.syntax
 
 file \\.install$ Arch\spackage\sinstall\sscript
 include sh.syntax
@@ -293,6 +299,12 @@ include yxx.syntax
 
 file ..\*\\.dlink\\.sw$ D-Link\sSwitch\sCommands
 include dlink.syntax
+
+file ..\*\\.(?i:mib)$ SNMP\sMIB\sFile
+include mib.syntax
+
+file (?i)\\.j2$|\\.jinja$|\\.jinja2$ Jinja2\sTemplate
+include jinja2.syntax
 
 file ..\*\\.(?i:jalt?)$ Jal\ssource
 include jal.syntax
@@ -339,6 +351,9 @@ include kotlin.syntax
 file ..\*\\.swift$ Swift\sProgram
 include swift.syntax
 
+file ..\*\\.ttl$ Turtle/RDF\sFile
+include turtle.syntax
+
 file ..\*\\.action$ Privoxy\sFile
 include privoxy.syntax
 
@@ -347,6 +362,24 @@ include toml.syntax
 
 file .\*\\.(mch|ref|imp)$ B\sFile
 include b.syntax
+
+file ..\*\\.(?i:cfg|cnf|conf)$ Config\sfile
+include conf.syntax
+
+file ((?i:Caddyfile)|..\*\\.(?i:caddy(file)?))$ Caddyfile
+include caddyfile.syntax
+
+file Dockerfile.\*$ Dockerfile
+include dockerfile.syntax
+
+file ..\*\\.(?i:e?bnf)$ BNF/EBNF/ABNF/WBNF\sMetasyntax
+include bnf.syntax
+
+file ..\*\\.(?i:m2o?)$ META\sII\sMetasyntax
+include meta-ii.syntax
+
+file ..\*\\.(?i:tmo?)$ TREE-META\sMetasyntax
+include tree-meta.syntax
 
 file .\* unknown
 include unknown.syntax

@@ -1,0 +1,2092 @@
+diff --git a/configure.ac b/configure.ac
+index 3580ae80d..fc850627a 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -497,6 +497,10 @@ fi
+ AC_SUBST(EXTHELPERSDIR)
+ AC_SUBST(EXTFSHELPERSDIR)
+ 
++ dnl Install the clipboard helper alongside MC on every distribution.
++eval MC_CLIPBOARD=\"${bindir}/mc-clipboard\"
++AC_SUBST(MC_CLIPBOARD)
++
+ 
+ dnl ############################################################################
+ dnl Documentation
+@@ -576,6 +580,8 @@ contrib/Makefile
+ misc/Makefile
+ misc/mc.charsets
+ misc/mc.menu
++misc/mc-clipboard.menu
++misc/mc-clipboard:misc/mc-clipboard.py
+ misc/mcedit.menu
+ misc/skins/Makefile
+ misc/ext.d/Makefile
+diff --git a/lib/keybind.c b/lib/keybind.c
+index 392fbca8b..a846b7666 100644
+--- a/lib/keybind.c
++++ b/lib/keybind.c
+@@ -95,7 +95,12 @@ static name_keymap_t command_names[] = {
+     ADD_KEYMAP_NAME (Menu),
+     ADD_KEYMAP_NAME (MenuLastSelected),
+     ADD_KEYMAP_NAME (UserMenu),
++    ADD_KEYMAP_NAME (Trash),
+     ADD_KEYMAP_NAME (EditUserMenu),
++    ADD_KEYMAP_NAME (ClipboardPath),
++    ADD_KEYMAP_NAME (ClipboardDirectory),
++    ADD_KEYMAP_NAME (ClipboardName),
++    ADD_KEYMAP_NAME (ClipboardFile),
+     ADD_KEYMAP_NAME (Search),
+     ADD_KEYMAP_NAME (SearchContinue),
+     ADD_KEYMAP_NAME (Replace),
+@@ -185,6 +190,8 @@ static name_keymap_t command_names[] = {
+ #endif
+     ADD_KEYMAP_NAME (OptionsLayout),
+     ADD_KEYMAP_NAME (OptionsAppearance),
++    ADD_KEYMAP_NAME (SkinNext),
++    ADD_KEYMAP_NAME (SkinPrev),
+     ADD_KEYMAP_NAME (Link),
+     ADD_KEYMAP_NAME (SetupListingFormat),
+     ADD_KEYMAP_NAME (PanelListing),
+diff --git a/lib/keybind.h b/lib/keybind.h
+index 28be23559..94d0f82db 100644
+--- a/lib/keybind.h
++++ b/lib/keybind.h
+@@ -74,7 +74,12 @@ enum
+     CK_Menu,
+     CK_MenuLastSelected,
+     CK_UserMenu,
++    CK_Trash,
+     CK_EditUserMenu,
++    CK_ClipboardPath,
++    CK_ClipboardDirectory,
++    CK_ClipboardName,
++    CK_ClipboardFile,
+     CK_Search,
+     CK_SearchContinue,
+     CK_Replace,
+@@ -157,6 +162,8 @@ enum
+     CK_Jobs,
+     CK_OptionsLayout,
+     CK_OptionsAppearance,
++    CK_SkinNext,
++    CK_SkinPrev,
+     CK_Link,
+     CK_PanelListing,
+     CK_ListMode,
+diff --git a/lib/skin/common.c b/lib/skin/common.c
+index 69b8be3bd..d72a3b36e 100644
+--- a/lib/skin/common.c
++++ b/lib/skin/common.c
+@@ -27,6 +27,7 @@
+ 
+ #include <config.h>
+ #include <stdlib.h>
++#include <unistd.h>
+ 
+ #include "internal.h"
+ #include "lib/util.h"
+@@ -76,8 +77,9 @@ mc_skin_get_default_name (void)
+     if (tmp_str != NULL)
+         return g_strdup (tmp_str);
+ 
+-    //  from config. Or 'default' if no present in config
+-    return mc_config_get_string (mc_global.main_config, CONFIG_APP_SECTION, "skin", "default");
++    /*  from config. Or 'default' if no present in config */
++    return mc_config_get_string (mc_global.main_config, CONFIG_APP_SECTION, "skin",
++                                 "dotname-light");
+ }
+ 
+ /* --------------------------------------------------------------------------------------------- */
+@@ -124,8 +126,25 @@ mc_skin_init (const gchar *skin_override, GError **mcerror)
+     mc_skin__default.name =
+         skin_override != NULL ? g_strdup (skin_override) : mc_skin_get_default_name ();
+ 
+-    mc_skin__default.colors =
+-        g_hash_table_new_full (g_str_hash, g_str_equal, g_free, mc_skin_hash_destroy_value);
++    /* Keep the base name so switching and saving work for both account types. */
++    if ((geteuid () == 0 && strcmp (mc_skin__default.name, "default") == 0)
++        || strcmp (mc_skin__default.name, "dotname-light-root") == 0
++        || strcmp (mc_skin__default.name, "dotname-light.ini") == 0
++        || strcmp (mc_skin__default.name, "dotname-light-root.ini") == 0)
++    {
++        g_free (mc_skin__default.name);
++        mc_skin__default.name = g_strdup ("dotname-light");
++    }
++    else if (strcmp (mc_skin__default.name, "dotname-dark-root") == 0
++             || strcmp (mc_skin__default.name, "dotname-dark.ini") == 0
++             || strcmp (mc_skin__default.name, "dotname-dark-root.ini") == 0)
++    {
++        g_free (mc_skin__default.name);
++        mc_skin__default.name = g_strdup ("dotname-dark");
++    }
++
++    mc_skin__default.colors = g_hash_table_new_full (g_str_hash, g_str_equal,
++                                                     g_free, mc_skin_hash_destroy_value);
+     if (!mc_skin_ini_file_load (&mc_skin__default))
+     {
+         mc_propagate_error (mcerror, 0,
+diff --git a/lib/skin/ini-file.c b/lib/skin/ini-file.c
+index c946b8c4b..35929b135 100644
+--- a/lib/skin/ini-file.c
++++ b/lib/skin/ini-file.c
+@@ -27,6 +27,7 @@
+ #include <config.h>
+ 
+ #include <string.h>
++#include <unistd.h>
+ 
+ #include "lib/global.h"  // <glib.h>
+ 
+@@ -147,8 +148,8 @@ mc_skin_list (void)
+ 
+ /* --------------------------------------------------------------------------------------------- */
+ 
+-gboolean
+-mc_skin_ini_file_load (mc_skin_t *mc_skin)
++static gboolean
++mc_skin_ini_file_load_raw (mc_skin_t *mc_skin)
+ {
+     char *file_name;
+ 
+@@ -180,6 +181,28 @@ mc_skin_ini_file_load (mc_skin_t *mc_skin)
+ 
+ /* --------------------------------------------------------------------------------------------- */
+ 
++gboolean
++mc_skin_ini_file_load (mc_skin_t *mc_skin)
++{
++    gchar *logical_name;
++    gboolean loaded;
++
++    /* Use effective process privileges, including sudo, su, and direct login. */
++    if (geteuid () != 0
++        || (strcmp (mc_skin->name, "dotname-light") != 0
++            && strcmp (mc_skin->name, "dotname-dark") != 0))
++        return mc_skin_ini_file_load_raw (mc_skin);
++
++    logical_name = mc_skin->name;
++    mc_skin->name = g_strconcat (logical_name, "-root", NULL);
++    loaded = mc_skin_ini_file_load_raw (mc_skin);
++    g_free (mc_skin->name);
++    mc_skin->name = logical_name;
++    return loaded;
++}
++
++/* --------------------------------------------------------------------------------------------- */
++
+ gboolean
+ mc_skin_ini_file_parse (mc_skin_t *mc_skin)
+ {
+diff --git a/m4.include/vfs/mc-vfs-extfs.m4 b/m4.include/vfs/mc-vfs-extfs.m4
+index b57dbba9f..3d14c9a6d 100644
+--- a/m4.include/vfs/mc-vfs-extfs.m4
++++ b/m4.include/vfs/mc-vfs-extfs.m4
+@@ -26,6 +26,10 @@ AC_DEFUN([mc_VFS_EXTFS],
+ 		    AS_HELP_STRING([--enable-vfs-extfs], [Support for extfs filesystem @<:@yes@:>@]))
+     if test "$enable_vfs" = "yes" -a x"$enable_vfs_extfs" != x"no"; then
+ 	mc_EXTFS_CHECKS
++        PKG_CHECK_MODULES([LIBZIP], [libzip >= 1.0], [
++            AC_DEFINE([HAVE_LIBZIP], [1], [Direct linear reading of ZIP archive entries])
++            MCLIBS="$MCLIBS $LIBZIP_LIBS"
++        ], [:])
+ 	enable_vfs_extfs="yes"
+ 	mc_VFS_ADDNAME([extfs])
+ 	AC_DEFINE([ENABLE_VFS_EXTFS], [1], [Support for extfs])
+diff --git a/misc/Makefile.am b/misc/Makefile.am
+index b02fcc5b3..54109a8a3 100644
+--- a/misc/Makefile.am
++++ b/misc/Makefile.am
+@@ -58,3 +58,10 @@ install-data-hook:
+ 
+ uninstall-hook:
+ 	cd $(DESTDIR)$(cfgdir) && rm -f mc.keymap
++
++# The helper and custom action menus are part of the standard installation.
++bin_SCRIPTS = mc-clipboard
++pkgdata_DATA += mc-clipboard.menu
++dist_pkgdata_DATA += mc-trash.menu
++EXTRA_DIST += mc-clipboard.py mc-clipboard.menu.in
++CLEANFILES += mc-clipboard mc-clipboard.menu
+diff --git a/misc/mc-clipboard.menu.in b/misc/mc-clipboard.menu.in
+new file mode 100644
+index 000000000..9fb579c27
+--- /dev/null
++++ b/misc/mc-clipboard.menu.in
+@@ -0,0 +1,8 @@
++p Copy full path
++    "@MC_CLIPBOARD@" path %f
++d Copy parent directory path
++    "@MC_CLIPBOARD@" directory %f
++n Copy item name
++    "@MC_CLIPBOARD@" name %f
++f Copy item to clipboard
++    "@MC_CLIPBOARD@" file %f
+diff --git a/misc/mc-clipboard.py b/misc/mc-clipboard.py
+new file mode 100644
+index 000000000..6d14aef00
+--- /dev/null
++++ b/misc/mc-clipboard.py
+@@ -0,0 +1,55 @@
++#!/usr/bin/env python3
++"""Copy the current MC item, path, or name to the Wayland clipboard."""
++
++import os
++from pathlib import Path
++import subprocess
++import sys
++import traceback
++
++
++def fail(message, status=1):
++    if os.environ.get("MC_CLIPBOARD_DEBUG") == "1":
++        traceback.print_exc()
++    print(message, file=sys.stderr)
++    sys.exit(status)
++
++
++def main():
++    if len(sys.argv) != 3 or sys.argv[1] not in ("path", "directory", "name", "file"):
++        sys.exit("Usage: mc-clipboard path|directory|name|file FILE")
++
++    # abspath normalizes . and .. but preserves the symbolic link path.
++    path = Path(os.path.abspath(sys.argv[2]))
++    value = {
++        "path": str(path),
++        "directory": str(path.parent),
++        "name": path.name,
++        "file": path.as_uri() + "\r\n",
++    }[sys.argv[1]]
++    try:
++        command = [
++            "wl-copy", "--type",
++            "text/uri-list" if sys.argv[1] == "file" else "text/plain;charset=utf-8",
++        ]
++        with subprocess.Popen(command, stdin=subprocess.PIPE) as process:
++            try:
++                process.communicate(os.fsencode(value), timeout=5)
++            except (subprocess.TimeoutExpired, KeyboardInterrupt):
++                process.kill()
++                process.wait()
++                raise
++            if process.returncode:
++                raise subprocess.CalledProcessError(process.returncode, command)
++    except subprocess.TimeoutExpired:
++        fail("Copy failed: clipboard did not respond within 5 seconds. Please try again.")
++    except subprocess.CalledProcessError:
++        fail("Copy failed: wl-copy could not access the clipboard.")
++    except OSError as error:
++        fail(f"Copy failed: {error}")
++    except KeyboardInterrupt:
++        fail("Copy cancelled.", 130)
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/misc/mc-trash.menu b/misc/mc-trash.menu
+new file mode 100644
+index 000000000..47acb098a
+--- /dev/null
++++ b/misc/mc-trash.menu
+@@ -0,0 +1,8 @@
++t Move selected items to trash
++    set -- %s
++    for item do
++        case "$item" in
++            ""|.|..|/) exit 0 ;;
++        esac
++    done
++    gio trash -- "$@"
+diff --git a/misc/mc.default.keymap b/misc/mc.default.keymap
+index 4f237ce7e..837cbf282 100644
+--- a/misc/mc.default.keymap
++++ b/misc/mc.default.keymap
+@@ -9,13 +9,18 @@ Edit = f4
+ Copy = f5
+ Move = f6
+ MakeDir = f7
+-Delete = f8
++Delete = f8; shift-delete
++Trash = delete; f12
+ Menu = f9
+ Quit = f10
+ MenuLastSelected = f19
+ QuitQuiet = f20
+ Find = alt-question
+ CdQuick = alt-c
++ClipboardPath = alt-shift-f
++ClipboardDirectory = alt-shift-d
++ClipboardName = alt-shift-n
++ClipboardFile = alt-shift-c
+ HotList = ctrl-backslash
+ Reread = ctrl-r
+ DirSize = ctrl-space
+@@ -41,6 +46,7 @@ SelectInvert = kpasterisk
+ ScreenList = alt-prime
+ # OptionsLayout =
+ # OptionsAppearance =
++SkinNext = alt-shift-t
+ # OptionsPanel =
+ # OptionsConfirm =
+ # OptionsDisplayBits =
+diff --git a/misc/mc.menu.in b/misc/mc.menu.in
+index ce43c04fc..81a4ed86f 100644
+--- a/misc/mc.menu.in
++++ b/misc/mc.menu.in
+@@ -34,6 +34,18 @@ shell_patterns=0    # expression type
+ #   %0f   don't quote expanded macro
+ ##############################################################################
+ 
++c       Copy full path (Alt+Shift+F)
++        "@MC_CLIPBOARD@" path %f
++
++p       Copy parent directory path (Alt+Shift+D)
++        "@MC_CLIPBOARD@" directory %f
++
++N       Copy item name (Alt+Shift+N)
++        "@MC_CLIPBOARD@" name %f
++
++f       Copy item to clipboard (Alt+Shift+C)
++        "@MC_CLIPBOARD@" file %f
++
+ + ! t t
+ @       Do something on the current file
+         CMD=%{Enter command}
+diff --git a/misc/skins/Makefile.am b/misc/skins/Makefile.am
+index 74cb63c96..15e25cf09 100644
+--- a/misc/skins/Makefile.am
++++ b/misc/skins/Makefile.am
+@@ -1,6 +1,10 @@
+ skindir = $(pkgdatadir)/skins
+ 
+ SKINS = \
++	dotname-light.ini \
++	dotname-dark.ini \
++	dotname-light-root.ini \
++	dotname-dark-root.ini \
+ 	dark.ini \
+ 	darkfar.ini \
+ 	default.ini \
+diff --git a/misc/skins/dotname-dark-root.ini b/misc/skins/dotname-dark-root.ini
+new file mode 100644
+index 000000000..ff1b31e6c
+--- /dev/null
++++ b/misc/skins/dotname-dark-root.ini
+@@ -0,0 +1,191 @@
++# DotName dark skin using the fixed xterm 256-color palette.
++# Requires a 256-color TERM entry; COLORTERM=truecolor is not needed.
++
++[skin]
++    description = DotName - Dark (Root)
++    256colors = true
++
++[Lines]
++    horiz = ─
++    vert = │
++    lefttop = ┌
++    righttop = ┐
++    leftbottom = └
++    rightbottom = ┘
++    topmiddle = ┬
++    bottommiddle = ┴
++    leftmiddle = ├
++    rightmiddle = ┤
++    cross = ┼
++    dhoriz = ═
++    dvert = ║
++    dlefttop = ╔
++    drighttop = ╗
++    dleftbottom = ╚
++    drightbottom = ╝
++    dtopmiddle = ╤
++    dbottommiddle = ╧
++    dleftmiddle = ╟
++    drightmiddle = ╢
++
++[aliases]
++    Main = color235
++    MainFg = color145
++    MarkedFg = color68
++    HeaderFg = color74
++    Selected = color52
++    Dialog = color52
++    DialogFocus = color95
++    Input = MainFg
++    PaleFg = color246
++    ShadowFg = color16
++    ShadowBg = color16
++    Error = color167
++    ErrorFocus = color174
++    Top = color239
++    MenuActive = Bottom
++    MenuSelected = Top
++    Bottom = color234
++    BottomNumber = color237
++    BottomNumberFg = color250
++    Help = Bottom
++    HelpBoldFg = ErrorFocus
++    HelpItalicFg = Error
++    HelpLinkFg = color68
++    EditorLineNumber = color236
++    EditorWhitespace = EditorLineNumber
++    EditorRightMargin = EditorLineNumber
++    EditorBookmark = color60
++    EditorFindAll = Top
++    EditorVoid = color234
++    EditorFrameFg = MainFg
++    EditorFrameActiveFg = MarkedFg
++    EditorFrameDragFg = color250
++    ViewerBoldFg = HelpBoldFg
++    ViewerUnderlinedFg = HelpLinkFg
++    ViewerSelected = EditorBookmark
++    DiffAdd = color23
++    DiffChangedLine = color235
++    DiffGap = color131
++
++[core]
++    _default_ = MainFg;Main
++    selected = MainFg;Selected
++    marked = MarkedFg;;bold
++    markselect = MarkedFg;Selected;bold
++    gauge = MainFg;DialogFocus
++    input = color235;color244
++    inputunchanged = color239;color244
++    inputmark = MainFg;DialogFocus
++    disabled = PaleFg;Dialog
++    reverse = MainFg;Bottom
++    commandlinemark = MainFg;DialogFocus
++    header = HeaderFg
++    shadow = ShadowFg;ShadowBg
++
++[dialog]
++    _default_ = MainFg;Dialog
++    dfocus = MainFg;DialogFocus
++    dhotnormal = MainFg;;underline
++    dhotfocus = MainFg;DialogFocus;underline
++    dtitle = MainFg;;bold
++
++[error]
++    _default_ = color231;Error
++    errdfocus = ;ErrorFocus
++    errdhotnormal = ;;underline
++    errdhotfocus = ;ErrorFocus;underline
++    errdtitle = ;;bold
++
++[filehighlight]
++    directory =
++    executable = color34
++    symlink = color96
++    hardlink =
++    stalelink = color124
++    device = color65
++    special = color101
++    core = color136
++    temp = color242
++    archive = color24
++    doc = color60
++    source = color130
++    media = color31
++    graph = color37
++    database = color131
++
++[menu]
++    _default_ = MainFg;MenuActive
++    menusel = MainFg;MenuSelected
++    menuhot = MainFg;;underline
++    menuhotsel = MainFg;MenuSelected;underline
++    menuinactive = PaleFg;Top
++
++[popupmenu]
++    _default_ = MainFg;Dialog
++    menusel = MainFg;DialogFocus
++    menutitle = MainFg;;bold
++
++[buttonbar]
++    hotkey = BottomNumberFg;BottomNumber
++    button = MainFg;Bottom
++
++[statusbar]
++    _default_ = MainFg;Top
++
++[help]
++    _default_ = MainFg;Help
++    helpbold = HelpBoldFg;;bold
++    helpitalic = HelpItalicFg;;italic
++    helplink = HelpLinkFg;;underline
++    helpslink = Help;HelpLinkFg
++
++[editor]
++    editbold = MarkedFg;;bold
++    editmarked = MainFg;Selected
++    editwhitespace = MainFg;EditorWhitespace
++    editnonprintable = MainFg;Main
++    editlinestate = MainFg;EditorLineNumber
++    bookmark = MainFg;EditorBookmark
++    bookmarkfound = MainFg;EditorFindAll
++    editrightmargin = MainFg;EditorRightMargin
++    editbg = MainFg;EditorVoid
++    editframe = EditorFrameFg
++    editframeactive = EditorFrameActiveFg
++    editframedrag = EditorFrameDragFg
++
++[viewer]
++    viewbold = ViewerBoldFg;;bold
++    viewunderline = ViewerUnderlinedFg;;underline
++    viewselected = MainFg;ViewerSelected
++
++[diffviewer]
++    added = ;DiffAdd
++    changedline = ;DiffChangedLine
++    changednew = ;DiffAdd
++    changed = ;DiffGap
++    removed = ;DiffGap
++    error = color231;Error
++
++[widget-panel]
++    sort-up-char = ▴
++    sort-down-char = ▾
++    hiddenfiles-show-char = •
++    hiddenfiles-hide-char = ○
++    history-prev-item-char = ◂
++    history-next-item-char = ▸
++    history-show-list-char = ▾
++    filename-scroll-left-char = ◂
++    filename-scroll-right-char = ▸
++
++[widget-scrollbar]
++    first-vert-char = ▴
++    last-vert-char = ▾
++    first-horiz-char = ◂
++    last-horiz-char = ▸
++    current-char = ■
++    background-char = ▒
++
++[widget-editor]
++    window-state-char = ↕
++    window-close-char = ✕
+diff --git a/misc/skins/dotname-dark.ini b/misc/skins/dotname-dark.ini
+new file mode 100644
+index 000000000..e513e7d4b
+--- /dev/null
++++ b/misc/skins/dotname-dark.ini
+@@ -0,0 +1,191 @@
++# DotName dark skin using the fixed xterm 256-color palette.
++# Requires a 256-color TERM entry; COLORTERM=truecolor is not needed.
++
++[skin]
++    description = DotName - Dark
++    256colors = true
++
++[Lines]
++    horiz = ─
++    vert = │
++    lefttop = ┌
++    righttop = ┐
++    leftbottom = └
++    rightbottom = ┘
++    topmiddle = ┬
++    bottommiddle = ┴
++    leftmiddle = ├
++    rightmiddle = ┤
++    cross = ┼
++    dhoriz = ═
++    dvert = ║
++    dlefttop = ╔
++    drighttop = ╗
++    dleftbottom = ╚
++    drightbottom = ╝
++    dtopmiddle = ╤
++    dbottommiddle = ╧
++    dleftmiddle = ╟
++    drightmiddle = ╢
++
++[aliases]
++    Main = color235
++    MainFg = color145
++    MarkedFg = color68
++    HeaderFg = color74
++    Selected = color24
++    Dialog = color52
++    DialogFocus = color95
++    Input = MainFg
++    PaleFg = color246
++    ShadowFg = color16
++    ShadowBg = color16
++    Error = color167
++    ErrorFocus = color174
++    Top = color239
++    MenuActive = Bottom
++    MenuSelected = Top
++    Bottom = color234
++    BottomNumber = color237
++    BottomNumberFg = color250
++    Help = Bottom
++    HelpBoldFg = ErrorFocus
++    HelpItalicFg = Error
++    HelpLinkFg = color68
++    EditorLineNumber = color236
++    EditorWhitespace = EditorLineNumber
++    EditorRightMargin = EditorLineNumber
++    EditorBookmark = color60
++    EditorFindAll = Top
++    EditorVoid = color234
++    EditorFrameFg = MainFg
++    EditorFrameActiveFg = MarkedFg
++    EditorFrameDragFg = color250
++    ViewerBoldFg = HelpBoldFg
++    ViewerUnderlinedFg = HelpLinkFg
++    ViewerSelected = EditorBookmark
++    DiffAdd = color23
++    DiffChangedLine = Selected
++    DiffGap = color131
++
++[core]
++    _default_ = MainFg;Main
++    selected = MainFg;Selected
++    marked = MarkedFg;;bold
++    markselect = MarkedFg;Selected;bold
++    gauge = MainFg;DialogFocus
++    input = color235;color244
++    inputunchanged = color239;color244
++    inputmark = MainFg;DialogFocus
++    disabled = PaleFg;Dialog
++    reverse = MainFg;Bottom
++    commandlinemark = MainFg;DialogFocus
++    header = HeaderFg
++    shadow = ShadowFg;ShadowBg
++
++[dialog]
++    _default_ = MainFg;Dialog
++    dfocus = MainFg;DialogFocus
++    dhotnormal = MainFg;;underline
++    dhotfocus = MainFg;DialogFocus;underline
++    dtitle = MainFg;;bold
++
++[error]
++    _default_ = color231;Error
++    errdfocus = ;ErrorFocus
++    errdhotnormal = ;;underline
++    errdhotfocus = ;ErrorFocus;underline
++    errdtitle = ;;bold
++
++[filehighlight]
++    directory =
++    executable = color34
++    symlink = color96
++    hardlink =
++    stalelink = color124
++    device = color65
++    special = color101
++    core = color136
++    temp = color242
++    archive = color24
++    doc = color60
++    source = color130
++    media = color31
++    graph = color37
++    database = color131
++
++[menu]
++    _default_ = MainFg;MenuActive
++    menusel = MainFg;MenuSelected
++    menuhot = MainFg;;underline
++    menuhotsel = MainFg;MenuSelected;underline
++    menuinactive = PaleFg;Top
++
++[popupmenu]
++    _default_ = MainFg;Dialog
++    menusel = MainFg;DialogFocus
++    menutitle = MainFg;;bold
++
++[buttonbar]
++    hotkey = BottomNumberFg;BottomNumber
++    button = MainFg;Bottom
++
++[statusbar]
++    _default_ = MainFg;Top
++
++[help]
++    _default_ = MainFg;Help
++    helpbold = HelpBoldFg;;bold
++    helpitalic = HelpItalicFg;;italic
++    helplink = HelpLinkFg;;underline
++    helpslink = Help;HelpLinkFg
++
++[editor]
++    editbold = MarkedFg;;bold
++    editmarked = MainFg;Selected
++    editwhitespace = MainFg;EditorWhitespace
++    editnonprintable = MainFg;Main
++    editlinestate = MainFg;EditorLineNumber
++    bookmark = MainFg;EditorBookmark
++    bookmarkfound = MainFg;EditorFindAll
++    editrightmargin = MainFg;EditorRightMargin
++    editbg = MainFg;EditorVoid
++    editframe = EditorFrameFg
++    editframeactive = EditorFrameActiveFg
++    editframedrag = EditorFrameDragFg
++
++[viewer]
++    viewbold = ViewerBoldFg;;bold
++    viewunderline = ViewerUnderlinedFg;;underline
++    viewselected = MainFg;ViewerSelected
++
++[diffviewer]
++    added = ;DiffAdd
++    changedline = ;DiffChangedLine
++    changednew = ;DiffAdd
++    changed = ;DiffGap
++    removed = ;DiffGap
++    error = color231;Error
++
++[widget-panel]
++    sort-up-char = ▴
++    sort-down-char = ▾
++    hiddenfiles-show-char = •
++    hiddenfiles-hide-char = ○
++    history-prev-item-char = ◂
++    history-next-item-char = ▸
++    history-show-list-char = ▾
++    filename-scroll-left-char = ◂
++    filename-scroll-right-char = ▸
++
++[widget-scrollbar]
++    first-vert-char = ▴
++    last-vert-char = ▾
++    first-horiz-char = ◂
++    last-horiz-char = ▸
++    current-char = ■
++    background-char = ▒
++
++[widget-editor]
++    window-state-char = ↕
++    window-close-char = ✕
+diff --git a/misc/skins/dotname-light-root.ini b/misc/skins/dotname-light-root.ini
+new file mode 100644
+index 000000000..9c8d84914
+--- /dev/null
++++ b/misc/skins/dotname-light-root.ini
+@@ -0,0 +1,191 @@
++# DotName light skin using the fixed xterm 256-color palette.
++# Requires a 256-color TERM entry; COLORTERM=truecolor is not needed.
++
++[skin]
++    description = DotName - Light (Root)
++    256colors = true
++
++[Lines]
++    horiz = ─
++    vert = │
++    lefttop = ┌
++    righttop = ┐
++    leftbottom = └
++    rightbottom = ┘
++    topmiddle = ┬
++    bottommiddle = ┴
++    leftmiddle = ├
++    rightmiddle = ┤
++    cross = ┼
++    dhoriz = ═
++    dvert = ║
++    dlefttop = ╔
++    drighttop = ╗
++    dleftbottom = ╚
++    drightbottom = ╝
++    dtopmiddle = ╤
++    dbottommiddle = ╧
++    dleftmiddle = ╟
++    drightmiddle = ╢
++
++[aliases]
++    Main = color254
++    MainFg = color16
++    MarkedFg = color19
++    HeaderFg = color61
++    Selected = color161
++    Dialog = color181
++    DialogFocus = color146
++    Input = Main
++    PaleFg = color243
++    ShadowFg = color16
++    ShadowBg = color243
++    Error = color239
++    ErrorFocus = color60
++    Top = color68
++    MenuActive = Bottom
++    MenuSelected = Top
++    Bottom = color146
++    BottomNumber = color103
++    BottomNumberFg = color254
++    Help = color188
++    HelpBoldFg = ErrorFocus
++    HelpItalicFg = Error
++    HelpLinkFg = color68
++    EditorLineNumber = color255
++    EditorWhitespace = EditorLineNumber
++    EditorRightMargin = EditorLineNumber
++    EditorBookmark = Bottom
++    EditorFindAll = Top
++    EditorVoid = BottomNumber
++    EditorFrameFg = MainFg
++    EditorFrameActiveFg = MarkedFg
++    EditorFrameDragFg = color231
++    ViewerBoldFg = HelpBoldFg
++    ViewerUnderlinedFg = HelpLinkFg
++    ViewerSelected = EditorBookmark
++    DiffAdd = color114
++    DiffChangedLine = color188
++    DiffGap = color174
++
++[core]
++    _default_ = MainFg;Main
++    selected = ;Selected
++    marked = MarkedFg;;bold
++    markselect = MarkedFg;Selected;bold
++    gauge = ;DialogFocus
++    input = color16;Input
++    inputunchanged = PaleFg;Input
++    inputmark = color16;DialogFocus
++    disabled = PaleFg;Dialog
++    reverse = color16;Bottom
++    commandlinemark = color16;DialogFocus
++    header = HeaderFg
++    shadow = ShadowFg;ShadowBg
++
++[dialog]
++    _default_ = color16;Dialog
++    dfocus = ;DialogFocus
++    dhotnormal = ;;underline
++    dhotfocus = ;DialogFocus;underline
++    dtitle = ;;bold
++
++[error]
++    _default_ = color231;Error
++    errdfocus = ;ErrorFocus
++    errdhotnormal = ;;underline
++    errdhotfocus = ;ErrorFocus;underline
++    errdtitle = ;;bold
++
++[filehighlight]
++    directory =
++    executable = color34
++    symlink = color90
++    hardlink =
++    stalelink = color160
++    device = color107
++    special = color143
++    core = color178
++    temp = color247
++    archive = color24
++    doc = color55
++    source = color130
++    media = color32
++    graph = color37
++    database = color173
++
++[menu]
++    _default_ = color16;MenuActive
++    menusel = ;MenuSelected
++    menuhot = ;;underline
++    menuhotsel = ;MenuSelected;underline
++    menuinactive = ;Top
++
++[popupmenu]
++    _default_ = color16;Dialog
++    menusel = ;DialogFocus
++    menutitle = ;;bold
++
++[buttonbar]
++    hotkey = BottomNumberFg;BottomNumber
++    button = color16;Bottom
++
++[statusbar]
++    _default_ = color16;Top
++
++[help]
++    _default_ = color16;Help
++    helpbold = HelpBoldFg;;bold
++    helpitalic = HelpItalicFg;;italic
++    helplink = HelpLinkFg;;underline
++    helpslink = Help;HelpLinkFg
++
++[editor]
++    editbold = MarkedFg;;bold
++    editmarked = ;Selected
++    editwhitespace = ;EditorWhitespace
++    editnonprintable = ;black
++    editlinestate = color16;EditorLineNumber
++    bookmark = color16;EditorBookmark
++    bookmarkfound = color16;EditorFindAll
++    editrightmargin = ;EditorRightMargin
++    editbg = ;EditorVoid
++    editframe = EditorFrameFg
++    editframeactive = EditorFrameActiveFg
++    editframedrag = EditorFrameDragFg
++
++[viewer]
++    viewbold = ViewerBoldFg;;bold
++    viewunderline = ViewerUnderlinedFg;;underline
++    viewselected = color16;ViewerSelected
++
++[diffviewer]
++    added = ;DiffAdd
++    changedline = ;DiffChangedLine
++    changednew = ;DiffAdd
++    changed = ;DiffGap
++    removed = ;DiffGap
++    error = color231;Error
++
++[widget-panel]
++    sort-up-char = ▴
++    sort-down-char = ▾
++    hiddenfiles-show-char = •
++    hiddenfiles-hide-char = ○
++    history-prev-item-char = ◂
++    history-next-item-char = ▸
++    history-show-list-char = ▾
++    filename-scroll-left-char = ◂
++    filename-scroll-right-char = ▸
++
++[widget-scrollbar]
++    first-vert-char = ▴
++    last-vert-char = ▾
++    first-horiz-char = ◂
++    last-horiz-char = ▸
++    current-char = ■
++    background-char = ▒
++
++[widget-editor]
++    window-state-char = ↕
++    window-close-char = ✕
+diff --git a/misc/skins/dotname-light.ini b/misc/skins/dotname-light.ini
+new file mode 100644
+index 000000000..3be8a74d4
+--- /dev/null
++++ b/misc/skins/dotname-light.ini
+@@ -0,0 +1,191 @@
++# DotName light skin using the fixed xterm 256-color palette.
++# Requires a 256-color TERM entry; COLORTERM=truecolor is not needed.
++
++[skin]
++    description = DotName - Light
++    256colors = true
++
++[Lines]
++    horiz = ─
++    vert = │
++    lefttop = ┌
++    righttop = ┐
++    leftbottom = └
++    rightbottom = ┘
++    topmiddle = ┬
++    bottommiddle = ┴
++    leftmiddle = ├
++    rightmiddle = ┤
++    cross = ┼
++    dhoriz = ═
++    dvert = ║
++    dlefttop = ╔
++    drighttop = ╗
++    dleftbottom = ╚
++    drightbottom = ╝
++    dtopmiddle = ╤
++    dbottommiddle = ╧
++    dleftmiddle = ╟
++    drightmiddle = ╢
++
++[aliases]
++    Main = color254
++    MainFg = color16
++    MarkedFg = color19
++    HeaderFg = color61
++    Selected = color252
++    Dialog = color181
++    DialogFocus = color146
++    Input = Main
++    PaleFg = color243
++    ShadowFg = color16
++    ShadowBg = color243
++    Error = color239
++    ErrorFocus = color60
++    Top = color68
++    MenuActive = Bottom
++    MenuSelected = Top
++    Bottom = color146
++    BottomNumber = color103
++    BottomNumberFg = color254
++    Help = Selected
++    HelpBoldFg = ErrorFocus
++    HelpItalicFg = Error
++    HelpLinkFg = color68
++    EditorLineNumber = color255
++    EditorWhitespace = EditorLineNumber
++    EditorRightMargin = EditorLineNumber
++    EditorBookmark = Bottom
++    EditorFindAll = Top
++    EditorVoid = BottomNumber
++    EditorFrameFg = MainFg
++    EditorFrameActiveFg = MarkedFg
++    EditorFrameDragFg = color231
++    ViewerBoldFg = HelpBoldFg
++    ViewerUnderlinedFg = HelpLinkFg
++    ViewerSelected = EditorBookmark
++    DiffAdd = color114
++    DiffChangedLine = Selected
++    DiffGap = color174
++
++[core]
++    _default_ = MainFg;Main
++    selected = ;Selected
++    marked = MarkedFg;;bold
++    markselect = MarkedFg;Selected;bold
++    gauge = ;DialogFocus
++    input = color16;Input
++    inputunchanged = PaleFg;Input
++    inputmark = color16;DialogFocus
++    disabled = PaleFg;Dialog
++    reverse = color16;Bottom
++    commandlinemark = color16;DialogFocus
++    header = HeaderFg
++    shadow = ShadowFg;ShadowBg
++
++[dialog]
++    _default_ = color16;Dialog
++    dfocus = ;DialogFocus
++    dhotnormal = ;;underline
++    dhotfocus = ;DialogFocus;underline
++    dtitle = ;;bold
++
++[error]
++    _default_ = color231;Error
++    errdfocus = ;ErrorFocus
++    errdhotnormal = ;;underline
++    errdhotfocus = ;ErrorFocus;underline
++    errdtitle = ;;bold
++
++[filehighlight]
++    directory =
++    executable = color34
++    symlink = color90
++    hardlink =
++    stalelink = color160
++    device = color107
++    special = color143
++    core = color178
++    temp = color247
++    archive = color24
++    doc = color55
++    source = color130
++    media = color32
++    graph = color37
++    database = color173
++
++[menu]
++    _default_ = color16;MenuActive
++    menusel = ;MenuSelected
++    menuhot = ;;underline
++    menuhotsel = ;MenuSelected;underline
++    menuinactive = ;Top
++
++[popupmenu]
++    _default_ = color16;Dialog
++    menusel = ;DialogFocus
++    menutitle = ;;bold
++
++[buttonbar]
++    hotkey = BottomNumberFg;BottomNumber
++    button = color16;Bottom
++
++[statusbar]
++    _default_ = color16;Top
++
++[help]
++    _default_ = color16;Help
++    helpbold = HelpBoldFg;;bold
++    helpitalic = HelpItalicFg;;italic
++    helplink = HelpLinkFg;;underline
++    helpslink = Help;HelpLinkFg
++
++[editor]
++    editbold = MarkedFg;;bold
++    editmarked = ;Selected
++    editwhitespace = ;EditorWhitespace
++    editnonprintable = ;black
++    editlinestate = color16;EditorLineNumber
++    bookmark = color16;EditorBookmark
++    bookmarkfound = color16;EditorFindAll
++    editrightmargin = ;EditorRightMargin
++    editbg = ;EditorVoid
++    editframe = EditorFrameFg
++    editframeactive = EditorFrameActiveFg
++    editframedrag = EditorFrameDragFg
++
++[viewer]
++    viewbold = ViewerBoldFg;;bold
++    viewunderline = ViewerUnderlinedFg;;underline
++    viewselected = color16;ViewerSelected
++
++[diffviewer]
++    added = ;DiffAdd
++    changedline = ;DiffChangedLine
++    changednew = ;DiffAdd
++    changed = ;DiffGap
++    removed = ;DiffGap
++    error = color231;Error
++
++[widget-panel]
++    sort-up-char = ▴
++    sort-down-char = ▾
++    hiddenfiles-show-char = •
++    hiddenfiles-hide-char = ○
++    history-prev-item-char = ◂
++    history-next-item-char = ▸
++    history-show-list-char = ▾
++    filename-scroll-left-char = ◂
++    filename-scroll-right-char = ▸
++
++[widget-scrollbar]
++    first-vert-char = ▴
++    last-vert-char = ▾
++    first-horiz-char = ◂
++    last-horiz-char = ▸
++    current-char = ■
++    background-char = ▒
++
++[widget-editor]
++    window-state-char = ↕
++    window-close-char = ✕
+diff --git a/src/filemanager/boxes.c b/src/filemanager/boxes.c
+index 63f865886..607c6dec1 100644
+--- a/src/filemanager/boxes.c
++++ b/src/filemanager/boxes.c
+@@ -145,13 +145,15 @@ configure_callback (Widget *w, Widget *sender, widget_msg_t msg, int parm, void
+ 
+ /* --------------------------------------------------------------------------------------------- */
+ 
+-static void
++static gboolean
+ skin_apply (const gchar *skin_override)
+ {
+     GError *mcerror = NULL;
+ 
++    gboolean success;
++
+     mc_skin_deinit ();
+-    mc_skin_init (skin_override, &mcerror);
++    success = mc_skin_init (skin_override, &mcerror);
+     mc_fhl_free (&mc_filehighlight);
+     mc_filehighlight = mc_fhl_new (TRUE);
+     panel_deinit ();
+@@ -159,6 +161,7 @@ skin_apply (const gchar *skin_override)
+     repaint_screen ();
+ 
+     mc_error_message (&mcerror, NULL);
++    return success;
+ }
+ 
+ /* --------------------------------------------------------------------------------------------- */
+@@ -649,6 +652,88 @@ configure_box (void)
+ 
+ /* --------------------------------------------------------------------------------------------- */
+ 
++void
++skin_cycle (gboolean forward)
++{
++    gchar *path, *contents = NULL, **lines, *previous;
++    GPtrArray *favorites;
++    GError *error = NULL;
++    guint i, next;
++    gint current = -1;
++
++    /* Reload the list each time so changes do not require restarting MC. */
++    path = g_build_filename (mc_config_get_path (), "skin-cycle", NULL);
++    if (!g_file_get_contents (path, &contents, NULL, &error))
++    {
++        /* A new account can switch skins without its own configuration. */
++        if (g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NOENT))
++        {
++            g_clear_error (&error);
++            contents = g_strdup ("dotname-light\ndotname-dark\n");
++        }
++        else
++        {
++            message (D_ERROR, MSG_ERROR, "Unable to read skin list %s:\n%s", path, error->message);
++            g_clear_error (&error);
++            g_free (path);
++            return;
++        }
++    }
++
++    favorites = g_ptr_array_new ();
++    lines = g_strsplit (contents, "\n", -1);
++    for (i = 0; lines[i] != NULL; i++)
++    {
++        gchar *name = g_strstrip (lines[i]);
++        guint j;
++
++        if (*name == '\0' || *name == '#')
++            continue;
++        for (j = 0; j < favorites->len; j++)
++            if (strcmp (name, g_ptr_array_index (favorites, j)) == 0)
++                break;
++        if (j == favorites->len)
++            g_ptr_array_add (favorites, name);
++    }
++
++    if (favorites->len == 0)
++    {
++        message (D_ERROR, MSG_ERROR, "Skin list %s is empty.", path);
++        goto done;
++    }
++
++    for (i = 0; i < favorites->len; i++)
++        if (strcmp (mc_skin__default.name, g_ptr_array_index (favorites, i)) == 0)
++        {
++            current = (gint) i;
++            break;
++        }
++
++    if (current < 0)
++        next = forward ? 0 : favorites->len - 1;
++    else if (forward)
++        next = ((guint) current + 1) % favorites->len;
++    else
++        next = ((guint) current + favorites->len - 1) % favorites->len;
++
++    /* On failure, restore the previous appearance without saving the invalid skin. */
++    previous = g_strdup (mc_skin__default.name);
++    if (skin_apply (g_ptr_array_index (favorites, next)))
++        mc_config_set_string (mc_global.main_config, CONFIG_APP_SECTION, "skin",
++                              g_ptr_array_index (favorites, next));
++    else
++        skin_apply (previous);
++    g_free (previous);
++
++  done:
++    g_ptr_array_free (favorites, TRUE);
++    g_strfreev (lines);
++    g_free (contents);
++    g_free (path);
++}
++
++/* --------------------------------------------------------------------------------------------- */
++
+ void
+ appearance_box (void)
+ {
+diff --git a/src/filemanager/boxes.h b/src/filemanager/boxes.h
+index 21e031e56..55096987e 100644
+--- a/src/filemanager/boxes.h
++++ b/src/filemanager/boxes.h
+@@ -21,6 +21,7 @@
+ void about_box (void);
+ void configure_box (void);
+ void appearance_box (void);
++void skin_cycle (gboolean forward);
+ void panel_options_box (void);
+ int panel_listing_box (WPanel *p, int num, char **user, char **mini, gboolean *use_msformat,
+                        int *brief_cols);
+diff --git a/src/filemanager/file.c b/src/filemanager/file.c
+index c8d171471..b6e61e967 100644
+--- a/src/filemanager/file.c
++++ b/src/filemanager/file.c
+@@ -1867,7 +1867,7 @@ check_single_entry (const WPanel *panel, gboolean force_single, struct stat *src
+ 
+ static char *
+ panel_operate_generate_prompt (const WPanel *panel, FileOperation operation,
+-                               const struct stat *src_stat)
++                               const struct stat *src_stat, const char *operation_name)
+ {
+     char *sp;
+     char *format_string;
+@@ -1914,8 +1914,10 @@ panel_operate_generate_prompt (const WPanel *panel, FileOperation operation,
+ 
+     cp = (src_stat != NULL ? one_format : many_format);
+ 
+-    // 1. Substitute %o
+-    format_string = str_replace_all (cp, "%o", op_names1[(int) operation]);
++    /* 1. Substitute %o */
++    format_string = str_replace_all (cp, "%o",
++                                            operation_name != NULL ? operation_name
++                                                                   : op_names1[(int) operation]);
+ 
+     // 2. Substitute %n
+     cp = operation == OP_DELETE ? "\n" : " ";
+@@ -1986,8 +1988,8 @@ do_confirm_copy_move (const WPanel *panel, gboolean force_single, const char *so
+     if (source == NULL)
+         src_stat = NULL;
+ 
+-    // Generate confirmation prompt
+-    format = panel_operate_generate_prompt (panel, ctx->operation, src_stat);
++    /* Generate confirmation prompt */
++    format = panel_operate_generate_prompt (panel, ctx->operation, src_stat, NULL);
+ 
+     ret =
+         file_mask_dialog (ctx, source != NULL, format,
+@@ -2002,7 +2004,8 @@ do_confirm_copy_move (const WPanel *panel, gboolean force_single, const char *so
+ /* --------------------------------------------------------------------------------------------- */
+ 
+ static gboolean
+-do_confirm_erase (const WPanel *panel, const char *source, struct stat *src_stat)
++do_confirm_erase (const WPanel *panel, const char *source, struct stat *src_stat,
++                  gboolean trash)
+ {
+     int i;
+     char *format;
+@@ -2011,8 +2014,9 @@ do_confirm_erase (const WPanel *panel, const char *source, struct stat *src_stat
+     if (source == NULL)
+         src_stat = NULL;
+ 
+-    // Generate confirmation prompt
+-    format = panel_operate_generate_prompt (panel, OP_DELETE, src_stat);
++    /* Generate confirmation prompt */
++    format = panel_operate_generate_prompt (panel, OP_DELETE, src_stat,
++                                            trash ? _("Trash") : NULL);
+ 
+     if (source == NULL)
+         g_snprintf (fmd_buf, sizeof (fmd_buf), format, panel->marked);
+@@ -2026,10 +2030,10 @@ do_confirm_erase (const WPanel *panel, const char *source, struct stat *src_stat
+ 
+     g_free (format);
+ 
+-    if (safe_delete)
+-        query_set_sel (1);
++    query_set_sel (safe_delete ? 1 : 0);
+ 
+-    i = query_dialog (op_names[OP_DELETE], fmd_buf, D_ERROR, 2, _ ("&Yes"), _ ("&No"));
++    i = query_dialog (trash ? _("Trash") : op_names[OP_DELETE], fmd_buf, D_ERROR,
++                      2, _("&Yes"), _("&No"));
+ 
+     return (i == 0);
+ }
+@@ -3024,7 +3028,7 @@ ret:
+         }
+     }
+ 
+-    // Always sync timestamps
++    /* Always sync timestamps */
+     if (dst_status == DEST_FULL || dst_status == DEST_SHORT_KEEP)
+         mc_utime (dst_vpath, &times);
+ 
+@@ -3510,6 +3514,26 @@ compute_dir_size (const vfs_path_t *dirname_vpath, dirsize_status_msg_t *sm, siz
+ }
+ 
+ /* --------------------------------------------------------------------------------------------- */
++/* Use native selection checks, prompt formatting, and safe-delete focus for trash. */
++gboolean
++panel_confirm_trash (void *source_panel)
++{
++    WPanel *panel = PANEL (source_panel);
++    const char *source = NULL;
++    struct stat src_stat;
++
++    if (panel->marked <= 1)
++    {
++        source = check_single_entry (panel, FALSE, &src_stat);
++        if (source == NULL)
++            return FALSE;
++    }
++
++    return do_confirm_erase (panel, source, &src_stat, TRUE);
++}
++
++/* --------------------------------------------------------------------------------------------- */
++
+ /**
+  * panel_operate:
+  *
+@@ -3570,7 +3594,7 @@ panel_operate (void *source_panel, FileOperation operation, gboolean force_singl
+ 
+         dest_vpath = vfs_path_from_str (dest);
+     }
+-    else if (confirm_delete && !do_confirm_erase (panel, source, &src_stat))
++    else if (confirm_delete && !do_confirm_erase (panel, source, &src_stat, FALSE))
+     {
+         ret_val = FALSE;
+         goto ret_fast;
+diff --git a/src/filemanager/file.h b/src/filemanager/file.h
+index 751b4cd72..c7d439c6d 100644
+--- a/src/filemanager/file.h
++++ b/src/filemanager/file.h
+@@ -49,6 +49,8 @@ FileProgressStatus copy_dir_dir (file_op_context_t *ctx, const char *s, const ch
+                                  GSList *parent_dirs);
+ FileProgressStatus erase_dir (file_op_context_t *ctx, const vfs_path_t *vpath);
+ 
++gboolean panel_confirm_trash (void *source_panel);
++
+ gboolean panel_operate (void *source_panel, FileOperation op, gboolean force_single);
+ 
+ /* Error reporting routines */
+diff --git a/src/filemanager/filemanager.c b/src/filemanager/filemanager.c
+index a15324a62..b48a72ba0 100644
+--- a/src/filemanager/filemanager.c
++++ b/src/filemanager/filemanager.c
+@@ -84,6 +84,7 @@
+ #include "src/consaver/cons.saver.h"  // show_console_contents
+ #include "src/file_history.h"         // show_file_history()
+ 
++#include "file.h"
+ #include "filemanager.h"
+ 
+ /*** global variables ****************************************************************************/
+@@ -1235,6 +1236,10 @@ midnight_execute_cmd (Widget *sender, long command)
+     case CK_OptionsLayout:
+         layout_box ();
+         break;
++    case CK_SkinNext:
++    case CK_SkinPrev:
++        skin_cycle (command == CK_SkinNext);
++        break;
+     case CK_OptionsAppearance:
+         appearance_box ();
+         break;
+@@ -1348,12 +1353,34 @@ midnight_execute_cmd (Widget *sender, long command)
+     case CK_UserMenu:
+         user_file_menu_cmd ();
+         break;
++    case CK_Trash:
++        if (get_current_type () == view_listing)
++        {
++            if (panel_confirm_trash (current_panel))
++            {
++                char *menu = g_build_filename (mc_global.share_data_dir, "mc-trash.menu", NULL);
++                (void) user_menu_cmd (NULL, menu, 0);
++                g_free (menu);
++            }
++        }
++        break;
+     case CK_View:
+         view_cmd (current_panel);
+         break;
+     case CK_ViewFile:
+         view_file_cmd (current_panel);
+         break;
++    case CK_ClipboardPath:
++    case CK_ClipboardDirectory:
++    case CK_ClipboardName:
++    case CK_ClipboardFile:
++        if (get_current_type () == view_listing)
++        {
++            char *menu = g_build_filename (mc_global.share_data_dir, "mc-clipboard.menu", NULL);
++            (void) user_menu_cmd (NULL, menu, command - CK_ClipboardPath);
++            g_free (menu);
++        }
++        break;
+     case CK_EditorViewerHistory:
+         show_editor_viewer_history ();
+         break;
+@@ -1527,6 +1554,11 @@ midnight_callback (Widget *w, Widget *sender, widget_msg_t msg, int parm, void *
+     {
+         cb_ret_t v = MSG_NOT_HANDLED;
+ 
++        /* Plain Delete edits a nonempty command line before considering trash. */
++        if (parm == KEY_DC && mc_global.cmdline_visible && !is_cmdline_mute ()
++            && !input_is_empty (the_cmdline))
++            return send_message (the_cmdline, NULL, MSG_KEY, parm, NULL);
++
+         command = widget_lookup_key (w, parm);
+         if (command != CK_IgnoreKey)
+             v = midnight_execute_cmd (NULL, command);
+diff --git a/src/keymap.c b/src/keymap.c
+index 35ef2759e..c38b14c6d 100644
+--- a/src/keymap.c
++++ b/src/keymap.c
+@@ -100,6 +100,7 @@ typedef struct global_keymap_ini_t
+ /* midnight */
+ static const global_keymap_ini_t default_filemanager_keymap[] = {
+     { "ChangePanel", "tab; ctrl-i" },
++    { "SkinNext", "alt-shift-t" },
+     { "Help", "f1" },
+     { "UserMenu", "f2" },
+     { "View", "f3" },
+@@ -107,7 +108,8 @@ static const global_keymap_ini_t default_filemanager_keymap[] = {
+     { "Copy", "f5" },
+     { "Move", "f6" },
+     { "MakeDir", "f7" },
+-    { "Delete", "f8" },
++    { "Delete", "f8; shift-delete" },
++    { "Trash", "delete; f12" },
+     { "Menu", "f9" },
+     { "Quit", "f10" },
+     { "MenuLastSelected", "f19" },
+@@ -121,6 +123,10 @@ static const global_keymap_ini_t default_filemanager_keymap[] = {
+     { "PutCurrentSelected", "alt-enter; ctrl-enter" },
+     { "PutCurrentFullSelected", "ctrl-shift-enter" },
+     { "CdQuick", "alt-c" },
++    { "ClipboardPath", "alt-shift-f" },
++    { "ClipboardDirectory", "alt-shift-d" },
++    { "ClipboardName", "alt-shift-n" },
++    { "ClipboardFile", "alt-shift-c" },
+     // To access the directory hotlist
+     { "HotList", "ctrl-backslash" },
+     // Suspend
+diff --git a/src/setup.c b/src/setup.c
+index fb0844915..46353482d 100644
+--- a/src/setup.c
++++ b/src/setup.c
+@@ -135,7 +135,7 @@ panels_options_t panels_options = {
+     .mark_moves_down = TRUE,
+     .reverse_files_only = TRUE,
+     .auto_save_setup = FALSE,
+-    .navigate_with_arrows = FALSE,
++    .navigate_with_arrows = TRUE,
+     .scroll_pages = TRUE,
+     .scroll_center = FALSE,
+     .mouse_move_pages = TRUE,
+diff --git a/src/vfs/extfs/Makefile.am b/src/vfs/extfs/Makefile.am
+index d310dd7e9..dc1093fb9 100644
+--- a/src/vfs/extfs/Makefile.am
++++ b/src/vfs/extfs/Makefile.am
+@@ -4,6 +4,7 @@ DIST_SUBDIRS = helpers
+ AM_CPPFLAGS = \
+ 	-DLIBEXECDIR=\""$(pkglibexecdir)"\" \
+ 	$(GLIB_CFLAGS) \
++	$(LIBZIP_CFLAGS) \
+ 	-I$(top_srcdir)
+ 
+ noinst_LTLIBRARIES = libvfs-extfs.la
+diff --git a/src/vfs/extfs/extfs.c b/src/vfs/extfs/extfs.c
+index b035cb025..e1a62fed7 100644
+--- a/src/vfs/extfs/extfs.c
++++ b/src/vfs/extfs/extfs.c
+@@ -50,6 +50,10 @@
+ #include <errno.h>
+ #include <sys/wait.h>
+ 
++#ifdef HAVE_LIBZIP
++#include <zip.h>
++#endif
++
+ #include "lib/global.h"
+ #include "lib/fileloc.h"
+ #include "lib/mcconfig.h"
+@@ -90,6 +94,13 @@ struct extfs_super_t
+ 
+     int fstype;
+     char *local_name;
++    char *cache_name;
++#ifdef HAVE_LIBZIP
++    zip_t *zip_archive;
++    GHashTable *zip_names;
++    struct stat zip_stat;
++    pid_t zip_pid;
++#endif
+     struct stat local_stat;
+     dev_t rdev;
+ };
+@@ -101,9 +112,20 @@ typedef struct
+     gboolean need_archive;
+ } extfs_plugin_info_t;
+ 
++typedef struct
++{
++    vfs_file_handler_t base;
++#ifdef HAVE_LIBZIP
++    zip_file_t *zip_file;
++#endif
++} extfs_file_handler_t;
++
+ /*** forward declarations (file scope functions) *************************************************/
+ 
+-static struct vfs_s_entry *extfs_resolve_symlinks_int (struct vfs_s_entry *entry, GSList *list);
++static struct vfs_s_entry *extfs_resolve_symlinks_int (struct vfs_s_entry *entry, GSList * list);
++#ifdef HAVE_LIBZIP
++static void extfs_zip_reset (struct extfs_super_t *archive);
++#endif
+ 
+ /*** file scope variables ************************************************************************/
+ 
+@@ -136,6 +158,20 @@ extfs_super_new (struct vfs_class *me, const char *name, const vfs_path_t *local
+ 
+     super->fstype = fstype;
+ 
++    /* Helpers may keep an index for the lifetime of this archive. */
++    {
++        vfs_path_t *cache_vpath;
++        int fd;
++
++        fd = vfs_mkstemps (&cache_vpath, "extfs-cache", "");
++        if (fd != -1)
++        {
++            close (fd);
++            super->cache_name = g_strdup (vfs_path_get_last_path_str (cache_vpath));
++            vfs_path_free (cache_vpath, TRUE);
++        }
++    }
++
+     if (local_name_vpath != NULL)
+     {
+         super->local_name = g_strdup (vfs_path_get_last_path_str (local_name_vpath));
+@@ -367,6 +403,25 @@ extfs_free_archive (struct vfs_class *me, struct vfs_s_super *psup)
+ 
+     (void) me;
+ 
++#ifdef HAVE_LIBZIP
++    extfs_zip_reset (archive);
++#endif
++    if (archive->cache_name != NULL)
++    {
++        const char *suffixes[] = { "", ".dir", ".pag" };
++        size_t i;
++
++        for (i = 0; i < G_N_ELEMENTS (suffixes); i++)
++        {
++            char *path;
++
++            path = g_strconcat (archive->cache_name, suffixes[i], (char *) NULL);
++            unlink (path);
++            g_free (path);
++        }
++        g_free (archive->cache_name);
++    }
++
+     if (archive->local_name != NULL)
+     {
+         struct stat my;
+@@ -938,6 +993,146 @@ extfs_get_archive_name (const struct extfs_super_t *archive)
+ }
+ 
+ /* --------------------------------------------------------------------------------------------- */
++#ifdef HAVE_LIBZIP
++static void
++extfs_zip_reset (struct extfs_super_t *archive)
++{
++    if (archive->zip_archive != NULL)
++        zip_discard (archive->zip_archive);
++    archive->zip_archive = NULL;
++    if (archive->zip_names != NULL)
++        g_hash_table_destroy (archive->zip_names);
++    archive->zip_names = NULL;
++}
++
++/* Match uzip's slash collapsing and first run of ./ or ../ components. */
++static char *
++extfs_zip_canonical_name (const char *name)
++{
++    GString *result;
++    const char *p;
++    size_t i;
++
++    result = g_string_new ("");
++    for (p = name; *p != '\0'; p++)
++        if (*p != '/' || result->len == 0 || result->str[result->len - 1] != '/')
++            g_string_append_c (result, *p);
++    for (i = 0; i < result->len; i++)
++        if (i == 0 || result->str[i - 1] == '/')
++        {
++            size_t end = i;
++
++            while (result->str[end] == '.')
++                if (result->str[end + 1] == '/')
++                    end += 2;
++                else if (result->str[end + 1] == '.' && result->str[end + 2] == '/')
++                    end += 3;
++                else
++                    break;
++            if (end != i)
++            {
++                g_string_erase (result, i, end - i);
++                break;
++            }
++        }
++    return g_string_free (result, FALSE);
++}
++
++static gboolean
++extfs_zip_same_archive (const struct stat *a, const struct stat *b)
++{
++    if (a->st_dev != b->st_dev || a->st_ino != b->st_ino || a->st_size != b->st_size
++        || a->st_mtime != b->st_mtime || a->st_ctime != b->st_ctime)
++        return FALSE;
++#if defined(HAVE_STRUCT_STAT_ST_MTIM)
++    return a->st_mtim.tv_nsec == b->st_mtim.tv_nsec && a->st_ctim.tv_nsec == b->st_ctim.tv_nsec;
++#elif defined(HAVE_STRUCT_STAT_ST_MTIMESPEC)
++    return a->st_mtimespec.tv_nsec == b->st_mtimespec.tv_nsec
++        && a->st_ctimespec.tv_nsec == b->st_ctimespec.tv_nsec;
++#elif defined(HAVE_STRUCT_STAT_ST_MTIMENSEC)
++    return a->st_mtimensec == b->st_mtimensec && a->st_ctimensec == b->st_ctimensec;
++#else
++    return TRUE;
++#endif
++}
++
++static zip_file_t *
++extfs_zip_open (struct extfs_super_t *archive, const struct vfs_s_entry *entry)
++{
++    const extfs_plugin_info_t *info;
++    char *archive_name, *entry_name, *helper_name, *system_helper;
++    gboolean is_system_helper;
++    struct stat st;
++    zip_int64_t count, i, *index;
++    zip_stat_t entry_stat;
++
++    info = &g_array_index (extfs_plugins, extfs_plugin_info_t, archive->fstype);
++    /* User-supplied extfs helpers retain control of their contents. */
++    helper_name = g_strconcat (info->path, info->prefix, NULL);
++    system_helper = g_build_filename (LIBEXECDIR, MC_EXTFS_DIR, "uzip", NULL);
++    is_system_helper = strcmp (helper_name, system_helper) == 0;
++    g_free (helper_name);
++    g_free (system_helper);
++    if (!is_system_helper)
++        return NULL;
++    archive_name = extfs_get_archive_name (archive);
++    if (stat (archive_name, &st) != 0)
++    {
++        g_free (archive_name);
++        return NULL;
++    }
++    if (archive->zip_archive != NULL
++        && (archive->zip_pid != getpid () || !extfs_zip_same_archive (&archive->zip_stat, &st)))
++        extfs_zip_reset (archive);
++    if (archive->zip_archive == NULL)
++    {
++        archive->zip_archive = zip_open (archive_name, ZIP_RDONLY, NULL);
++        if (archive->zip_archive != NULL)
++        {
++            archive->zip_stat = st;
++            archive->zip_pid = getpid ();
++            archive->zip_names = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
++            count = zip_get_num_entries (archive->zip_archive, 0);
++            for (i = 0; i < count; i++)
++            {
++                const char *name;
++                char *canonical;
++
++                name = zip_get_name (archive->zip_archive, i, ZIP_FL_ENC_RAW);
++                if (name == NULL)
++                    continue;
++                canonical = extfs_zip_canonical_name (name);
++                index = g_hash_table_lookup (archive->zip_names, canonical);
++                if (index != NULL)
++                {
++                    /* Duplicate/aliased names keep the helper's original semantics. */
++                    *index = -1;
++                    g_free (canonical);
++                }
++                else
++                {
++                    index = g_new (zip_int64_t, 1);
++                    *index = i;
++                    g_hash_table_insert (archive->zip_names, canonical, index);
++                }
++            }
++        }
++    }
++    g_free (archive_name);
++    if (archive->zip_archive == NULL)
++        return NULL;
++    entry_name = extfs_get_path_from_entry (entry);
++    index = g_hash_table_lookup (archive->zip_names, entry_name);
++    g_free (entry_name);
++    if (index == NULL || *index < 0
++        || zip_stat_index (archive->zip_archive, *index, 0, &entry_stat) != 0
++        || (entry_stat.valid & ZIP_STAT_SIZE) == 0
++        || entry_stat.size != (zip_uint64_t) entry->ino->st.st_size)
++        return NULL;
++    return zip_fopen_index (archive->zip_archive, *index, 0);
++}
++#endif
++
+ /** Don't pass localname as NULL */
+ 
+ static int
+@@ -1000,6 +1195,20 @@ extfs_cmd (const char *str_extfs_cmd, const struct extfs_super_t *archive,
+         g_string_free (quoted_localname, TRUE);
+     }
+ 
++    if (archive->cache_name != NULL)
++    {
++        GString *quoted_cache_name;
++
++        quoted_cache_name = name_quote (archive->cache_name, FALSE);
++        if (quoted_cache_name != NULL)
++        {
++            g_string_prepend_c (cmd, ' ');
++            g_string_prepend (cmd, quoted_cache_name->str);
++            g_string_prepend (cmd, "MC_EXTFS_CACHE=");
++            g_string_free (quoted_cache_name, TRUE);
++        }
++    }
++
+     // don't read stdout
+     pip = mc_popen (cmd->str, FALSE, TRUE, &error);
+     g_string_free (cmd, TRUE);
+@@ -1072,6 +1281,7 @@ extfs_run (const vfs_path_t *vpath)
+ static void *
+ extfs_open (const vfs_path_t *vpath, int flags, mode_t mode)
+ {
++    extfs_file_handler_t *handler;
+     vfs_file_handler_t *extfs_info;
+     struct extfs_super_t *archive = NULL;
+     const char *q;
+@@ -1099,6 +1309,25 @@ extfs_open (const vfs_path_t *vpath, int flags, mode_t mode)
+     if (S_ISDIR (entry->ino->st.st_mode))
+         ERRNOR (EISDIR, NULL);
+ 
++#ifdef HAVE_LIBZIP
++    if (!created && entry->ino->localname == NULL && IS_LINEAR (flags))
++    {
++        zip_file_t *zip_file;
++
++        zip_file = extfs_zip_open (archive, entry);
++        if (zip_file != NULL)
++        {
++            extfs_file_handler_t *file;
++
++            file = g_new0 (extfs_file_handler_t, 1);
++            file->zip_file = zip_file;
++            extfs_info = &file->base;
++            vfs_s_init_fh (extfs_info, entry->ino, FALSE);
++            extfs_info->handle = -1;
++            goto register_handle;
++        }
++    }
++#endif
+     if (entry->ino->localname == NULL)
+     {
+         vfs_path_t *local_filename_vpath;
+@@ -1135,11 +1364,15 @@ extfs_open (const vfs_path_t *vpath, int flags, mode_t mode)
+     if (local_handle == -1)
+         ERRNOR (EIO, NULL);
+ 
+-    extfs_info = g_new (vfs_file_handler_t, 1);
++    handler = g_new0 (extfs_file_handler_t, 1);
++    extfs_info = &handler->base;
+     vfs_s_init_fh (extfs_info, entry->ino, created);
+     extfs_info->handle = local_handle;
+ 
+-    // i.e. we had no open files and now we have one
++#ifdef HAVE_LIBZIP
++  register_handle:
++#endif
++    /* i.e. we had no open files and now we have one */
+     vfs_rmstamp (vfs_extfs_ops, (vfsid) archive);
+     VFS_SUPER (archive)->fd_usage++;
+     return extfs_info;
+@@ -1152,6 +1385,18 @@ extfs_read (void *fh, char *buffer, size_t count)
+ {
+     vfs_file_handler_t *file = VFS_FILE_HANDLER (fh);
+ 
++#ifdef HAVE_LIBZIP
++    if (((extfs_file_handler_t *) fh)->zip_file != NULL)
++    {
++        zip_int64_t result;
++
++        result = zip_fread (((extfs_file_handler_t *) fh)->zip_file, buffer, count);
++        if (result < 0)
++            ERRNOR (EIO, -1);
++        file->pos += result;
++        return result;
++    }
++#endif
+     return read (file->handle, buffer, count);
+ }
+ 
+@@ -1163,7 +1408,15 @@ extfs_close (void *fh)
+     vfs_file_handler_t *file = VFS_FILE_HANDLER (fh);
+     int errno_code = 0;
+ 
+-    close (file->handle);
++#ifdef HAVE_LIBZIP
++    if (((extfs_file_handler_t *) fh)->zip_file != NULL)
++    {
++        if (zip_fclose (((extfs_file_handler_t *) fh)->zip_file) != 0)
++            errno_code = EIO;
++    }
++    else
++#endif
++        close (file->handle);
+     file->handle = -1;
+ 
+     // Commit the file if it has changed
+@@ -1517,6 +1770,14 @@ extfs_lseek (void *fh, off_t offset, int whence)
+ {
+     vfs_file_handler_t *file = VFS_FILE_HANDLER (fh);
+ 
++#ifdef HAVE_LIBZIP
++    if (((extfs_file_handler_t *) fh)->zip_file != NULL)
++    {
++        if (whence == SEEK_SET && offset == 0 && file->pos == 0)
++            return 0;
++        ERRNOR (ESPIPE, -1);
++    }
++#endif
+     return lseek (file->handle, offset, whence);
+ }
+ 
+diff --git a/src/vfs/extfs/helpers/README b/src/vfs/extfs/helpers/README
+index 64da3d6c1..40836978a 100644
+--- a/src/vfs/extfs/helpers/README
++++ b/src/vfs/extfs/helpers/README
+@@ -89,6 +89,12 @@ storedfilename (possibly with path if not located in archive's root
+ [this is wrong. current extfs strips paths! -- pavel@ucw.cz])
+ to file extractto.
+ 
++MC sets MC_EXTFS_CACHE to a private temporary file reserved for the open
++archive. Helpers may use it as a lock and create an SDBM index with the
++suffixes .dir and .pag. MC removes all three files when the archive is
++released. Cache contents must be invalidated when the archive changes;
++helpers must also work without this optional environment variable.
++
+ * Command: copyin archivename storedfilename sourcefile
+ 
+ This should add to the archivename the sourcefile with the name
+diff --git a/src/vfs/extfs/helpers/uzip.in b/src/vfs/extfs/helpers/uzip.in
+index ceffb5317..68fb531cb 100644
+--- a/src/vfs/extfs/helpers/uzip.in
++++ b/src/vfs/extfs/helpers/uzip.in
+@@ -8,6 +8,7 @@
+ 
+ use POSIX;
+ use File::Basename;
++use Fcntl qw(:DEFAULT :flock :mode);
+ use strict;
+ use warnings;
+ 
+@@ -72,31 +73,108 @@ sub zipfs_canonicalize_pathname($) {
+ # starting with either "./" or "../". Some ZIP files contain such names,
+ # so we need to build a translation table for them.
+ my $zipfs_realpathname_table = undef;
++
++# Read the original names once, either into the in-process fallback table
++# or into the persistent index supplied by MC for this open archive.
++sub zipfs_read_realpathnames {
++    my ($store) = @_;
++    open(my $zip, "$cmd_list $qarchive |") or return 0;
++    while (my $line = <$zip>) {
++        $line =~ s/\r*\n*$//;
++        my $name;
++        if ($op_has_zipinfo) {
++            $name = $14 if $line =~ $regex_zipinfo_line;
++        } else {
++            $name = $11 if $line =~ $regex_nonzipinfo_line;
++        }
++        $store->(zipfs_canonicalize_pathname($name), $name) if defined $name;
++    }
++    return close($zip);
++}
++
++sub zipfs_cache_signature {
++    my @st = Time::HiRes::stat($aarchive);
++    die "cannot stat archive" unless @st;
++    return Digest::SHA::sha256_hex(join("\0", $aarchive, @st[0, 1, 7],
++        sprintf('%.9f', $st[9]), sprintf('%.9f', $st[10]), $cmd_list,
++        map { $ENV{$_} // '' } qw(LANG LC_ALL LC_CTYPE LC_TIME TZ)));
++}
++
++# SDBM is a Perl core module and provides individual lookups without loading
++# the whole index for each extracted file. Split values to fit SDBM's pages,
++# including archive paths longer than a single page.
++sub zipfs_cached_realpathname {
++    my ($fname) = @_;
++    my $cache = $ENV{MC_EXTFS_CACHE};
++    return () unless defined $cache && $cache =~ m{^/};
++
++    my @parent = lstat(File::Basename::dirname($cache));
++    my @lockstat = lstat($cache);
++    return () unless @parent && S_ISDIR($parent[2]) && $parent[4] == $<
++        && ($parent[2] & 0777) == 0700
++        && @lockstat && S_ISREG($lockstat[2]) && $lockstat[4] == $<
++        && ($lockstat[2] & 0777) == 0600;
++    for my $suffix ('.dir', '.pag') {
++        my @st = lstat($cache . $suffix);
++        return () if @st && (!S_ISREG($st[2]) || $st[4] != $< || ($st[2] & 0777) != 0600);
++    }
++
++    # Missing modules or an unwritable/damaged cache must not prevent copying.
++    my $realname;
++    my $ok = eval {
++        require SDBM_File;
++        require Digest::SHA;
++        require Time::HiRes;
++        open(my $lock, '+<', $cache) or die "cannot open cache lock";
++        flock($lock, LOCK_EX) or die "cannot lock cache";
++        my $signature = zipfs_cache_signature();
++        my %index;
++        tie(%index, 'SDBM_File', $cache, O_RDWR | O_CREAT, 0600) or die "cannot open index";
++        if (($index{'signature'} // '') ne $signature) {
++            untie %index;
++            tie(%index, 'SDBM_File', $cache, O_RDWR | O_CREAT | O_TRUNC, 0600)
++                or die "cannot reset index";
++            zipfs_read_realpathnames(sub {
++                my ($canonical, $original) = @_;
++                my $key = Digest::SHA::sha256_hex($canonical);
++                my $parts = int((length($original) + 767) / 768) || 1;
++                for my $part (0 .. $parts - 1) {
++                    $index{"$key:$part"} = substr($original, $part * 768, 768);
++                }
++                $index{$key} = $parts;
++            }) or die "cannot list archive";
++            die "archive changed while indexing" if zipfs_cache_signature() ne $signature;
++            $index{'signature'} = $signature;
++        }
++        my $key = Digest::SHA::sha256_hex($fname);
++        my $parts = $index{$key};
++        $realname = $fname;
++        if (defined $parts) {
++            die "invalid index entry" unless $parts =~ /^\d+$/ && $parts > 0 && $parts <= 128;
++            $realname = '';
++            for my $part (0 .. $parts - 1) {
++                my $value = $index{"$key:$part"};
++                die "incomplete index entry" unless defined $value;
++                $realname .= $value;
++            }
++        }
++        untie %index;
++        1;
++    };
++    return $ok ? ($realname) : ();
++}
++
+ sub zipfs_realpathname($) {
+     my ($fname) = @_;
+ 
+     if (!defined($zipfs_realpathname_table)) {
++        my @cached = zipfs_cached_realpathname($fname);
++        return $cached[0] if @cached;
+         $zipfs_realpathname_table = {};
+-	if (!open(ZIP, "$cmd_list $qarchive |")) {
+-	    return $fname;
+-	}
+-	foreach my $line (<ZIP>) {
+-	    $line =~ s/\r*\n*$//;
+-	    if ($op_has_zipinfo) {
+-		if ($line =~ $regex_zipinfo_line) {
+-		    my ($fname) = ($14);
+-		    $zipfs_realpathname_table->{zipfs_canonicalize_pathname($fname)} = $fname;
+-		}
+-	    } else {
+-		if ($line =~ $regex_nonzipinfo_line) {
+-		    my ($fname) = ($11);
+-		    $zipfs_realpathname_table->{zipfs_canonicalize_pathname($fname)} = $fname;
+-		}
+-	    }
+-	}
+-	if (!close(ZIP)) {
+-	    return $fname;
+-	}
++        zipfs_read_realpathnames(sub {
++            my ($canonical, $original) = @_;
++            $zipfs_realpathname_table->{$canonical} = $original;
++        }) or return $fname;
+     }
+     if (exists($zipfs_realpathname_table->{$fname})) {
+ 	return $zipfs_realpathname_table->{$fname};
+diff --git a/version.sh b/version.sh
+index 0623f0662..28f2b6834 100755
+--- a/version.sh
++++ b/version.sh
+@@ -68,6 +68,13 @@ if [ -r "${VERSION_FILE}" ]
+     SHOR_MC_VERSION="${PREV_MC_VERSION}"
+ fi
+ 
++# Use the fork release version in both Git checkouts and source archives.
++if [ -r "${src_top_dir}/dotname/VERSION" ]; then
++    CURR_MC_VERSION=`cat "${src_top_dir}/dotname/VERSION"`
++    SHOR_MC_VERSION="${CURR_MC_VERSION}"
++    mc_print_version
++fi
++
+ git_head=`git --git-dir "${src_top_dir}/.git" rev-parse --verify HEAD 2>/dev/null`
+ [ -z "${git_head}" ] && mc_print_version
+ 

@@ -26,10 +26,6 @@ and `make' as usually.
 The distribution tarball is created by the command `make distcheck'. 
 This command can take a while.
 
-Currently snapshots are made on Debian unstable and use the versions of
-the tools from the unstable repository.  Yes, the rpm packages are made
-on Debian too.
-
 Note that the version of gettext doesn't affect the snapshot because the
 distributed files are installed by gettext from archives for the version
 used in the AM_GNU_GETTEXT_VERSION macro, which is 0.18.2.
@@ -70,29 +66,11 @@ cd mc-slang
 cd ../mc-ncurses
 /usr/local/src/mc/configure --with-screen=ncurses && make all
 
-Please use the same indentation as other developers.  To indent a block,
-select in the internal editor and use Shift-F9 to call the external
-indent.  For historic reasons, GNU Midnight Commander used formatting
-that is not default for GNU Indent.  Please put following text to your
-~/.indent.pro file to make GNU Indent follow the style used in GNU
-Midnight Commander:
+Please use the same indentation as other developers.  We enforce our
+indentation style with clang-format.  If your IDE doesn't have a
+suitable itegration, make sure to run the formatter yourself:
 
---gnu-style
---format-first-column-comments
---indent-level4
---brace-indent0
---line-length100
---no-tabs
---blank-lines-after-procedures
-
-or in short notation:
-
-indent -gnu -fc1 -i4 -bli0 -nut -bap -l100
-
-It's OK to indent the whole function if you edit it.  However, please
-refrain from it if you are posting your patch for review.  In this case
-you would save time of other developers if you only include significant
-changes.  The developer applying your patch can format the code for you.
+make indent
 
 Please keep in mind that the VFS subsystem is licensed under LGPL, while
 the rest of the code uses GPL.
@@ -265,31 +243,32 @@ Where to Find Bug Reports and Patches
 
 The official place for bug reports is:
 
-    https://www.midnight-commander.org/
-
+    https://github.com/MidnightCommander/mc/issues
 
 There are various unofficial sources where bug reports and patches can
 be found (NOT maintained by the MC team).
 
-
-http://bugs.debian.org/mc
+https://tracker.debian.org/pkg/mc
+https://bugs.debian.org/cgi-bin/pkgreport.cgi?pkg=mc
 	The bug tracking system for Debian, a package collection mainly
 	for GNU/Linux and the Hurd.
 
-http://bugzilla.redhat.com/bugzilla/buglist.cgi?component=mc
+https://bugzilla.redhat.com/bugzilla/buglist.cgi?component=mc
+https://src.fedoraproject.org/rpms/mc
 	Bugs reported in Redhat Linux.
 
-http://www.openbsd.org/cgi-bin/cvsweb/ports/misc/mc/patches/
-	The patches that are applied for the OpenBSD version of MC.
+https://gitweb.gentoo.org/repo/gentoo.git/tree/app-misc/mc/files
+	The patches that are applied for the Gentoo Linux version of MC.
 
-http://www.freebsd.org/cgi/cvsweb.cgi/ports/misc/mc/files/
+https://cgit.freebsd.org/ports/tree/misc/mc/files
 	The patches that are applied for the FreeBSD version of MC.
+
+https://cvsweb.openbsd.org/ports/misc/mc/patches/
+	The patches that are applied for the OpenBSD version of MC.
 
 http://cvsweb.netbsd.org/bsdweb.cgi/pkgsrc/sysutils/mc/patches/
 	The patches that are applied for the NetBSD version of MC.
 
-http://sources.gentoo.org/cgi-bin/viewvc.cgi/gentoo-x86/app-misc/mc/files/?hideattic=1
-	The patches that are applied for the Gentoo Linux version of MC.
 
 
 Programming Tips

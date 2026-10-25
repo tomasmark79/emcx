@@ -1,7 +1,7 @@
 /*
    paths to configuration files
 
-   Copyright (C) 2010-2025
+   Copyright (C) 2010-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -20,7 +20,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -31,7 +31,7 @@
 #include "lib/global.h"
 #include "lib/fileloc.h"
 #include "lib/vfs/vfs.h"
-#include "lib/util.h"           /* unix_error_string() */
+#include "lib/util.h"  // unix_error_string()
 
 #include "lib/mcconfig.h"
 
@@ -50,15 +50,12 @@ static char *mc_config_str = NULL;
 static char *mc_cache_str = NULL;
 static char *mc_data_str = NULL;
 
-static gboolean config_dir_present = FALSE;
-
 static const struct
 {
     char **basedir;
     const char *filename;
 } mc_config_files_reference[] = {
-    /* *INDENT-OFF* */
-    /* config */
+    // config
     { &mc_config_str, MC_CONFIG_FILE },
     { &mc_config_str, MC_FHL_INI_FILE },
     { &mc_config_str, MC_HOTLIST_FILE },
@@ -67,19 +64,19 @@ static const struct
     { &mc_config_str, EDIT_HOME_MENU },
     { &mc_config_str, MC_PANELS_FILE },
 
-    /* User should move this file with applying some changes in file */
+    // User should move this file with applying some changes in file
     { &mc_config_str, MC_EXT_FILE },
     { &mc_config_str, MC_EXT_OLD_FILE },
 
-    /* data */
+    // data
     { &mc_data_str, MC_SKINS_DIR },
     { &mc_data_str, VFS_SHELL_PREFIX },
-    { &mc_data_str, MC_ASHRC_FILE },
-    { &mc_data_str, MC_KSHRC_FILE },
-    { &mc_data_str, MC_MKSHRC_FILE },
-    { &mc_data_str, MC_BASHRC_FILE },
+    { &mc_data_str, MC_ASHRC_CUSTOM_PROFILE_FILE },
+    { &mc_data_str, MC_KSHRC_CUSTOM_PROFILE_FILE },
+    { &mc_data_str, MC_MKSHRC_CUSTOM_PROFILE_FILE },
+    { &mc_data_str, MC_BASHRC_CUSTOM_PROFILE_FILE },
     { &mc_data_str, MC_INPUTRC_FILE },
-    { &mc_data_str, MC_ZSHRC_FILE },
+    { &mc_data_str, MC_ZSHRC_CUSTOM_PROFILE_FILE },
     { &mc_data_str, MC_EXTFS_DIR },
     { &mc_data_str, MC_HISTORY_FILE },
     { &mc_data_str, MC_FILEPOS_FILE },
@@ -87,14 +84,16 @@ static const struct
     { &mc_data_str, EDIT_HOME_CLIP_FILE },
     { &mc_data_str, MC_MACRO_FILE },
 
-    /* cache */
+    // cache
     { &mc_cache_str, "mc.log" },
     { &mc_cache_str, MC_TREESTORE_FILE },
     { &mc_cache_str, EDIT_HOME_TEMP_FILE },
     { &mc_cache_str, EDIT_HOME_BLOCK_FILE },
 
-    { NULL, NULL }
-    /* *INDENT-ON* */
+    {
+        NULL,
+        NULL,
+    },
 };
 
 /* --------------------------------------------------------------------------------------------- */
@@ -106,9 +105,10 @@ mc_config_mkdir (const char *directory_name, GError **mcerror)
 {
     mc_return_if_error (mcerror);
 
-    if ((!g_file_test (directory_name, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_DIR)) &&
-        (g_mkdir_with_parents (directory_name, 0700) != 0))
-        mc_propagate_error (mcerror, 0, _("Cannot create %s directory"), directory_name);
+    if (!(g_file_test (directory_name, G_FILE_TEST_EXISTS)
+          && g_file_test (directory_name, G_FILE_TEST_IS_DIR))
+        && g_mkdir_with_parents (directory_name, 0700) != 0)
+        mc_propagate_error (mcerror, 0, _ ("Cannot create %s directory"), directory_name);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -122,15 +122,10 @@ mc_config_init_one_config_path (const char *path_base, const char *subdir, GErro
 
     full_path = g_build_filename (path_base, subdir, (char *) NULL);
 
-    if (g_file_test (full_path, G_FILE_TEST_EXISTS))
+    if (g_file_test (full_path, G_FILE_TEST_EXISTS) && !g_file_test (full_path, G_FILE_TEST_IS_DIR))
     {
-        if (g_file_test (full_path, G_FILE_TEST_IS_DIR))
-            config_dir_present = TRUE;
-        else
-        {
-            fprintf (stderr, "%s %s\n", _("FATAL: not a directory:"), full_path);
-            exit (EXIT_FAILURE);
-        }
+        fprintf (stderr, "%s %s\n", _ ("FATAL: not a directory:"), full_path);
+        exit (EXIT_FAILURE);
     }
 
     mc_config_mkdir (full_path, mcerror);

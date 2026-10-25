@@ -1,7 +1,7 @@
 /*
    Definitions of key bindings.
 
-   Copyright (C) 2005-2025
+   Copyright (C) 2005-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -22,7 +22,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -33,15 +33,14 @@
 #include <sys/types.h>
 
 #include "lib/global.h"
-#include "lib/tty/key.h"        /* KEY_M_ */
+#include "lib/tty/key.h"  // KEY_M_
 #include "lib/keybind.h"
 
 /*** global variables ****************************************************************************/
 
 /*** file scope macro definitions ****************************************************************/
 
-#define ADD_KEYMAP_NAME(name) \
-    { #name, CK_##name }
+#define ADD_KEYMAP_NAME(name) { #name, CK_##name }
 
 /*** file scope type declarations ****************************************************************/
 
@@ -56,7 +55,7 @@ typedef struct name_keymap_t
 /*** file scope variables ************************************************************************/
 
 static name_keymap_t command_names[] = {
-    /* common */
+    // common
     ADD_KEYMAP_NAME (InsertChar),
     ADD_KEYMAP_NAME (Enter),
     ADD_KEYMAP_NAME (ChangePanel),
@@ -110,9 +109,7 @@ static name_keymap_t command_names[] = {
     ADD_KEYMAP_NAME (Shell),
     ADD_KEYMAP_NAME (Edit),
     ADD_KEYMAP_NAME (EditNew),
-#ifdef HAVE_CHARSET
     ADD_KEYMAP_NAME (SelectCodepage),
-#endif
     ADD_KEYMAP_NAME (EditorViewerHistory),
     ADD_KEYMAP_NAME (History),
     ADD_KEYMAP_NAME (HistoryNext),
@@ -157,7 +154,7 @@ static name_keymap_t command_names[] = {
     ADD_KEYMAP_NAME (QuitQuiet),
     ADD_KEYMAP_NAME (ExtendedKeyMap),
 
-    /* main commands */
+// main commands
 #ifdef USE_INTERNAL_EDIT
     ADD_KEYMAP_NAME (EditForceInternal),
 #endif
@@ -173,7 +170,6 @@ static name_keymap_t command_names[] = {
 #endif
     ADD_KEYMAP_NAME (OptionsVfs),
     ADD_KEYMAP_NAME (OptionsConfirm),
-    ADD_KEYMAP_NAME (OptionsDisplayBits),
     ADD_KEYMAP_NAME (EditExtensionsFile),
     ADD_KEYMAP_NAME (EditFileHighlightFile),
     ADD_KEYMAP_NAME (LinkSymbolicEdit),
@@ -199,9 +195,6 @@ static name_keymap_t command_names[] = {
     ADD_KEYMAP_NAME (Link),
     ADD_KEYMAP_NAME (SetupListingFormat),
     ADD_KEYMAP_NAME (PanelListing),
-#ifdef LISTMODE_EDITOR
-    ADD_KEYMAP_NAME (ListMode),
-#endif
     ADD_KEYMAP_NAME (OptionsPanel),
     ADD_KEYMAP_NAME (CdQuick),
     ADD_KEYMAP_NAME (PanelQuickView),
@@ -211,9 +204,6 @@ static name_keymap_t command_names[] = {
     ADD_KEYMAP_NAME (LinkSymbolic),
     ADD_KEYMAP_NAME (PanelTree),
     ADD_KEYMAP_NAME (Tree),
-#ifdef ENABLE_VFS_UNDELFS
-    ADD_KEYMAP_NAME (Undelete),
-#endif
     ADD_KEYMAP_NAME (PutCurrentLink),
     ADD_KEYMAP_NAME (PutOtherLink),
     ADD_KEYMAP_NAME (HotListAdd),
@@ -231,10 +221,12 @@ static name_keymap_t command_names[] = {
     ADD_KEYMAP_NAME (Select),
     ADD_KEYMAP_NAME (Unselect),
 
-    /* panel */
+    // panel
     ADD_KEYMAP_NAME (SelectExt),
     ADD_KEYMAP_NAME (ScrollLeft),
     ADD_KEYMAP_NAME (ScrollRight),
+    ADD_KEYMAP_NAME (ScrollHome),
+    ADD_KEYMAP_NAME (ScrollEnd),
     ADD_KEYMAP_NAME (PanelOtherCd),
     ADD_KEYMAP_NAME (PanelOtherCdLink),
     ADD_KEYMAP_NAME (CopySingle),
@@ -248,20 +240,21 @@ static name_keymap_t command_names[] = {
     ADD_KEYMAP_NAME (SortPrev),
     ADD_KEYMAP_NAME (SortReverse),
     ADD_KEYMAP_NAME (SortByName),
+    ADD_KEYMAP_NAME (SortByVersion),
     ADD_KEYMAP_NAME (SortByExt),
     ADD_KEYMAP_NAME (SortBySize),
     ADD_KEYMAP_NAME (SortByMTime),
     ADD_KEYMAP_NAME (CdParentSmart),
     ADD_KEYMAP_NAME (CycleListingFormat),
 
-    /* dialog */
+    // dialog
     ADD_KEYMAP_NAME (Ok),
     ADD_KEYMAP_NAME (Cancel),
 
-    /* input line */
+    // input line
     ADD_KEYMAP_NAME (Yank),
 
-    /* help */
+    // help
     ADD_KEYMAP_NAME (Index),
     ADD_KEYMAP_NAME (Back),
     ADD_KEYMAP_NAME (LinkNext),
@@ -269,14 +262,14 @@ static name_keymap_t command_names[] = {
     ADD_KEYMAP_NAME (NodeNext),
     ADD_KEYMAP_NAME (NodePrev),
 
-    /* tree */
+    // tree
     ADD_KEYMAP_NAME (Forget),
 
-#if defined (USE_INTERNAL_EDIT) || defined (USE_DIFF_VIEW)
+#if defined(USE_INTERNAL_EDIT) || defined(USE_DIFF_VIEW)
     ADD_KEYMAP_NAME (ShowNumbers),
 #endif
 
-    /* chattr dialog */
+    // chattr dialog
     ADD_KEYMAP_NAME (MarkAndDown),
 
 #ifdef USE_INTERNAL_EDIT
@@ -312,7 +305,7 @@ static name_keymap_t command_names[] = {
     ADD_KEYMAP_NAME (SpellCheck),
     ADD_KEYMAP_NAME (SpellCheckCurrentWord),
     ADD_KEYMAP_NAME (SpellCheckSelectLang),
-#endif /* HAVE_ASPELL */
+#endif
     ADD_KEYMAP_NAME (BookmarkFlush),
     ADD_KEYMAP_NAME (BookmarkNext),
     ADD_KEYMAP_NAME (BookmarkPrev),
@@ -345,17 +338,17 @@ static name_keymap_t command_names[] = {
     ADD_KEYMAP_NAME (ShowMargin),
     ADD_KEYMAP_NAME (OptionsSaveMode),
     ADD_KEYMAP_NAME (About),
-    /* An action to run external script from macro */
-    {"ExecuteScript", CK_PipeBlock (0)},
+    // An action to run external script from macro
+    { "ExecuteScript", CK_PipeBlock (0) },
     ADD_KEYMAP_NAME (WindowMove),
     ADD_KEYMAP_NAME (WindowResize),
     ADD_KEYMAP_NAME (WindowFullscreen),
     ADD_KEYMAP_NAME (WindowList),
     ADD_KEYMAP_NAME (WindowNext),
     ADD_KEYMAP_NAME (WindowPrev),
-#endif /* USE_INTERNAL_EDIT */
+#endif
 
-    /* viewer */
+    // viewer
     ADD_KEYMAP_NAME (WrapMode),
     ADD_KEYMAP_NAME (HexEditMode),
     ADD_KEYMAP_NAME (HexMode),
@@ -370,7 +363,7 @@ static name_keymap_t command_names[] = {
     ADD_KEYMAP_NAME (SearchOppositeContinue),
 
 #ifdef USE_DIFF_VIEW
-    /* diff viewer */
+    // diff viewer
     ADD_KEYMAP_NAME (ShowSymbols),
     ADD_KEYMAP_NAME (SplitFull),
     ADD_KEYMAP_NAME (Tab2),
@@ -382,14 +375,12 @@ static name_keymap_t command_names[] = {
     ADD_KEYMAP_NAME (EditOther),
     ADD_KEYMAP_NAME (Merge),
     ADD_KEYMAP_NAME (MergeOther),
-#endif /* USE_DIFF_VIEW */
+#endif
 
-    {NULL, CK_IgnoreKey}
+    { NULL, CK_IgnoreKey }
 };
 
-/* *INDENT-OFF* */
 static const size_t num_command_names = G_N_ELEMENTS (command_names) - 1;
-/* *INDENT-ON* */
 
 /* --------------------------------------------------------------------------------------------- */
 /*** file scope functions ************************************************************************/
@@ -413,8 +404,8 @@ sort_command_names (void)
 
     if (!has_been_sorted)
     {
-        qsort (command_names, num_command_names,
-               sizeof (command_names[0]), &name_keymap_comparator);
+        qsort (command_names, num_command_names, sizeof (command_names[0]),
+               &name_keymap_comparator);
         has_been_sorted = TRUE;
     }
 }
@@ -443,7 +434,7 @@ void
 keybind_cmd_bind (GArray *keymap, const char *keybind, long action)
 {
     char *caption = NULL;
-    long key;
+    int key;
 
     key = tty_keyname_to_keycode (keybind, &caption);
     keymap_add (keymap, key, action, caption);
@@ -460,8 +451,8 @@ keybind_lookup_action (const char *name)
 
     sort_command_names ();
 
-    res = bsearch (&key, command_names, num_command_names,
-                   sizeof (command_names[0]), name_keymap_comparator);
+    res = bsearch (&key, command_names, num_command_names, sizeof (command_names[0]),
+                   name_keymap_comparator);
 
     return (res != NULL) ? res->val : CK_IgnoreKey;
 }

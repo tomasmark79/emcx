@@ -14,7 +14,6 @@ libmcfilemanager_la_SOURCES = \
 	file.c file.h \
 	filegui.c filegui.h \
 	filemanager.h filemanager.c \
-	filenot.c filenot.h \
 	find.c \
 	hotlist.c hotlist.h \
 	info.c info.h \
@@ -25,9 +24,6 @@ libmcfilemanager_la_SOURCES = \
 	panel.c panel.h \
 	tree.c tree.h \
 	treestore.c treestore.h
-
-# Unmaintained, unsupported, etc
-#	listmode.c listmode.h
 
 AM_CPPFLAGS = -I$(top_srcdir) $(GLIB_CFLAGS)
 

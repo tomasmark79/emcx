@@ -1,7 +1,7 @@
 /*
    Widget based utility functions.
 
-   Copyright (C) 1994-2025
+   Copyright (C) 1994-2026
    Free Software Foundation, Inc.
 
    Authors:
@@ -24,7 +24,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 /** \file wtools.c
@@ -38,11 +38,11 @@
 
 #include "lib/global.h"
 #include "lib/tty/tty.h"
-#include "lib/tty/key.h"        /* tty_getch() */
+#include "lib/tty/key.h"  // tty_getch()
 #include "lib/strutil.h"
-#include "lib/util.h"           /* tilde_expand() */
+#include "lib/util.h"  // tilde_expand()
 #include "lib/widget.h"
-#include "lib/event.h"          /* mc_event_raise() */
+#include "lib/event.h"  // mc_event_raise()
 
 /*** global variables ****************************************************************************/
 
@@ -75,10 +75,10 @@ query_default_callback (Widget *w, Widget *sender, widget_msg_t msg, int parm, v
         if ((w->pos_flags & WPOS_CENTER) == 0)
         {
             WDialog *prev_dlg = NULL;
-            int ypos, xpos;
-            WRect r;
+            int ypos;
+            WRect r = { 0, 0, w->rect.lines, w->rect.cols };
 
-            /* get dialog under h */
+            // get dialog under h
             if (top_dlg != NULL)
             {
                 if (top_dlg->data != (void *) h)
@@ -95,20 +95,19 @@ query_default_callback (Widget *w, Widget *sender, widget_msg_t msg, int parm, v
                 }
             }
 
-            /* if previous dialog is not fullscreen'd -- overlap it */
+            // if previous dialog is not fullscreen'd -- overlap it
             if (prev_dlg == NULL || (WIDGET (prev_dlg)->pos_flags & WPOS_FULLSCREEN) != 0)
                 ypos = LINES / 3 - (w->rect.lines - 3) / 2;
             else
                 ypos = WIDGET (prev_dlg)->rect.y + 2;
 
-            /* if dialog is too high, place it centered */
-            if (ypos + w->rect.lines < LINES / 2)
-                w->pos_flags |= WPOS_CENTER;
+            // if dialog is too high or too low, place it centered
+            if (ypos + w->rect.lines < LINES / 2 || ypos > LINES / 2)
+                w->pos_flags |= WPOS_CENTER_VERT;
+            else
+                r.y = ypos;
 
-            xpos = COLS / 2 - w->rect.cols / 2;
-
-            /* set position */
-            rect_init (&r, ypos, xpos, w->rect.lines, w->rect.cols);
+            w->pos_flags |= WPOS_CENTER_HORZ;
 
             return dlg_default_callback (w, NULL, MSG_RESIZE, 0, &r);
         }
@@ -127,11 +126,11 @@ static void
 bg_message (int dummy, int *flags, char *title, const char *text)
 {
     (void) dummy;
-    title = g_strconcat (_("Background process:"), " ", title, (char *) NULL);
-    query_dialog (title, text, *flags, 1, _("&OK"));
+    title = g_strconcat (_ ("Background process:"), " ", title, (char *) NULL);
+    query_dialog (title, text, *flags, 1, _ ("&OK"));
     g_free (title);
 }
-#endif /* ENABLE_BACKGROUND */
+#endif
 
 /* --------------------------------------------------------------------------------------------- */
 
@@ -152,15 +151,14 @@ fg_input_dialog_help (const char *header, const char *text, const char *help,
                       input_complete_t completion_flags)
 {
     char *p_text;
-    char histname[64] = "inp|";
+    char histname[BUF_TINY] = "inp|";
     gboolean is_passwd = FALSE;
     char *my_str = NULL;
-    int ret;
 
-    /* label text */
+    // label text
     p_text = g_strstrip (g_strdup (text));
 
-    /* input history */
+    // input history
     if (history_name != NULL && *history_name != '\0')
         g_strlcpy (histname + 3, history_name, sizeof (histname) - 3);
 
@@ -173,25 +171,25 @@ fg_input_dialog_help (const char *header, const char *text, const char *help,
         def_text = "";
     }
 
-    {
-        quick_widget_t quick_widgets[] = {
-            /* *INDENT-OFF* */
-            QUICK_LABELED_INPUT (p_text, input_label_above, def_text, histname, &my_str,
-                                 NULL, is_passwd, strip_password, completion_flags),
-            QUICK_BUTTONS_OK_CANCEL,
-            QUICK_END
-            /* *INDENT-ON* */
-        };
+    quick_widget_t quick_widgets[] = {
+        QUICK_LABELED_INPUT (p_text, input_label_above, def_text, histname, &my_str, NULL,
+                             is_passwd, strip_password, completion_flags),
+        QUICK_BUTTONS_OK_CANCEL,
+        QUICK_END,
+    };
 
-        WRect r = { -1, -1, 0, COLS / 2 };
+    WRect r = { -1, -1, 0, COLS / 2 };
 
-        quick_dialog_t qdlg = {
-            r, header, help,
-            quick_widgets, NULL, NULL
-        };
+    quick_dialog_t qdlg = {
+        .rect = r,
+        .title = header,
+        .help = help,
+        .widgets = quick_widgets,
+        .callback = NULL,
+        .mouse_callback = NULL,
+    };
 
-        ret = quick_dialog (&qdlg);
-    }
+    const int ret = quick_dialog (&qdlg);
 
     g_free (p_text);
 
@@ -210,7 +208,7 @@ wtools_parent_call (void *routine, gpointer ctx, int argc, ...)
     event_data.ctx = ctx;
     event_data.argc = argc;
     va_start (event_data.ap, argc);
-    mc_event_raise (MCEVENT_GROUP_CORE, "background_parent_call", (gpointer) & event_data);
+    mc_event_raise (MCEVENT_GROUP_CORE, "background_parent_call", (gpointer) &event_data);
     va_end (event_data.ap);
     return event_data.ret.i;
 }
@@ -225,11 +223,11 @@ wtools_parent_call_string (void *routine, int argc, ...)
     event_data.routine = routine;
     event_data.argc = argc;
     va_start (event_data.ap, argc);
-    mc_event_raise (MCEVENT_GROUP_CORE, "background_parent_call_string", (gpointer) & event_data);
+    mc_event_raise (MCEVENT_GROUP_CORE, "background_parent_call_string", (gpointer) &event_data);
     va_end (event_data.ap);
     return event_data.ret.s;
 }
-#endif /* ENABLE_BACKGROUND */
+#endif
 
 /* --------------------------------------------------------------------------------------------- */
 /*** public functions ****************************************************************************/
@@ -239,11 +237,11 @@ wtools_parent_call_string (void *routine, int argc, ...)
 int
 query_dialog (const char *header, const char *text, int flags, int count, ...)
 {
-    va_list ap;
     WDialog *query_dlg;
     WGroup *g;
+    GPtrArray *buttons = NULL;
     WButton *button;
-    int win_len = 0;
+    int win_width = 0;
     int i;
     int result = -1;
     int cols, lines;
@@ -252,31 +250,36 @@ query_dialog (const char *header, const char *text, int flags, int count, ...)
         (flags & D_CENTER) != 0 ? (WPOS_CENTER | WPOS_TRYUP) : WPOS_KEEP_DEFAULT;
 
     if (header == MSG_ERROR)
-        header = _("Error");
+        header = _ ("Error");
 
     if (count > 0)
     {
+        va_list ap;
+
+        buttons = g_ptr_array_sized_new ((guint) count);
+
         va_start (ap, count);
         for (i = 0; i < count; i++)
         {
-            char *cp = va_arg (ap, char *);
+            const char *cp = va_arg (ap, char *);
 
-            win_len += str_term_width1 (cp) + 6;
-            if (strchr (cp, '&') != NULL)
-                win_len--;
+            button = button_new (1, 1, B_USER + i, NORMAL_BUTTON, cp, NULL);
+            win_width += widget_get_columns (WIDGET (button)) + 1;
+            g_ptr_array_add (buttons, button);
         }
         va_end (ap);
     }
 
-    /* count coordinates */
+    const int header_cols = str_term_width1 (header);
+
+    // count coordinates
     str_msg_term_size (text, &lines, &cols);
-    cols = 6 + MAX (win_len, MAX (str_term_width1 (header), cols));
+    cols = 6 + MAX (win_width, MAX (header_cols, cols));
     lines += 4 + (count > 0 ? 2 : 0);
 
-    /* prepare dialog */
-    query_dlg =
-        dlg_create (TRUE, 0, 0, lines, cols, pos_flags, FALSE, query_colors, query_default_callback,
-                    NULL, "[QueryBox]", header);
+    // prepare dialog
+    query_dlg = dlg_create (TRUE, 0, 0, lines, cols, pos_flags, FALSE, query_colors,
+                            query_default_callback, NULL, "[QueryBox]", header);
     g = GROUP (query_dlg);
 
     if (count > 0)
@@ -287,33 +290,30 @@ query_dialog (const char *header, const char *text, int flags, int count, ...)
                                   NULL);
         group_add_widget (g, hline_new (lines - 4, -1, -1));
 
-        cols = (cols - win_len - 2) / 2 + 2;
-        va_start (ap, count);
+        cols = (cols - win_width - 2) / 2 + 2;
+
         for (i = 0; i < count; i++)
         {
-            int xpos;
-            char *cur_name;
-
-            cur_name = va_arg (ap, char *);
-            xpos = str_term_width1 (cur_name) + 6;
-            if (strchr (cur_name, '&') != NULL)
-                xpos--;
-
-            button = button_new (lines - 3, cols, B_USER + i, NORMAL_BUTTON, cur_name, NULL);
+            button = BUTTON (g_ptr_array_index (buttons, i));
+            WIDGET (button)->rect.y = lines - 3;
+            WIDGET (button)->rect.x = cols;
             group_add_widget (g, button);
-            cols += xpos;
+
+            cols += widget_get_columns (WIDGET (button)) + 1;
+
             if (i == sel_pos)
                 defbutton = button;
         }
-        va_end (ap);
 
-        /* do resize before running and selecting any widget */
+        g_ptr_array_free (buttons, FALSE);
+
+        // do resize before running and selecting any widget
         send_message (query_dlg, NULL, MSG_RESIZE, 0, NULL);
 
         if (defbutton != NULL)
             widget_select (WIDGET (defbutton));
 
-        /* run dialog and make result */
+        // run dialog and make result
         switch (dlg_run (query_dlg))
         {
         case B_CANCEL:
@@ -322,7 +322,7 @@ query_dialog (const char *header, const char *text, int flags, int count, ...)
             result = query_dlg->ret_value - B_USER;
         }
 
-        /* free used memory */
+        // free used memory
         widget_destroy (WIDGET (query_dlg));
     }
     else
@@ -364,7 +364,7 @@ create_message (int flags, const char *title, const char *text, ...)
     query_dialog (title, p, flags, 0);
     d = last_query_dlg;
 
-    /* do resize before initing and running */
+    // do resize before initing and running
     send_message (d, NULL, MSG_RESIZE, 0, NULL);
 
     dlg_init (d);
@@ -387,7 +387,7 @@ message (int flags, const char *title, const char *text, ...)
     va_end (ap);
 
     if (title == MSG_ERROR)
-        title = _("Error");
+        title = _ ("Error");
 
 #ifdef ENABLE_BACKGROUND
     if (mc_global.we_are_background)
@@ -404,8 +404,8 @@ message (int flags, const char *title, const char *text, ...)
                             strlen (p), p);
     }
     else
-#endif /* ENABLE_BACKGROUND */
-        query_dialog (title, p, flags, 1, _("&OK"));
+#endif
+        query_dialog (title, p, flags, 1, _ ("&OK"));
 
     g_free (p);
 }
@@ -422,7 +422,7 @@ mc_error_message (GError **mcerror, int *code)
     if ((*mcerror)->code == 0)
         message (D_ERROR, MSG_ERROR, "%s", (*mcerror)->message);
     else
-        message (D_ERROR, MSG_ERROR, _("%s (%d)"), (*mcerror)->message, (*mcerror)->code);
+        message (D_ERROR, MSG_ERROR, _ ("%s (%d)"), (*mcerror)->message, (*mcerror)->code);
 
     if (code != NULL)
         *code = (*mcerror)->code;
@@ -442,9 +442,8 @@ mc_error_message (GError **mcerror, int *code)
  */
 
 char *
-input_dialog_help (const char *header, const char *text, const char *help,
-                   const char *history_name, const char *def_text, gboolean strip_password,
-                   input_complete_t completion_flags)
+input_dialog_help (const char *header, const char *text, const char *help, const char *history_name,
+                   const char *def_text, gboolean strip_password, input_complete_t completion_flags)
 {
 #ifdef ENABLE_BACKGROUND
     if (mc_global.we_are_background)
@@ -456,16 +455,13 @@ input_dialog_help (const char *header, const char *text, const char *help,
                         gboolean, input_complete_t);
         } func;
         func.f = fg_input_dialog_help;
-        return wtools_parent_call_string (func.p, 7,
-                                          strlen (header), header, strlen (text),
-                                          text, strlen (help), help,
-                                          strlen (history_name), history_name,
-                                          strlen (def_text), def_text,
-                                          sizeof (gboolean), strip_password,
-                                          sizeof (input_complete_t), completion_flags);
+        return wtools_parent_call_string (
+            func.p, 7, strlen (header), header, strlen (text), text, strlen (help), help,
+            strlen (history_name), history_name, strlen (def_text), def_text, sizeof (gboolean),
+            strip_password, sizeof (input_complete_t), completion_flags);
     }
     else
-#endif /* ENABLE_BACKGROUND */
+#endif
         return fg_input_dialog_help (header, text, help, history_name, def_text, strip_password,
                                      completion_flags);
 }
@@ -484,9 +480,8 @@ input_dialog (const char *header, const char *text, const char *history_name, co
 /* --------------------------------------------------------------------------------------------- */
 
 char *
-input_expand_dialog (const char *header, const char *text,
-                     const char *history_name, const char *def_text,
-                     input_complete_t completion_flags)
+input_expand_dialog (const char *header, const char *text, const char *history_name,
+                     const char *def_text, input_complete_t completion_flags)
 {
     char *result;
 
@@ -559,7 +554,7 @@ status_msg_init (status_msg_t *sm, const char *title, double delay, status_msg_c
 {
     gint64 start;
 
-    /* repaint screen to remove previous finished dialog */
+    // repaint screen to remove previous finished dialog
     mc_refresh ();
 
     start = g_get_monotonic_time ();
@@ -579,7 +574,7 @@ status_msg_init (status_msg_t *sm, const char *title, double delay, status_msg_c
 
     if (mc_time_elapsed (&start, sm->delay))
     {
-        /* We will manage the dialog without any help, that's why we have to call dlg_init */
+        // We will manage the dialog without any help, that's why we have to call dlg_init
         dlg_init (sm->dlg);
     }
 }
@@ -600,7 +595,7 @@ status_msg_deinit (status_msg_t *sm)
     if (sm->deinit != NULL)
         sm->deinit (sm);
 
-    /* close and destroy dialog */
+    // close and destroy dialog
     dlg_run_done (sm->dlg);
     widget_destroy (WIDGET (sm->dlg));
 }
@@ -623,15 +618,15 @@ status_msg_common_update (status_msg_t *sm)
     if (sm == NULL)
         return B_ENTER;
 
-    /* This should not happen, but... */
+    // This should not happen, but...
     if (sm->dlg == NULL)
         return B_ENTER;
 
     if (widget_get_state (WIDGET (sm->dlg), WST_CONSTRUCT))
     {
-        /* dialog is not shown yet */
+        // dialog is not shown yet
 
-        /* do not change sm->start */
+        // do not change sm->start
         gint64 start = sm->start;
 
         if (mc_time_elapsed (&start, sm->delay))
@@ -640,7 +635,7 @@ status_msg_common_update (status_msg_t *sm)
         return B_ENTER;
     }
 
-    event.x = -1;               /* Don't show the GPM cursor */
+    event.x = -1;  // Don't show the GPM cursor
     c = tty_get_event (&event, FALSE, sm->block);
     if (c == EV_NONE)
         return B_ENTER;
@@ -668,14 +663,10 @@ simple_status_msg_init_cb (status_msg_t *sm)
     WGroup *wg = GROUP (sm->dlg);
     WRect r;
 
-    const char *b_name = N_("&Abort");
+    const char *b_name = _ ("&Abort");
     int b_width;
     int wd_width, y;
     Widget *b;
-
-#ifdef ENABLE_NLS
-    b_name = _(b_name);
-#endif
 
     b_width = str_term_width1 (b_name) + 4;
     wd_width = MAX (wd->rect.cols, b_width + 6);

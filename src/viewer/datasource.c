@@ -2,7 +2,7 @@
    Internal file viewer for the Midnight Commander
    Functions for datasources
 
-   Copyright (C) 1994-2025
+   Copyright (C) 1994-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -30,7 +30,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 /*
@@ -57,7 +57,7 @@
 #include "lib/global.h"
 #include "lib/vfs/vfs.h"
 #include "lib/util.h"
-#include "lib/widget.h"         /* D_NORMAL, D_ERROR */
+#include "lib/widget.h"  // D_NORMAL, D_ERROR
 
 #include "internal.h"
 
@@ -153,7 +153,7 @@ mcview_get_utf (WView *view, off_t byte_index, int *ch, int *ch_len)
 {
     gchar *str = NULL;
     int res;
-    gchar utf8buf[UTF8_CHAR_LEN + 1];
+    gchar utf8buf[MB_LEN_MAX + 1];
 
     switch (view->datasource)
     {
@@ -181,10 +181,10 @@ mcview_get_utf (WView *view, off_t byte_index, int *ch, int *ch_len)
 
     if (res < 0)
     {
-        /* Retry with explicit bytes to make sure it's not a buffer boundary */
+        // Retry with explicit bytes to make sure it's not a buffer boundary
         int i;
 
-        for (i = 0; i < UTF8_CHAR_LEN; i++)
+        for (i = 0; i < MB_LEN_MAX; i++)
         {
             if (mcview_get_byte (view, byte_index + i, &res))
                 utf8buf[i] = res;
@@ -194,14 +194,14 @@ mcview_get_utf (WView *view, off_t byte_index, int *ch, int *ch_len)
                 break;
             }
         }
-        utf8buf[UTF8_CHAR_LEN] = '\0';
+        utf8buf[MB_LEN_MAX] = '\0';
         str = utf8buf;
         res = g_utf8_get_char_validated (str, -1);
     }
 
     if (res < 0)
     {
-        /* Implicit conversion from signed char to signed int keeps negative values. */
+        // Implicit conversion from signed char to signed int keeps negative values.
         *ch = *str;
         *ch_len = 1;
     }
@@ -210,7 +210,7 @@ mcview_get_utf (WView *view, off_t byte_index, int *ch, int *ch_len)
         gchar *next_ch = NULL;
 
         *ch = res;
-        /* Calculate UTF-8 char length */
+        // Calculate UTF-8 char length
         next_ch = g_utf8_next_char (str);
         *ch_len = next_ch - str;
     }
@@ -275,7 +275,7 @@ mcview_set_byte (WView *view, off_t offset, byte b)
     g_assert (offset < mcview_get_filesize (view));
     g_assert (view->datasource == DS_FILE);
 
-    view->ds_file_datalen = 0;  /* just force reloading */
+    view->ds_file_datalen = 0;  // just force reloading
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -303,9 +303,8 @@ mcview_file_load_data (WView *view, off_t byte_index)
     bytes_read = 0;
     while (bytes_read < view->ds_file_datasize)
     {
-        res =
-            mc_read (view->ds_file_fd, view->ds_file_data + bytes_read,
-                     view->ds_file_datasize - bytes_read);
+        res = mc_read (view->ds_file_fd, view->ds_file_data + bytes_read,
+                       view->ds_file_datasize - bytes_read);
         if (res == -1)
             goto error;
         if (res == 0)
@@ -315,7 +314,7 @@ mcview_file_load_data (WView *view, off_t byte_index)
     view->ds_file_offset = blockoffset;
     if ((off_t) bytes_read > view->ds_file_filesize - view->ds_file_offset)
     {
-        /* the file has grown in the meantime -- stick to the old size */
+        // the file has grown in the meantime -- stick to the old size
         view->ds_file_datalen = view->ds_file_filesize - view->ds_file_offset;
     }
     else
@@ -324,7 +323,7 @@ mcview_file_load_data (WView *view, off_t byte_index)
     }
     return;
 
-  error:
+error:
     view->ds_file_datalen = 0;
 }
 
@@ -392,18 +391,17 @@ mcview_load_command_output (WView *view, const char *command)
     if (p == NULL)
     {
         mcview_display (view);
-        mcview_show_error (view, error->message);
+        mcview_show_error (view, NULL, error->message);
         g_error_free (error);
         return FALSE;
     }
 
-    /* Check if filter produced any output */
+    // Check if filter produced any output
     mcview_set_datasource_stdio_pipe (view, p);
     if (!mcview_get_byte (view, 0, NULL))
     {
         mcview_close_datasource (view);
         mcview_display (view);
-        return FALSE;
     }
 
     return TRUE;

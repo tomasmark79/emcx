@@ -1,7 +1,7 @@
 /*
    Global structure for some library-related variables
 
-   Copyright (C) 2009-2025
+   Copyright (C) 2009-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -20,7 +20,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 /** \file glibcompat.c
@@ -34,23 +34,19 @@
 
 #include "global.h"
 
-/* *INDENT-OFF* */
 #ifdef ENABLE_SUBSHELL
-#  ifdef SUBSHELL_OPTIONAL
-#    define SUBSHELL_USE FALSE
-#  else /* SUBSHELL_OPTIONAL */
-#    define SUBSHELL_USE TRUE
-#  endif /* SUBSHELL_OPTIONAL */
-#else /* !ENABLE_SUBSHELL */
-#    define SUBSHELL_USE FALSE
-#endif /* !ENABLE_SUBSHELL */
-/* *INDENT-ON* */
+#ifdef SUBSHELL_OPTIONAL
+#define SUBSHELL_USE FALSE
+#else
+#define SUBSHELL_USE TRUE
+#endif
+#else
+#define SUBSHELL_USE FALSE
+#endif
 
 /*** global variables ****************************************************************************/
 
-/* *INDENT-OFF* */
-mc_global_t mc_global =
-{
+mc_global_t mc_global = {
     .mc_version = MC_CURRENT_VERSION,
 
     .mc_run_mode = MC_RUN_FULL,
@@ -62,48 +58,42 @@ mc_global_t mc_global =
 
     .profile_name = NULL,
 
-#ifdef HAVE_CHARSET
     .source_codepage = -1,
     .display_codepage = -1,
-#else
-    .eight_bit_clean = TRUE,
-    .full_eight_bits = FALSE,
-#endif /* !HAVE_CHARSET */
     .utf8_display = FALSE,
 
-    .message_visible = TRUE,
+    .menubar_visible = TRUE,
+    .hint_visible = TRUE,
+    .cmdline_visible = TRUE,
     .keybar_visible = TRUE,
 
 #ifdef ENABLE_BACKGROUND
     .we_are_background = FALSE,
-#endif /* ENABLE_BACKGROUND */
+#endif
 
-    .widget =
-    {
+    .widget = {
         .confirm_history_cleanup = TRUE,
         .show_all_if_ambiguous = FALSE,
-        .is_right = FALSE
+        .is_right = FALSE,
     },
 
     .shell = NULL,
 
-    .tty =
-    {
+    .tty = {
         .skin = NULL,
         .shadows = TRUE,
         .setup_color_string = NULL,
         .term_color_string = NULL,
         .color_terminal_string = NULL,
-        .command_line_colors = NULL,
+
 #ifndef LINUX_CONS_SAVER_C
         .console_flag = '\0',
-#endif /* !LINUX_CONS_SAVER_C */
+#endif
 
         .use_subshell = SUBSHELL_USE,
-
 #ifdef ENABLE_SUBSHELL
         .subshell_pty = 0,
-#endif /* !ENABLE_SUBSHELL */
+#endif
 
         .xterm_flag = FALSE,
         .disable_x11 = FALSE,
@@ -111,17 +101,16 @@ mc_global_t mc_global =
         .disable_colors = FALSE,
         .ugly_line_drawing = FALSE,
         .old_mouse = FALSE,
-        .alternate_plus_minus = FALSE
+        .alternate_plus_minus = FALSE,
     },
 
-    .vfs =
-    {
+    .vfs = {
         .cd_symlinks = TRUE,
         .preallocate_space = FALSE,
-    }
+        .file_cloning = TRUE,
+    },
 
 };
-/* *INDENT-ON* */
 
 #undef SUBSHELL_USE
 
@@ -131,7 +120,20 @@ mc_global_t mc_global =
 
 /*** file scope variables ************************************************************************/
 
+/* --------------------------------------------------------------------------------------------- */
 /*** file scope functions ************************************************************************/
+/* --------------------------------------------------------------------------------------------- */
 
+/* --------------------------------------------------------------------------------------------- */
 /*** public functions ****************************************************************************/
+/* --------------------------------------------------------------------------------------------- */
+
+char *
+mc_get_package_copyright (void)
+{
+    const size_t last_year = 2026;
+
+    return g_strdup_printf (_ ("Copyright (C) 1996-%zu the Free Software Foundation"), last_year);
+}
+
 /* --------------------------------------------------------------------------------------------- */

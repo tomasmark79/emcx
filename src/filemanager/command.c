@@ -4,12 +4,13 @@
    with all the magic of the command input line, we depend on some
    help from the program's callback.
 
-   Copyright (C) 1995-2025
+   Copyright (C) 1995-2026
    Free Software Foundation, Inc.
 
    Written by:
    Slava Zanko <slavazanko@gmail.com>, 2013
    Andrew Borodin <aborodin@vmail.ru>, 2011-2022
+   Marek Libra <marek.libra@gmail.com>, 2026
 
    This file is part of the Midnight Commander.
 
@@ -24,7 +25,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 /** \file command.c
@@ -37,27 +38,27 @@
 #include <string.h>
 
 #include "lib/global.h"
-#include "lib/vfs/vfs.h"        /* vfs_current_is_local() */
-#include "lib/skin.h"           /* DEFAULT_COLOR */
-#include "lib/util.h"           /* whitespace() */
+#include "lib/vfs/vfs.h"  // vfs_current_is_local()
+#include "lib/skin.h"
+#include "lib/util.h"  // whitespace()
 #include "lib/widget.h"
 
-#include "src/setup.h"          /* quit */
+#include "src/setup.h"  // quit
 #ifdef ENABLE_SUBSHELL
 #include "src/subshell/subshell.h"
 #endif
-#include "src/execute.h"        /* shell_execute() */
-#include "src/usermenu.h"       /* expand_format() */
+#include "src/execute.h"   // shell_execute()
+#include "src/usermenu.h"  // expand_format()
 
-#include "filemanager.h"        /* quiet_quit_cmd(), layout.h */
-#include "cd.h"                 /* cd_to() */
+#include "filemanager.h"  // quiet_quit_cmd(), layout.h
+#include "cd.h"           // cd_to()
 
 #include "command.h"
 
 /*** global variables ****************************************************************************/
 
 /* This holds the command line */
-WInput *cmdline;
+WInput *the_cmdline;
 
 /*** file scope macro definitions ****************************************************************/
 
@@ -65,13 +66,102 @@ WInput *cmdline;
 
 /*** forward declarations (file scope functions) *************************************************/
 
+#ifdef HAVE_TESTS
+MC_TESTABLE gboolean command_has_unquoted_metacharacters (const char *cmd);
+#endif
+
 /*** file scope variables ************************************************************************/
 
 /* Color styles command line */
-static input_colors_t command_colors;
+static const input_colors_t command_colors = {
+    [INPUT_COLOR_MAIN] = CORE_COMMANDLINE_COLOR,
+    [INPUT_COLOR_MARK] = CORE_COMMANDLINE_MARK_COLOR,
+    [INPUT_COLOR_UNCHANGED] = CORE_COMMANDLINE_COLOR,
+    [INPUT_COLOR_HISTORY] = CORE_COMMAND_HISTORY_COLOR,
+};
 
 /* --------------------------------------------------------------------------------------------- */
 /*** file scope functions ************************************************************************/
+/* --------------------------------------------------------------------------------------------- */
+/**
+ * Detect shell syntax that the internal cd handler cannot process.
+ *
+ * Returns TRUE when any of the following appears outside of single quotes
+ * and backslash escaping:
+ *   - Command separators/operators: ; | &
+ *   - Command substitution: $( or ` (including inside double quotes,
+ *     where the shell still expands them)
+ *
+ * Note: plain parameter expansion ($VAR, ${VAR}) is intentionally excluded
+ * because the internal cd handler expands environment variables itself.
+ *
+ * Motivation: the internal cd handler cannot expand command substitutions
+ * nor execute compound commands. When any of these constructs are present,
+ * the entire command line must be passed to the shell.
+ *
+ * Only single quotes and backslash fully suppress detection. Double quotes
+ * suppress ; | & but NOT $( and ` because the shell expands command
+ * substitution inside double quotes.
+ *
+ * Parsing strategy: forward scan tracking quote state.
+ * We treat $( and ` as immediate indicators rather than parsing their
+ * contents, because internal cd cannot handle them regardless
+ * of what is inside.
+ */
+
+MC_TESTABLE gboolean
+command_has_unquoted_metacharacters (const char *cmd)
+{
+    gboolean in_single_quote = FALSE;
+    gboolean in_double_quote = FALSE;
+
+    for (const char *p = cmd; *p != '\0'; p++)
+    {
+        if (in_single_quote)
+        {
+            if (*p == '\'')
+                in_single_quote = FALSE;
+            continue;
+        }
+
+        if (*p == '\\' && p[1] != '\0')
+        {
+            p++;
+            continue;
+        }
+
+        if (*p == '`')
+            return TRUE;
+
+        if (*p == '$' && p[1] == '(')
+            return TRUE;
+
+        if (in_double_quote)
+        {
+            if (*p == '"')
+                in_double_quote = FALSE;
+            continue;
+        }
+
+        if (*p == '\'')
+        {
+            in_single_quote = TRUE;
+            continue;
+        }
+
+        if (*p == '"')
+        {
+            in_double_quote = TRUE;
+            continue;
+        }
+
+        if (*p == ';' || *p == '|' || *p == '&')
+            return TRUE;
+    }
+
+    return FALSE;
+}
+
 /* --------------------------------------------------------------------------------------------- */
 
 /** Handle Enter on the command line
@@ -85,19 +175,20 @@ enter (WInput *lc_cmdline)
 {
     const char *cmd;
 
-    if (!command_prompt)
+    if (!mc_global.cmdline_visible)
         return MSG_HANDLED;
 
     cmd = input_get_ctext (lc_cmdline);
 
-    /* Any initial whitespace should be removed at this point */
+    // Any initial whitespace should be removed at this point
     while (whiteness (*cmd))
         cmd++;
 
     if (*cmd == '\0')
         return MSG_HANDLED;
 
-    if (strncmp (cmd, "cd", 2) == 0 && (cmd[2] == '\0' || whitespace (cmd[2])))
+    if (strncmp (cmd, "cd", 2) == 0 && (cmd[2] == '\0' || whitespace (cmd[2]))
+        && !command_has_unquoted_metacharacters (cmd))
     {
         cd_to (cmd + 2);
         input_clean (lc_cmdline);
@@ -106,7 +197,7 @@ enter (WInput *lc_cmdline)
     else if (strcmp (cmd, "exit") == 0)
     {
         input_assign_text (lc_cmdline, "");
-        if (!quiet_quit_cmd ())
+        if (!quiet_quit_cmd (FALSE))
             return MSG_NOT_HANDLED;
     }
     else
@@ -116,7 +207,7 @@ enter (WInput *lc_cmdline)
 
         if (!vfs_current_is_local ())
         {
-            message (D_ERROR, MSG_ERROR, _("Cannot execute commands on non-local filesystems"));
+            message (D_ERROR, MSG_ERROR, _ ("Cannot execute commands on non-local filesystems"));
             return MSG_NOT_HANDLED;
         }
 #ifdef ENABLE_SUBSHELL
@@ -124,7 +215,7 @@ enter (WInput *lc_cmdline)
          * (will be checked again by shell_execute) */
         if (mc_global.tty.use_subshell && subshell_state != INACTIVE)
         {
-            message (D_ERROR, MSG_ERROR, _("The shell is already running a command"));
+            message (D_ERROR, MSG_ERROR, _ ("The shell is already running a command"));
             return MSG_NOT_HANDLED;
         }
 #endif
@@ -136,13 +227,13 @@ enter (WInput *lc_cmdline)
                 g_string_append_c (command, cmd[i]);
             else
             {
-                char *s;
+                GString *s;
 
                 s = expand_format (NULL, cmd[++i], TRUE);
                 if (s != NULL)
                 {
-                    g_string_append (command, s);
-                    g_free (s);
+                    mc_g_string_concat (command, s);
+                    g_string_free (s, TRUE);
                 }
             }
         }
@@ -154,11 +245,11 @@ enter (WInput *lc_cmdline)
 #ifdef ENABLE_SUBSHELL
         if ((quit & SUBSHELL_EXIT) != 0)
         {
-            if (quiet_quit_cmd ())
+            if (quiet_quit_cmd (FALSE))
                 return MSG_HANDLED;
 
             quit = 0;
-            /* restart subshell */
+            // restart subshell
             if (mc_global.tty.use_subshell)
                 init_subshell ();
         }
@@ -188,7 +279,7 @@ command_callback (Widget *w, Widget *sender, widget_msg_t msg, int parm, void *d
     switch (msg)
     {
     case MSG_KEY:
-        /* Special case: we handle the enter key */
+        // Special case: we handle the enter key
         if (parm == '\n')
             return enter (INPUT (w));
         MC_FALLTHROUGH;
@@ -210,29 +301,15 @@ command_new (int y, int x, int cols)
 
     cmd = input_new (y, x, command_colors, cols, "", "cmdline",
                      INPUT_COMPLETE_FILENAMES | INPUT_COMPLETE_VARIABLES | INPUT_COMPLETE_USERNAMES
-                     | INPUT_COMPLETE_HOSTNAMES | INPUT_COMPLETE_CD | INPUT_COMPLETE_COMMANDS |
-                     INPUT_COMPLETE_SHELL_ESC);
+                         | INPUT_COMPLETE_HOSTNAMES | INPUT_COMPLETE_CD | INPUT_COMPLETE_COMMANDS
+                         | INPUT_COMPLETE_SHELL_ESC);
     w = WIDGET (cmd);
-    /* Don't set WOP_SELECTABLE up, otherwise panels will be unselected */
+    // Don't set WOP_SELECTABLE up, otherwise panels will be unselected
     widget_set_options (w, WOP_SELECTABLE, FALSE);
-    /* Add our hooks */
+    // Add our hooks
     w->callback = command_callback;
 
     return cmd;
-}
-
-/* --------------------------------------------------------------------------------------------- */
-/**
- * Set colors for the command line.
- */
-
-void
-command_set_default_colors (void)
-{
-    command_colors[WINPUTC_MAIN] = DEFAULT_COLOR;
-    command_colors[WINPUTC_MARK] = COMMAND_MARK_COLOR;
-    command_colors[WINPUTC_UNCHANGED] = DEFAULT_COLOR;
-    command_colors[WINPUTC_HISTORY] = COMMAND_HISTORY_COLOR;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -248,13 +325,13 @@ command_set_default_colors (void)
 void
 command_insert (WInput *in, const char *text, gboolean insert_extra_space)
 {
-    char *quoted_text;
+    GString *quoted_text;
 
     quoted_text = name_quote (text, TRUE);
     if (quoted_text != NULL)
     {
-        input_insert (in, quoted_text, insert_extra_space);
-        g_free (quoted_text);
+        input_insert (in, quoted_text->str, insert_extra_space);
+        g_string_free (quoted_text, TRUE);
     }
 }
 

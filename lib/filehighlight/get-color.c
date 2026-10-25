@@ -2,7 +2,7 @@
    File highlight plugin.
    Interface functions. get color pair index for highlighted file.
 
-   Copyright (C) 2009-2025
+   Copyright (C) 2009-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -21,7 +21,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -29,7 +29,7 @@
 
 #include "lib/global.h"
 #include "lib/skin.h"
-#include "lib/util.h"           /* is_exe() */
+#include "lib/util.h"  // is_exe()
 #include "lib/filehighlight.h"
 #include "internal.h"
 
@@ -171,9 +171,8 @@ mc_fhl_is_special_door (const file_entry_t *fe)
 inline static gboolean
 mc_fhl_is_special (const file_entry_t *fe)
 {
-    return
-        (mc_fhl_is_special_socket (fe) || mc_fhl_is_special_fifo (fe)
-         || mc_fhl_is_special_door (fe));
+    return (mc_fhl_is_special_socket (fe) || mc_fhl_is_special_fifo (fe)
+            || mc_fhl_is_special_door (fe));
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -283,7 +282,7 @@ mc_fhl_get_color (const mc_fhl_t *fhl, const file_entry_t *fe)
     int ret;
 
     if (fhl == NULL)
-        return NORMAL_COLOR;
+        return FILEHIGHLIGHT_DEFAULT_COLOR;
 
     for (i = 0; i < fhl->filters->len; i++)
     {
@@ -294,20 +293,20 @@ mc_fhl_get_color (const mc_fhl_t *fhl, const file_entry_t *fe)
         {
         case MC_FLHGH_T_FTYPE:
             ret = mc_fhl_get_color_filetype (mc_filter, fhl, fe);
-            if (ret > 0)
-                return -ret;
+            if (ret >= 0)
+                return ret;
             break;
         case MC_FLHGH_T_EXT:
         case MC_FLHGH_T_FREGEXP:
             ret = mc_fhl_get_color_regexp (mc_filter, fhl, fe);
-            if (ret > 0)
-                return -ret;
+            if (ret >= 0)
+                return ret;
             break;
         default:
             break;
         }
     }
-    return NORMAL_COLOR;
+    return FILEHIGHLIGHT_DEFAULT_COLOR;
 }
 
 /* --------------------------------------------------------------------------------------------- */

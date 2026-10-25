@@ -2,7 +2,7 @@
    Handle any events in application.
    Manage events: add, delete, destroy, search
 
-   Copyright (C) 2011-2025
+   Copyright (C) 2011-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -21,7 +21,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -58,7 +58,7 @@ mc_event_group_destroy_value (gpointer data)
 
 gboolean
 mc_event_add (const gchar *event_group_name, const gchar *event_name,
-              mc_event_callback_func_t event_callback, gpointer event_init_data, GError **mcerror)
+              mc_event_callback_fn event_callback, gpointer event_init_data, GError **mcerror)
 {
     GTree *event_group;
     GPtrArray *callbacks;
@@ -69,7 +69,7 @@ mc_event_add (const gchar *event_group_name, const gchar *event_name,
     if (mc_event_grouplist == NULL || event_group_name == NULL || event_name == NULL
         || event_callback == NULL)
     {
-        mc_propagate_error (mcerror, 0, "%s", _("Check input data! Some of parameters are NULL!"));
+        mc_propagate_error (mcerror, 0, "%s", _ ("Check input data! Some of parameters are NULL!"));
         return FALSE;
     }
 
@@ -96,7 +96,7 @@ mc_event_add (const gchar *event_group_name, const gchar *event_name,
 
 void
 mc_event_del (const gchar *event_group_name, const gchar *event_name,
-              mc_event_callback_func_t event_callback, gpointer event_init_data)
+              mc_event_callback_fn event_callback, gpointer event_init_data)
 {
     GTree *event_group;
     GPtrArray *callbacks;
@@ -157,13 +157,11 @@ mc_event_get_event_group_by_name (const gchar *event_group_name, gboolean create
     if (event_group == NULL && create_new)
     {
         event_group =
-            g_tree_new_full ((GCompareDataFunc) g_ascii_strcasecmp,
-                             NULL,
-                             (GDestroyNotify) g_free,
+            g_tree_new_full ((GCompareDataFunc) g_ascii_strcasecmp, NULL, (GDestroyNotify) g_free,
                              (GDestroyNotify) mc_event_group_destroy_value);
         if (event_group == NULL)
         {
-            mc_propagate_error (mcerror, 0, _("Unable to create group '%s' for events!"),
+            mc_propagate_error (mcerror, 0, _ ("Unable to create group '%s' for events!"),
                                 event_group_name);
             return NULL;
         }
@@ -188,7 +186,7 @@ mc_event_get_event_by_name (GTree *event_group, const gchar *event_name, gboolea
         callbacks = g_ptr_array_new_with_free_func (g_free);
         if (callbacks == NULL)
         {
-            mc_propagate_error (mcerror, 0, _("Unable to create event '%s'!"), event_name);
+            mc_propagate_error (mcerror, 0, _ ("Unable to create event '%s'!"), event_name);
             return NULL;
         }
         g_tree_insert (event_group, g_strdup (event_name), (gpointer) callbacks);
@@ -199,7 +197,7 @@ mc_event_get_event_by_name (GTree *event_group, const gchar *event_name, gboolea
 /* --------------------------------------------------------------------------------------------- */
 
 mc_event_callback_t *
-mc_event_is_callback_in_array (GPtrArray *callbacks, mc_event_callback_func_t event_callback,
+mc_event_is_callback_in_array (GPtrArray *callbacks, mc_event_callback_fn event_callback,
                                gpointer event_init_data)
 {
     guint array_index;

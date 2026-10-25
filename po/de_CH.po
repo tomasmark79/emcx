@@ -6,8 +6,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
-"Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2025-01-23 10:30+0100\n"
+"Report-Msgid-Bugs-To: https://github.com/MidnightCommander/mc/issues\n"
+"POT-Creation-Date: 2026-03-01 11:35+0300\n"
 "PO-Revision-Date: 2015-02-26 09:48+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: German (Switzerland) (http://www.transifex.com/projects/p/mc/"
@@ -17,6 +17,9 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "No translation"
+msgstr ""
 
 # "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 msgid "Warning: cannot load codepages list"
@@ -47,6 +50,10 @@ msgstr ""
 
 #, c-format
 msgid "Unable to create event '%s'!"
+msgstr ""
+
+#, c-format
+msgid "Copyright (C) 1996-%zu the Free Software Foundation"
 msgstr ""
 
 #, c-format
@@ -138,21 +145,41 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Unable to use '%s' skin with 256 colors support\n"
-"on non-256 colors terminal.\n"
+"Unable to use '%s' skin with 256 colors support:\n"
+"%s\n"
 "Default skin has been loaded"
 msgstr ""
 
-msgid "True color not supported with ncurses."
+msgid ""
+"\n"
+"If your terminal supports 256 colors, you need to set your TERM\n"
+"environment variable to match your terminal, perhaps using\n"
+"a *-256color or *-direct256 variant. Use the 'toe -a'\n"
+"command to list all available variants on your system.\n"
 msgstr ""
 
-msgid "Your terminal doesn't even seem to support 256 colors."
+msgid ""
+"For true color support, you need version 6.1 or later of the ncurses\n"
+"library with wide character and ABI 6 or higher support.\n"
+"Please upgrade your system.\n"
+msgstr ""
+
+msgid ""
+"\n"
+"If your terminal supports true colors, you need to set your TERM\n"
+"environment variable to a *-direct256, *-direct16, or *-direct variant.\n"
+"Use the 'toe -a' command to list all available variants on your system.\n"
 msgstr ""
 
 msgid "True color not supported in this slang version."
 msgstr ""
 
-msgid "Set COLORTERM=truecolor if your terminal really supports true colors."
+msgid ""
+"\n"
+"If your terminal supports true colors, you need to set your TERM\n"
+"environment variable to a *-direct256, *-direct16, or *-direct variant.\n"
+"Use the 'toe -a' command to list all available variants on your system.\n"
+"Alternatively, you can set COLORTERM=truecolor.\n"
 msgstr ""
 
 msgid "Escape"
@@ -528,6 +555,12 @@ msgstr ""
 msgid "Getting file"
 msgstr ""
 
+#, c-format
+msgid ""
+"Changes to file lost:\n"
+"%s"
+msgstr ""
+
 msgid "Changes to file lost"
 msgstr ""
 
@@ -647,9 +680,6 @@ msgstr ""
 msgid "Use stickchars to draw"
 msgstr ""
 
-msgid "Resets soft keys on HP terminals"
-msgstr ""
-
 msgid "Load definitions of key bindings from specified file"
 msgstr ""
 
@@ -662,53 +692,10 @@ msgstr ""
 msgid "Request to run in color mode"
 msgstr ""
 
-msgid "Specifies a color configuration"
-msgstr ""
-
-msgid "<string>"
-msgstr ""
-
 msgid "Show mc with specified skin"
 msgstr ""
 
-#. TRANSLATORS: don't translate keywords
-msgid ""
-"--colors KEYWORD={FORE},{BACK},{ATTR}:KEYWORD2=...\n"
-"\n"
-"{FORE}, {BACK} and {ATTR} can be omitted, and the default will be used\n"
-"\n"
-" Keywords:\n"
-"   Global:       errors, disabled, reverse, gauge, header\n"
-"                 input, inputmark, inputunchanged, commandlinemark\n"
-"                 bbarhotkey, bbarbutton, statusbar\n"
-"   File display: normal, selected, marked, markselect\n"
-"   Dialog boxes: dnormal, dfocus, dhotnormal, dhotfocus, errdhotnormal,\n"
-"                 errdhotfocus\n"
-"   Menus:        menunormal, menuhot, menusel, menuhotsel, menuinactive\n"
-"   Popup menus:  pmenunormal, pmenusel, pmenutitle\n"
-"   Editor:       editnormal, editbold, editmarked, editwhitespace, "
-"editnonprintable,\n"
-"                 editlinestate, editbg, editframe, editframeactive\n"
-"                 editframedrag\n"
-"   Viewer:       viewnormal,viewbold, viewunderline, viewselected\n"
-"   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
-msgstr ""
-
-#. TRANSLATORS: don't translate color names and attributes
-msgid ""
-"Standard Colors:\n"
-"   black, gray, red, brightred, green, brightgreen, brown,\n"
-"   yellow, blue, brightblue, magenta, brightmagenta, cyan,\n"
-"   brightcyan, lightgray and white\n"
-"\n"
-"Extended colors, when 256 colors are available:\n"
-"   color16 to color255, or rgb000 to rgb555 and gray0 to gray23\n"
-"\n"
-"Attributes:\n"
-"   bold, italic, underline, reverse, blink; append more with '+'\n"
-msgstr ""
-
-msgid "Color options"
+msgid "<string>"
 msgstr ""
 
 msgid "[+lineno] file1[:lineno] [file2[:lineno]...]"
@@ -723,20 +710,20 @@ msgstr ""
 msgid "[this_dir] [other_panel_dir]"
 msgstr ""
 
+#, c-format
 msgid ""
 "\n"
-"Please send any bug reports (including the output of 'mc -V')\n"
-"as tickets at www.midnight-commander.org\n"
-msgstr ""
-
-#, c-format
-msgid "GNU Midnight Commander %s\n"
+"Please send any bug reports (including the output of '%s -V')\n"
+"as tickets at %s\n"
 msgstr ""
 
 msgid "Main options"
 msgstr ""
 
 msgid "Terminal options"
+msgstr ""
+
+msgid "Color options"
 msgstr ""
 
 msgid "Arguments parse error!"
@@ -795,23 +782,16 @@ msgstr ""
 msgid "Search is disabled"
 msgstr ""
 
-#, c-format
-msgid ""
-"Cannot create temporary diff file\n"
-"%s"
+msgid "Cannot create temporary diff file"
 msgstr ""
 
 #, c-format
 msgid ""
 "Cannot create backup file\n"
-"%s%s\n"
-"%s"
+"%s~~~"
 msgstr ""
 
-#, c-format
-msgid ""
-"Cannot create temporary merge file\n"
-"%s"
+msgid "Cannot create temporary merge file"
 msgstr ""
 
 msgid "&Fastest (Assume large files)"
@@ -880,15 +860,16 @@ msgstr ""
 msgid "ButtonBar|Quit"
 msgstr ""
 
-msgid "Quit"
-msgstr ""
-
 msgid "File(s) was modified. Save with exit?"
 msgstr ""
 
+#, c-format
 msgid ""
-"Midnight Commander is being shut down.\n"
+"%s is being shut down.\n"
 "Save modified file(s)?"
+msgstr ""
+
+msgid "Quit"
 msgstr ""
 
 msgid "Diff:"
@@ -898,12 +879,14 @@ msgid "File name is empty!"
 msgstr ""
 
 #, c-format
-msgid "\"%s\" is a directory"
+msgid ""
+"%s\n"
+"is a directory"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot stat \"%s\"\n"
+"Cannot stat\n"
 "%s"
 msgstr ""
 
@@ -921,7 +904,9 @@ msgid "Loading..."
 msgstr ""
 
 #, c-format
-msgid "Cannot open %s for reading"
+msgid ""
+"Cannot open\n"
+"%s"
 msgstr ""
 
 msgid "Load file"
@@ -932,11 +917,9 @@ msgid "Error reading %s"
 msgstr ""
 
 #, c-format
-msgid "Cannot get size/permissions for %s"
-msgstr ""
-
-#, c-format
-msgid "\"%s\" is not a regular file"
+msgid ""
+"%s\n"
+"is not a regular file"
 msgstr ""
 
 #, c-format
@@ -953,7 +936,9 @@ msgid "Error reading from pipe: %s"
 msgstr ""
 
 #, c-format
-msgid "Cannot open pipe for reading: %s"
+msgid ""
+"Cannot open pipe for reading\n"
+"%s"
 msgstr ""
 
 msgid "File has hard-links. Detach before saving?"
@@ -967,11 +952,10 @@ msgid "Error writing to pipe: %s"
 msgstr ""
 
 #, c-format
-msgid "Cannot open pipe for writing: %s"
-msgstr ""
-
-#, c-format
-msgid "Cannot open file for writing: %s"
+msgid ""
+"Cannot open file\n"
+"%s\n"
+"for writing"
 msgstr ""
 
 msgid "The file you are saving does not end with a newline."
@@ -1001,6 +985,12 @@ msgstr ""
 msgid "Save As"
 msgstr ""
 
+#, c-format
+msgid ""
+"Cannot create directory\n"
+"%s"
+msgstr ""
+
 msgid "&Quick save"
 msgstr ""
 
@@ -1016,7 +1006,11 @@ msgstr ""
 msgid "Edit Save Mode"
 msgstr ""
 
-msgid "Cannot save: destination is not a regular file"
+#, c-format
+msgid ""
+"Cannot save\n"
+"%s:\n"
+"not a regular file"
 msgstr ""
 
 msgid "A file already exists with this name"
@@ -1076,7 +1070,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Midnight Commander is being shut down.\n"
+"%s is being shut down.\n"
 "Save modified file %s?"
 msgstr ""
 
@@ -1290,6 +1284,9 @@ msgstr ""
 msgid "Toggle s&yntax highlighting"
 msgstr ""
 
+msgid "Togg&le right margin"
+msgstr ""
+
 msgid "&Find declaration"
 msgstr ""
 
@@ -1476,6 +1473,14 @@ msgstr ""
 msgid "&Find all"
 msgstr ""
 
+#, c-format
+msgid "Searching %s: %3d%%"
+msgstr ""
+
+#, c-format
+msgid "Searching %s"
+msgstr ""
+
 msgid "Enter replacement string:"
 msgstr ""
 
@@ -1498,23 +1503,13 @@ msgid "Confirm replace"
 msgstr ""
 
 #, c-format
-msgid "Searching %s: %3d%%"
-msgstr ""
-
-#, c-format
-msgid "Searching %s"
-msgstr ""
-
-#, c-format
 msgid "%ld replacements made"
 msgstr ""
 
+#, c-format
 msgid ""
 "A user friendly text editor\n"
-"written for the Midnight Commander."
-msgstr ""
-
-msgid "Copyright (C) 1996-2025 the Free Software Foundation"
+"written for the %s."
 msgstr ""
 
 msgid "About"
@@ -1643,13 +1638,13 @@ msgstr ""
 msgid "< Reload Current Syntax >"
 msgstr ""
 
-msgid "Load syntax file"
-msgstr ""
-
 #, c-format
 msgid ""
-"Cannot open file %s\n"
+"Cannot open file\n"
 "%s"
+msgstr ""
+
+msgid "Load syntax file"
 msgstr ""
 
 #, c-format
@@ -1675,7 +1670,8 @@ msgid ""
 "the subshell cannot be toggled."
 msgstr ""
 
-msgid "Type 'exit' to return to the Midnight Commander"
+#, c-format
+msgid "Type 'exit' to return to the %s"
 msgstr ""
 
 msgid "Set &all"
@@ -1708,22 +1704,25 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot chmod \"%s\"\n"
-"%s"
-msgstr ""
-
-msgid "&Ignore"
-msgstr ""
-
-msgid "Ignore &all"
-msgstr ""
-
-msgid "&Retry"
+"Cannot chmod\n"
+"%sn%s"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot chown \"%s\"\n"
+"Cannot chown\n"
+"%sn%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot chmod\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot chown\n"
 "%s"
 msgstr ""
 
@@ -1733,13 +1732,21 @@ msgstr ""
 msgid "Skins"
 msgstr ""
 
-msgid "Other 8 bit"
-msgstr ""
-
 msgid "Running"
 msgstr ""
 
 msgid "Stopped"
+msgstr ""
+
+#, c-format
+msgid "Detected display codepage: %s"
+msgstr ""
+
+#, c-format
+msgid "Selected source (file I/O) codepage: %s"
+msgstr ""
+
+msgid "Classic terminal file manager inspired by Norton Commander."
 msgstr ""
 
 msgid "&Never"
@@ -1957,27 +1964,6 @@ msgstr ""
 msgid "Confirmation"
 msgstr ""
 
-msgid "&UTF-8 output"
-msgstr ""
-
-msgid "&Full 8 bits output"
-msgstr ""
-
-msgid "&ISO 8859-1"
-msgstr ""
-
-msgid "7 &bits"
-msgstr ""
-
-msgid "F&ull 8 bits input"
-msgstr ""
-
-msgid "Display bits"
-msgstr ""
-
-msgid "Input / display codepage:"
-msgstr ""
-
 msgid "Directory tree"
 msgstr ""
 
@@ -2035,7 +2021,6 @@ msgstr ""
 #, c-format
 msgid ""
 "Cannot change directory to\n"
-"%s\n"
 "%s"
 msgstr ""
 
@@ -2093,7 +2078,7 @@ msgstr ""
 msgid "Inode uses extents"
 msgstr ""
 
-msgid "Huge_file"
+msgid "Huge file"
 msgstr ""
 
 msgid "No COW"
@@ -2128,13 +2113,19 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot chattr \"%s\"\n"
+"Cannot chattr\n"
+"%sn%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot get ext2 attributes of\n"
 "%s"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get ext2 attributes of \"%s\"\n"
+"Cannot chattr\n"
 "%s"
 msgstr ""
 
@@ -2239,11 +2230,15 @@ msgid "Link"
 msgstr ""
 
 #, c-format
-msgid "link: %s"
+msgid ""
+"Cannot create link\n"
+"%s"
 msgstr ""
 
 #, c-format
-msgid "symlink: %s"
+msgid ""
+"Cannot create symbolic link\n"
+"%s"
 msgstr ""
 
 msgid "View file"
@@ -2314,11 +2309,15 @@ msgid "Edit symlink"
 msgstr ""
 
 #, c-format
-msgid "edit symlink, unable to remove %s: %s"
+msgid ""
+"Edit symlink, unable to remove\n"
+"%s"
 msgstr ""
 
 #, c-format
-msgid "edit symlink: %s"
+msgid ""
+"Cannot edit symlink\n"
+"%s"
 msgstr ""
 
 msgid "FTP to machine"
@@ -2328,14 +2327,6 @@ msgid "SFTP to machine"
 msgstr ""
 
 msgid "Shell link to machine"
-msgstr ""
-
-msgid "Undelete files on an ext2 file system"
-msgstr ""
-
-msgid ""
-"Enter device (without /dev/) to undelete\n"
-"files on: (F1 for details)"
 msgstr ""
 
 msgid "Directory scanning"
@@ -2358,10 +2349,7 @@ msgstr ""
 msgid "Parameter"
 msgstr ""
 
-#, c-format
-msgid ""
-"Cannot create temporary command file\n"
-"%s"
+msgid "Cannot create temporary command file"
 msgstr ""
 
 msgid "Pipe failed"
@@ -2370,7 +2358,7 @@ msgstr ""
 #, c-format
 msgid ""
 "You have an outdated %s file.\n"
-"Midnight Commander now uses %s file.\n"
+"%s now uses %s file.\n"
 "Please copy your modifications of the old file to the new one."
 msgstr ""
 
@@ -2380,7 +2368,7 @@ msgid ""
 "%s%s\n"
 "file has changed with version 4.0.\n"
 "It seems that the installation has failed.\n"
-"Please fetch a fresh copy from the Midnight Commander package."
+"Please fetch a fresh copy from the %s package."
 msgstr ""
 
 #, c-format
@@ -2437,23 +2425,19 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot stat hardlink source file \"%s\"\n"
+"Cannot stat hardlink source file\n"
 "%s"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot create target hardlink \"%s\"\n"
+"Cannot create target hardlink\n"
 "%s"
 msgstr ""
 
 #, c-format
-msgid "Cannot create target hardlink \"%s\""
-msgstr ""
-
-#, c-format
 msgid ""
-"Cannot read source link \"%s\"\n"
+"Cannot read source link\n"
 "%s"
 msgstr ""
 
@@ -2465,7 +2449,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot create target symlink \"%s\"\n"
+"Cannot create target symlink\n"
 "%s"
 msgstr ""
 
@@ -2485,19 +2469,29 @@ msgid ""
 "are the same file"
 msgstr ""
 
+msgid "&Ignore"
+msgstr ""
+
 msgid "Ignore a&ll"
+msgstr ""
+
+msgid "&Retry"
 msgstr ""
 
 #, c-format
 msgid ""
-"Directory \"%s\" not empty.\n"
+"Directory\n"
+"%s\n"
+"is not empty.\n"
 "Delete it recursively?"
 msgstr ""
 
 #, c-format
 msgid ""
 "Background process:\n"
-"Directory \"%s\" not empty.\n"
+"Directory\n"
+"%s\n"
+"is not empty.\n"
 "Delete it recursively?"
 msgstr ""
 
@@ -2506,13 +2500,13 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot remove file \"%s\"\n"
+"Cannot remove file\n"
 "%s"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot stat file \"%s\"\n"
+"Cannot stat file\n"
 "%s"
 msgstr ""
 
@@ -2522,37 +2516,41 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot move file \"%s\" to \"%s\"\n"
+"Cannot move file\n"
+"%s\n"
+"to\n"
 "%s"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot remove directory \"%s\"\n"
+"Cannot remove directory\n"
 "%s"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot enter into directory \"%s\"\n"
+"Cannot enter into directory\n"
 "%s"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot overwrite directory \"%s\"\n"
+"Cannot overwrite directory\n"
 "%s"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot overwrite file \"%s\"\n"
+"Cannot overwrite file\n"
 "%s"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot move directory \"%s\" to \"%s\"\n"
+"Cannot move directory\n"
+"%s\n"
+"to\n"
 "%s"
 msgstr ""
 
@@ -2561,43 +2559,43 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot stat source file \"%s\"\n"
+"Cannot stat source file\n"
 "%s"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get ext2 attributes of source file \"%s\"\n"
+"Cannot get ext2 attributes of source file\n"
 "%s"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot set ext2 attributes of target file \"%s\"\n"
+"Cannot set ext2 attributes of target file\n"
 "%s"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot create special file \"%s\"\n"
+"Cannot create special file\n"
 "%s"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot chown target file \"%s\"\n"
+"Cannot chown target file\n"
 "%s"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot chmod target file \"%s\"\n"
+"Cannot chmod target file\n"
 "%s"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot open source file \"%s\"\n"
+"Cannot open source file\n"
 "%s"
 msgstr ""
 
@@ -2606,37 +2604,37 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot fstat source file \"%s\"\n"
+"Cannot fstat source file\n"
 "%s"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot create target file \"%s\"\n"
+"Cannot create target file\n"
 "%s"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot fstat target file \"%s\"\n"
+"Cannot fstat target file\n"
 "%s"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot preallocate space for target file \"%s\"\n"
+"Cannot preallocate space for target file\n"
 "%s"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot read source file \"%s\"\n"
+"Cannot read source file\n"
 "%s"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot write target file \"%s\"\n"
+"Cannot write target file\n"
 "%s"
 msgstr ""
 
@@ -2654,31 +2652,31 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot close source file \"%s\"\n"
+"Cannot close source file\n"
 "%s"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot close target file \"%s\"\n"
+"Cannot close target file\n"
 "%s"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot set ext2 attributes for target file \"%s\"\n"
+"Cannot set ext2 attributes for target file\n"
 "%s"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot stat source directory \"%s\"\n"
+"Cannot stat source directory\n"
 "%s"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot get ext2 attributes of source directory \"%s\"\n"
+"Cannot get ext2 attributes of source directory\n"
 "%s"
 msgstr ""
 
@@ -2696,19 +2694,21 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Destination \"%s\" must be a directory\n"
+"Destination\n"
+"%s\n"
+"must be a directory\n"
 "%s"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot create target directory \"%s\"\n"
+"Cannot create target directory\n"
 "%s"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot chown target directory \"%s\"\n"
+"Cannot chown target directory\n"
 "%s"
 msgstr ""
 
@@ -2834,6 +2834,9 @@ msgstr ""
 msgid "Preserve &attributes"
 msgstr ""
 
+msgid "Preserve e&xt2 attributes"
+msgstr ""
+
 msgid "Di&ve into subdir if exists"
 msgstr ""
 
@@ -2859,6 +2862,9 @@ msgstr ""
 msgid "&Tree"
 msgstr ""
 
+msgid "Paneli&ze"
+msgstr ""
+
 msgid "&Listing format..."
 msgstr ""
 
@@ -2878,9 +2884,6 @@ msgid "S&hell link..."
 msgstr ""
 
 msgid "SFTP li&nk..."
-msgstr ""
-
-msgid "Paneli&ze"
 msgstr ""
 
 msgid "&Rescan"
@@ -2988,9 +2991,6 @@ msgstr ""
 msgid "Screen lis&t"
 msgstr ""
 
-msgid "&Undelete files (ext2fs only)"
-msgstr ""
-
 msgid "&Listing format edit"
 msgstr ""
 
@@ -3018,9 +3018,6 @@ msgstr ""
 msgid "&Appearance..."
 msgstr ""
 
-msgid "&Display bits..."
-msgstr ""
-
 msgid "&Virtual FS..."
 msgstr ""
 
@@ -3033,10 +3030,7 @@ msgid_plural "You have %zu opened screens. Quit anyway?"
 msgstr[0] ""
 msgstr[1] ""
 
-msgid "The Midnight Commander"
-msgstr ""
-
-msgid "Do you really want to quit the Midnight Commander?"
+msgid "Do you really want to quit?"
 msgstr ""
 
 msgid "&Above"
@@ -3236,10 +3230,6 @@ msgid "Label for \"%s\":"
 msgstr ""
 
 msgid "Add to hotlist"
-msgstr ""
-
-#, c-format
-msgid "Midnight Commander %s"
 msgstr ""
 
 #, c-format
@@ -3534,11 +3524,9 @@ msgid ""
 "%s"
 msgstr ""
 
-#, c-format
 msgid ""
 "External panelize:\n"
-"failed to read data from child stdout:\n"
-"%s"
+"failed to read data from child stdout:"
 msgstr ""
 
 msgid "Cannot run external panelize in a non-local directory"
@@ -3574,6 +3562,13 @@ msgstr ""
 msgid ""
 "Cannot stat the destination\n"
 "%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"Destination\n"
+"%s\n"
+"must be a directory"
 msgstr ""
 
 #, c-format
@@ -3676,8 +3671,9 @@ msgstr ""
 msgid "Home directory path is not absolute"
 msgstr ""
 
+#, c-format
 msgid ""
-"GNU Midnight Commander\n"
+"%s\n"
 "is already running on this terminal.\n"
 "Subshell support will be disabled."
 msgstr ""
@@ -3745,32 +3741,27 @@ msgstr ""
 msgid "With internationalization support"
 msgstr ""
 
-msgid "With multiple codepages support"
-msgstr ""
-
 msgid "With ext2fs attributes support"
 msgstr ""
 
 #, c-format
-msgid "Built with GLib %d.%d.%d\n"
+msgid "Built with GLib %d.%d.%d (using GLib %u.%u.%u)\n"
 msgstr ""
 
 #, c-format
-msgid "Built with S-Lang %s with terminfo database\n"
+msgid "Built with S-Lang"
 msgstr ""
 
 #, c-format
-msgid "Built with ncurses %s\n"
-msgstr ""
-
-msgid "Built with ncurses (unknown version)"
+msgid " and terminfo database (using S-Lang %s)\n"
 msgstr ""
 
 #, c-format
-msgid "Built with ncursesw %s\n"
+msgid "Built with %s"
 msgstr ""
 
-msgid "Built with ncursesw (unknown version)"
+#, c-format
+msgid " (using %s)\n"
 msgstr ""
 
 #, c-format
@@ -3918,11 +3909,6 @@ msgstr ""
 msgid ""
 "EXTFS virtual file system:\n"
 "wrong archive name"
-msgstr ""
-
-msgid ""
-"EXTFS virtual file system:\n"
-"cannot build command"
 msgstr ""
 
 #, c-format
@@ -4105,6 +4091,12 @@ msgstr ""
 msgid "sftp: connection to server failed: %s"
 msgstr ""
 
+#, c-format
+msgid ""
+"sftp: cannot open %s:\n"
+"%s"
+msgstr ""
+
 msgid "sftp: found host key of unsupported type: RSA1"
 msgstr ""
 
@@ -4247,87 +4239,15 @@ msgstr ""
 msgid "tar: mc_lseek not stopped at a record boundary"
 msgstr ""
 
-msgid "undelfs: error"
-msgstr ""
-
-msgid "not enough memory"
-msgstr ""
-
-msgid "while allocating block buffer"
-msgstr ""
-
-#, c-format
-msgid "open_inode_scan: %d"
-msgstr ""
-
-#, c-format
-msgid "while starting inode scan %d"
-msgstr ""
-
-#, c-format
-msgid "undelfs: loading deleted files information %d inodes"
-msgstr ""
-
-#, c-format
-msgid "while calling ext2_block_iterate %d"
-msgstr ""
-
-msgid "no more memory while reallocating array"
-msgstr ""
-
-#, c-format
-msgid "while doing inode scan %d"
-msgstr ""
-
-#, c-format
-msgid "Cannot open file %s"
-msgstr ""
-
-msgid "undelfs: reading inode bitmap..."
-msgstr ""
-
-#, c-format
-msgid ""
-"Cannot load inode bitmap from:\n"
-"%s"
-msgstr ""
-
-msgid "undelfs: reading block bitmap..."
-msgstr ""
-
-#, c-format
-msgid ""
-"Cannot load block bitmap from:\n"
-"%s"
-msgstr ""
-
-msgid "vfs_info is not fs!"
-msgstr ""
-
-msgid "You have to chdir to extract files first"
-msgstr ""
-
-msgid "while iterating over blocks"
-msgstr ""
-
-#, c-format
-msgid "Cannot open file \"%s\""
-msgstr ""
-
-msgid "Ext2lib error"
-msgstr ""
-
 msgid "Invalid value"
 msgstr ""
 
 msgid "File was modified. Save with exit?"
 msgstr ""
 
-msgid "&Cancel quit"
-msgstr ""
-
+#, c-format
 msgid ""
-"Midnight Commander is being shut down.\n"
+"%s is being shut down.\n"
 "Save modified file?"
 msgstr ""
 
@@ -4376,10 +4296,10 @@ msgstr ""
 msgid "ButtonBar|Format"
 msgstr ""
 
-#, c-format
-msgid ""
-"Failed to read data from child stdout:\n"
-"%s"
+msgid "Quick view"
+msgstr ""
+
+msgid "Failed to read data from child stdout"
 msgstr ""
 
 #, c-format
@@ -4400,16 +4320,16 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot open \"%s\"\n"
-"%s"
-msgstr ""
-
-msgid "Cannot view: not a regular file"
+"Cannot view\n"
+"%s\n"
+"Not a regular file"
 msgstr ""
 
 #, c-format
 msgid ""
-"Cannot open \"%s\" in parse mode\n"
+"Cannot open\n"
+"%s\n"
+"in parse mode\n"
 "%s"
 msgstr ""
 

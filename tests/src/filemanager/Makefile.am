@@ -4,25 +4,22 @@ AM_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	-I$(top_srcdir) \
 	-I$(top_srcdir)/lib/vfs \
-	-DTEST_SHARE_DIR=\"$(abs_srcdir)\" \
+	-DTEST_SHARE_DIR=\"$(abs_srcdir)/../fixtures\" \
 	@CHECK_CFLAGS@
 
-LIBS = @CHECK_LIBS@ \
+LDADD = \
 	$(top_builddir)/src/libinternal.la \
-	$(top_builddir)/lib/libmc.la
-
-if ENABLE_MCLIB
-LIBS += $(GLIB_LIBS)
-endif
-
-EXTRA_DIST = hints/mc.hint
+	$(top_builddir)/lib/libmc.la \
+	@CHECK_LIBS@
 
 TESTS = \
 	cd_to \
 	examine_cd \
 	exec_get_export_variables_ext \
+	ext__exec_make_shell_string \
 	filegui_is_wildcarded \
-	get_random_hint
+	get_random_hint \
+	has_unquoted_metacharacters
 
 check_PROGRAMS = $(TESTS)
 
@@ -35,8 +32,14 @@ examine_cd_SOURCES = \
 exec_get_export_variables_ext_SOURCES = \
 	exec_get_export_variables_ext.c
 
+ext__exec_make_shell_string_SOURCES = \
+	ext__exec_make_shell_string.c
+
 get_random_hint_SOURCES = \
 	get_random_hint.c
 
 filegui_is_wildcarded_SOURCES = \
 	filegui_is_wildcarded.c
+
+has_unquoted_metacharacters_SOURCES = \
+	has_unquoted_metacharacters.c

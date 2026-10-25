@@ -47,7 +47,8 @@ class Session:
         self.file.write_text("test content\n")
         (self.right / "other.txt").write_text("second panel\n")
         env = os.environ.copy()
-        for key in ("MC_TMPDIR", "MC_SID", "MC_SKIN", "MC_KEYMAP", "TMUX", "TMUX_PANE", "DISPLAY"):
+        for key in ("MC_TMPDIR", "MC_SID", "MC_SKIN", "MC_KEYMAP", "TMUX", "TMUX_PANE", "DISPLAY",
+                    "NO_COLOR"):
             env.pop(key, None)
         env.update(XDG_CONFIG_HOME=str(self.base / "config"),
                    XDG_DATA_HOME=str(self.base / "data"),
@@ -113,6 +114,18 @@ class RuntimeTests(unittest.TestCase):
         s = Session(self.tmp.name, **kwargs)
         self.addCleanup(s.stop)
         return s
+
+    def test_lynx_motion_default(self):
+        s = self.session()
+        s.wait(lambda t: s.file.name in t, "Initial panel did not open")
+        nested = s.left / "nested"
+        nested.mkdir()
+        (nested / "nested-marker.txt").write_text("navigation test\n")
+        s.keys("C-r", "Home", "Down", "Right")
+        s.wait(lambda t: "nested-marker.txt" in t, "Right did not enter the directory")
+        s.keys("Left")
+        s.wait(lambda t: s.file.name in t and "nested-marker.txt" not in t,
+               "Left did not return to the parent")
 
     def test_zip_f5_streaming_and_cleanup(self):
         s = self.session(skin="dotname-light")

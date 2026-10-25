@@ -1,7 +1,7 @@
 /*
    Virtual File System path handlers
 
-   Copyright (C) 2011-2025
+   Copyright (C) 2011-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -21,7 +21,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 /**
@@ -31,14 +31,13 @@
  * \date 2011
  */
 
-
 #include <config.h>
 
 #include <errno.h>
 
 #include "lib/global.h"
 #include "lib/strutil.h"
-#include "lib/util.h"           /* mc_build_filename() */
+#include "lib/util.h"  // mc_build_filename()
 #include "lib/serialize.h"
 
 #include "vfs.h"
@@ -147,11 +146,10 @@ vfs_canon (const char *path)
 
     if (!IS_PATH_SEP (*path))
     {
-        /* Relative to current directory */
+        // Relative to current directory
 
         char *local;
 
-#ifdef HAVE_CHARSET
         if (g_str_has_prefix (path, VFS_ENCODING_PREFIX))
         {
             /*
@@ -161,7 +159,6 @@ vfs_canon (const char *path)
             local = mc_build_filename (PATH_SEP_STR, path, (char *) NULL);
         }
         else
-#endif
         {
             const char *curr_dir;
 
@@ -173,7 +170,7 @@ vfs_canon (const char *path)
     }
     else
     {
-        /* Absolute path */
+        // Absolute path
 
         result = g_strdup (path);
         canonicalize_pathname (result);
@@ -213,10 +210,10 @@ vfs_path_url_split (vfs_path_element_t *path_element, const char *path)
 
     pcopy = g_strdup (path);
 
-    /* search for any possible user */
+    // search for any possible user
     at = strrchr (pcopy, '@');
 
-    /* We have a username */
+    // We have a username
     if (at == NULL)
         rest = pcopy;
     else
@@ -244,7 +241,7 @@ vfs_path_url_split (vfs_path_element_t *path_element, const char *path)
             rest = at + 1;
     }
 
-    /* Check if the host comes with a port spec, if so, chop it */
+    // Check if the host comes with a port spec, if so, chop it
     if (*rest != '[')
         colon = strchr (rest, ':');
     else
@@ -262,7 +259,6 @@ vfs_path_url_split (vfs_path_element_t *path_element, const char *path)
     if (colon != NULL)
     {
         *colon = '\0';
-        /* cppcheck-suppress invalidscanf */
         if (sscanf (colon + 1, "%d", &path_element->port) == 1)
         {
             if (path_element->port <= 0 || path_element->port >= 65536)
@@ -336,7 +332,7 @@ vfs_path_is_str_path_deprecated (const char *path_str)
  * @param path_str VFS-path
  *
  * @return pointer to newly created vfs_path_t object with filled path elements array.
-*/
+ */
 
 static vfs_path_t *
 vfs_path_from_str_deprecated_parser (char *path)
@@ -350,23 +346,20 @@ vfs_path_from_str_deprecated_parser (char *path)
 
     while ((class = _vfs_split_with_semi_skip_count (path, &local, &op, 0)) != NULL)
     {
-        char *url_params;
         element = g_new0 (vfs_path_element_t, 1);
         element->class = class;
         if (local == NULL)
             local = "";
         element->path = vfs_translate_path_n (local);
 
-#ifdef HAVE_CHARSET
         element->encoding = vfs_get_encoding (local, -1);
         element->dir.converter =
             (element->encoding != NULL) ? str_crt_conv_from (element->encoding) : INVALID_CONV;
-#endif
 
-        url_params = strchr (op, ':');  /* skip VFS prefix */
+        const char *url_params = strchr (op, ':');  // skip VFS prefix
         if (url_params != NULL)
         {
-            *url_params = '\0';
+            path[url_params - path] = '\0';  // truncate the path
             url_params++;
             vfs_path_url_split (element, url_params);
         }
@@ -382,11 +375,9 @@ vfs_path_from_str_deprecated_parser (char *path)
         element->class = g_ptr_array_index (vfs__classes_list, 0);
         element->path = vfs_translate_path_n (path);
 
-#ifdef HAVE_CHARSET
         element->encoding = vfs_get_encoding (path, -1);
         element->dir.converter =
             (element->encoding != NULL) ? str_crt_conv_from (element->encoding) : INVALID_CONV;
-#endif
         g_array_prepend_val (vpath->path, element);
     }
 
@@ -400,7 +391,7 @@ vfs_path_from_str_deprecated_parser (char *path)
  * @param flags    flags for converter
  *
  * @return pointer to newly created vfs_path_t object with filled path elements array.
-*/
+ */
 
 static vfs_path_t *
 vfs_path_from_str_uri_parser (char *path)
@@ -414,9 +405,7 @@ vfs_path_from_str_uri_parser (char *path)
         return vfs_path_new (FALSE);
 
     path_is_absolute = IS_PATH_SEP (*path);
-#ifdef HAVE_CHARSET
     path_is_absolute = path_is_absolute || g_str_has_prefix (path, VFS_ENCODING_PREFIX);
-#endif
 
     vpath = vfs_path_new (!path_is_absolute);
 
@@ -450,9 +439,7 @@ vfs_path_from_str_uri_parser (char *path)
             else
             {
                 element->path = vfs_translate_path_n (slash_pointer + 1);
-#ifdef HAVE_CHARSET
                 element->encoding = vfs_get_encoding (slash_pointer, -1);
-#endif
                 *slash_pointer = '\0';
             }
             vfs_path_url_split (element, url_delimiter);
@@ -460,18 +447,15 @@ vfs_path_from_str_uri_parser (char *path)
         else
         {
             element->path = vfs_translate_path_n (url_delimiter);
-#ifdef HAVE_CHARSET
             element->encoding = vfs_get_encoding (url_delimiter, -1);
-#endif
         }
-#ifdef HAVE_CHARSET
+
         element->dir.converter =
             (element->encoding != NULL) ? str_crt_conv_from (element->encoding) : INVALID_CONV;
-#endif
         g_array_prepend_val (vpath->path, element);
 
-        if ((real_vfs_prefix_start > path && IS_PATH_SEP (*real_vfs_prefix_start)) ||
-            (real_vfs_prefix_start == path && !IS_PATH_SEP (*real_vfs_prefix_start)))
+        if ((real_vfs_prefix_start > path && IS_PATH_SEP (*real_vfs_prefix_start))
+            || (real_vfs_prefix_start == path && !IS_PATH_SEP (*real_vfs_prefix_start)))
             *real_vfs_prefix_start = '\0';
         else
             *(real_vfs_prefix_start + 1) = '\0';
@@ -482,11 +466,9 @@ vfs_path_from_str_uri_parser (char *path)
         element = g_new0 (vfs_path_element_t, 1);
         element->class = g_ptr_array_index (vfs__classes_list, 0);
         element->path = vfs_translate_path_n (path);
-#ifdef HAVE_CHARSET
         element->encoding = vfs_get_encoding (path, -1);
         element->dir.converter =
             (element->encoding != NULL) ? str_crt_conv_from (element->encoding) : INVALID_CONV;
-#endif
         g_array_prepend_val (vpath->path, element);
     }
 
@@ -527,7 +509,6 @@ vfs_path_tokens_add_class_info (const vfs_path_element_t *element, GString *ret_
         }
     }
 
-#ifdef HAVE_CHARSET
     if (element->encoding != NULL)
     {
         if (ret_tokens->len > 0 && !IS_PATH_SEP (ret_tokens->str[ret_tokens->len - 1]))
@@ -536,7 +517,6 @@ vfs_path_tokens_add_class_info (const vfs_path_element_t *element, GString *ret_
         g_string_append (ret_tokens, element->encoding);
         g_string_append (ret_tokens, PATH_SEP_STR);
     }
-#endif
 
     g_string_append (ret_tokens, element_tokens->str);
 }
@@ -569,24 +549,24 @@ vfs_path_strip_home (const char *dir)
 /*** public functions ****************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
-#define vfs_append_from_path(appendfrom, is_relative) \
-{ \
-    if ((flags & VPF_STRIP_HOME) && element_index == 0 && \
-        (element->class->flags & VFSF_LOCAL) != 0) \
-    { \
-        char *stripped_home_str; \
-        stripped_home_str = vfs_path_strip_home (appendfrom); \
-        g_string_append (buffer, stripped_home_str); \
-        g_free (stripped_home_str); \
-    } \
-    else \
-    { \
-        if (!is_relative && !IS_PATH_SEP (*appendfrom) && *appendfrom != '\0' \
-            && (buffer->len == 0 || !IS_PATH_SEP (buffer->str[buffer->len - 1]))) \
-            g_string_append_c (buffer, PATH_SEP); \
-        g_string_append (buffer, appendfrom); \
-    } \
-}
+#define vfs_append_from_path(appendfrom, is_relative)                                              \
+    {                                                                                              \
+        if ((flags & VPF_STRIP_HOME) && element_index == 0                                         \
+            && (element->class->flags & VFSF_LOCAL) != 0)                                          \
+        {                                                                                          \
+            char *stripped_home_str;                                                               \
+            stripped_home_str = vfs_path_strip_home (appendfrom);                                  \
+            g_string_append (buffer, stripped_home_str);                                           \
+            g_free (stripped_home_str);                                                            \
+        }                                                                                          \
+        else                                                                                       \
+        {                                                                                          \
+            if (!is_relative && !IS_PATH_SEP (*appendfrom) && *appendfrom != '\0'                  \
+                && (buffer->len == 0 || !IS_PATH_SEP (buffer->str[buffer->len - 1])))              \
+                g_string_append_c (buffer, PATH_SEP);                                              \
+            g_string_append (buffer, appendfrom);                                                  \
+        }                                                                                          \
+    }
 
 /**
  * Convert first elements_count elements from vfs_path_t to string representation with flags.
@@ -603,9 +583,7 @@ vfs_path_to_str_flags (const vfs_path_t *vpath, int elements_count, vfs_path_fla
 {
     int element_index;
     GString *buffer;
-#ifdef HAVE_CHARSET
     GString *recode_buffer = NULL;
-#endif
 
     if (vpath == NULL)
         return NULL;
@@ -643,7 +621,6 @@ vfs_path_to_str_flags (const vfs_path_t *vpath, int elements_count, vfs_path_fla
             }
         }
 
-#ifdef HAVE_CHARSET
         if ((flags & VPF_RECODE) == 0 && vfs_path_element_need_cleanup_converter (element))
         {
             if ((flags & VPF_HIDE_CHARSET) == 0)
@@ -664,16 +641,13 @@ vfs_path_to_str_flags (const vfs_path_t *vpath, int elements_count, vfs_path_fla
             vfs_append_from_path (recode_buffer->str, is_relative);
         }
         else
-#endif
         {
             vfs_append_from_path (element->path, is_relative);
         }
     }
 
-#ifdef HAVE_CHARSET
     if (recode_buffer != NULL)
         g_string_free (recode_buffer, TRUE);
-#endif
 
     return g_string_free (buffer, FALSE);
 }
@@ -858,13 +832,11 @@ vfs_path_element_clone (const vfs_path_element_t *element)
     new_element->path = g_strdup (element->path);
     new_element->class = element->class;
     new_element->vfs_prefix = g_strdup (element->vfs_prefix);
-#ifdef HAVE_CHARSET
     new_element->encoding = g_strdup (element->encoding);
     if (vfs_path_element_need_cleanup_converter (element) && element->encoding != NULL)
         new_element->dir.converter = str_crt_conv_from (element->encoding);
     else
         new_element->dir.converter = element->dir.converter;
-#endif
     new_element->dir.info = element->dir.info;
 
     return new_element;
@@ -890,12 +862,10 @@ vfs_path_element_free (vfs_path_element_t *element)
     g_free (element->path);
     g_free (element->vfs_prefix);
 
-#ifdef HAVE_CHARSET
     g_free (element->encoding);
 
     if (vfs_path_element_need_cleanup_converter (element))
         str_close_conv (element->dir.converter);
-#endif
 
     g_free (element);
 }
@@ -981,7 +951,8 @@ vfs_path_free (vfs_path_t *vpath, gboolean free_str)
  * Remove one path element by index
  *
  * @param vpath pointer to vfs_path_t object
- * @param element_index element index. May have negative value (in this case count was started at the end of list).
+ * @param element_index element index. May have negative value (in this case count was started at
+ * the end of list).
  *
  */
 
@@ -1011,7 +982,7 @@ vfs_prefix_to_class (const char *prefix)
 {
     guint i;
 
-    /* Avoid first class (localfs) that would accept any prefix */
+    // Avoid first class (localfs) that would accept any prefix
     for (i = 1; i < vfs__classes_list->len; i++)
     {
         struct vfs_class *vfs;
@@ -1032,9 +1003,6 @@ vfs_prefix_to_class (const char *prefix)
 }
 
 /* --------------------------------------------------------------------------------------------- */
-
-#ifdef HAVE_CHARSET
-
 /** get encoding after last #enc: or NULL, if part does not contain #enc:
  *
  * @param path null-terminated string
@@ -1048,7 +1016,7 @@ vfs_get_encoding (const char *path, ssize_t len)
 {
     char *semi;
 
-    /* try found #enc: */
+    // try found #enc:
     semi = g_strrstr_len (path, len, VFS_ENCODING_PREFIX);
     if (semi == NULL)
         return NULL;
@@ -1057,7 +1025,7 @@ vfs_get_encoding (const char *path, ssize_t len)
     {
         char *slash;
 
-        semi += strlen (VFS_ENCODING_PREFIX);   /* skip "#enc:" */
+        semi += strlen (VFS_ENCODING_PREFIX);  // skip "#enc:"
         slash = strchr (semi, PATH_SEP);
         if (slash != NULL)
             return g_strndup (semi, slash - semi);
@@ -1097,7 +1065,7 @@ vfs_path_change_encoding (vfs_path_t *vpath, const char *encoding)
     vfs_path_element_t *path_element;
 
     path_element = (vfs_path_element_t *) vfs_path_get_by_index (vpath, -1);
-    /* don't add current encoding */
+    // don't add current encoding
     if ((path_element->encoding != NULL) && (strcmp (encoding, path_element->encoding) == 0))
         return vpath;
 
@@ -1114,8 +1082,6 @@ vfs_path_change_encoding (vfs_path_t *vpath, const char *encoding)
     return vpath;
 }
 
-#endif
-
 /* --------------------------------------------------------------------------------------------- */
 
 /**
@@ -1131,7 +1097,6 @@ char *
 vfs_path_serialize (const vfs_path_t *vpath, GError **mcerror)
 {
     mc_config_t *cpath;
-    ssize_t element_index;
     char *ret_value;
 
     mc_return_val_if_error (mcerror, FALSE);
@@ -1144,20 +1109,18 @@ vfs_path_serialize (const vfs_path_t *vpath, GError **mcerror)
 
     cpath = mc_config_init (NULL, FALSE);
 
-    for (element_index = 0; element_index < vfs_path_elements_count (vpath); element_index++)
+    for (int element_index = 0; element_index < vfs_path_elements_count (vpath); element_index++)
     {
         char groupname[BUF_TINY];
         const vfs_path_element_t *element;
 
-        g_snprintf (groupname, sizeof (groupname), "path-element-%zd", element_index);
+        g_snprintf (groupname, sizeof (groupname), "path-element-%d", element_index);
         element = vfs_path_get_by_index (vpath, element_index);
-        /* convert one element to config group */
+        // convert one element to config group
 
         mc_config_set_string_raw (cpath, groupname, "path", element->path);
         mc_config_set_string_raw (cpath, groupname, "class-name", element->class->name);
-#ifdef HAVE_CHARSET
         mc_config_set_string_raw (cpath, groupname, "encoding", element->encoding);
-#endif
         mc_config_set_string_raw (cpath, groupname, "vfs_prefix", element->vfs_prefix);
 
         mc_config_set_string_raw (cpath, groupname, "user", element->user);
@@ -1224,11 +1187,9 @@ vfs_path_deserialize (const char *data, GError **mcerror)
         element->class = eclass;
         element->path = mc_config_get_string_raw (cpath, groupname, "path", NULL);
 
-#ifdef HAVE_CHARSET
         element->encoding = mc_config_get_string_raw (cpath, groupname, "encoding", NULL);
         element->dir.converter =
             (element->encoding != NULL) ? str_crt_conv_from (element->encoding) : INVALID_CONV;
-#endif
 
         element->vfs_prefix = mc_config_get_string_raw (cpath, groupname, "vfs_prefix", NULL);
 
@@ -1311,7 +1272,6 @@ vfs_path_append_new (const vfs_path_t *vpath, const char *first_element, ...)
     g_free (str_path);
 
     return ret_vpath;
-
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1388,7 +1348,7 @@ vfs_path_tokens_count (const vfs_path_t *vpath)
         for (prev_token = element->path; (token = strchr (prev_token, PATH_SEP)) != NULL;
              prev_token = token + 1)
         {
-            /* skip empty substring */
+            // skip empty substring
             if (token != prev_token)
                 count_tokens++;
         }

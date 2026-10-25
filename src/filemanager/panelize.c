@@ -1,7 +1,7 @@
 /*
    External panelize
 
-   Copyright (C) 1995-2025
+   Copyright (C) 1995-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -22,7 +22,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 /** \file panelize.c
@@ -31,21 +31,24 @@
 
 #include <config.h>
 
+#include <errno.h>
+
 #include "lib/global.h"
 
 #include "lib/skin.h"
 #include "lib/tty/tty.h"
 #include "lib/vfs/vfs.h"
-#include "lib/mcconfig.h"       /* Load/save directories panelize */
+#include "lib/mcconfig.h"  // Load/save directories panelize
 #include "lib/strutil.h"
 #include "lib/widget.h"
-#include "lib/util.h"           /* mc_pipe_t */
+#include "lib/util.h"  // mc_pipe_t
 
 #include "src/history.h"
+#include "src/util.h"  // file_error_message()
 
-#include "filemanager.h"        /* current_panel */
-#include "layout.h"             /* rotate_dash() */
-#include "panel.h"              /* WPanel, dir.h */
+#include "filemanager.h"  // current_panel
+#include "layout.h"       // rotate_dash()
+#include "panel.h"        // WPanel, dir.h
 
 #include "panelize.h"
 
@@ -53,8 +56,8 @@
 
 /*** file scope macro definitions ****************************************************************/
 
-#define UX 3
-#define UY 2
+#define UX       3
+#define UY       2
 
 #define B_ADD    B_USER
 #define B_REMOVE (B_USER + 1)
@@ -144,7 +147,7 @@ panelize_callback (Widget *w, Widget *sender, widget_msg_t msg, int parm, void *
         group_default_callback (w, NULL, MSG_INIT, 0, NULL);
         MC_FALLTHROUGH;
 
-    case MSG_NOTIFY:           /* MSG_NOTIFY is fired by the listbox to tell us the item has changed. */
+    case MSG_NOTIFY:  // MSG_NOTIFY is fired by the listbox to tell us the item has changed.
         update_command ();
         return MSG_HANDLED;
 
@@ -164,12 +167,10 @@ external_panelize_init (void)
         button_flags_t flags;
         const char *text;
     } panelize_but[] = {
-        /* *INDENT-OFF* */
-        { B_ENTER, DEFPUSH_BUTTON, N_("Pane&lize") },
-        { B_REMOVE, NORMAL_BUTTON, N_("&Remove") },
-        { B_ADD, NORMAL_BUTTON, N_("&Add new") },
-        { B_CANCEL, NORMAL_BUTTON, N_("&Cancel") }
-        /* *INDENT-ON* */
+        { B_ENTER, DEFPUSH_BUTTON, _ ("Pane&lize") },
+        { B_REMOVE, NORMAL_BUTTON, _ ("&Remove") },
+        { B_ADD, NORMAL_BUTTON, _ ("&Add new") },
+        { B_CANCEL, NORMAL_BUTTON, _ ("&Cancel") },
     };
 
     WGroup *g;
@@ -184,12 +185,9 @@ external_panelize_init (void)
     do_refresh ();
 
     i = G_N_ELEMENTS (panelize_but);
-    blen = i - 1;               /* gaps between buttons */
+    blen = i - 1;  // gaps between buttons
     while (i-- != 0)
     {
-#ifdef ENABLE_NLS
-        panelize_but[i].text = _(panelize_but[i].text);
-#endif
         blen += str_term_width1 (panelize_but[i].text) + 3 + 1;
         if (panelize_but[i].flags == DEFPUSH_BUTTON)
             blen += 2;
@@ -200,25 +198,24 @@ external_panelize_init (void)
 
     panelize_dlg =
         dlg_create (TRUE, 0, 0, 20, panelize_cols, WPOS_CENTER, FALSE, dialog_colors,
-                    panelize_callback, NULL, "[External panelize]", _("External panelize"));
+                    panelize_callback, NULL, "[External panelize]", _ ("External panelize"));
     g = GROUP (panelize_dlg);
 
-    /* add listbox to the dialogs */
+    // add listbox to the dialogs
     y = UY;
     group_add_widget (g, groupbox_new (y++, UX, 12, panelize_cols - UX * 2, ""));
 
     l_panelize = listbox_new (y, UX + 1, 10, panelize_cols - UX * 2 - 2, FALSE, NULL);
     g_slist_foreach (panelize, panelize_entry_add_to_listbox, NULL);
-    listbox_set_current (l_panelize, listbox_search_text (l_panelize, _("Other command")));
+    listbox_set_current (l_panelize, listbox_search_text (l_panelize, _ ("Other command")));
     group_add_widget (g, l_panelize);
 
     y += WIDGET (l_panelize)->rect.lines + 1;
-    group_add_widget (g, label_new (y++, UX, _("Command")));
-    pname =
-        input_new (y++, UX, input_colors, panelize_cols - UX * 2, "", "in",
-                   INPUT_COMPLETE_FILENAMES | INPUT_COMPLETE_HOSTNAMES | INPUT_COMPLETE_COMMANDS |
-                   INPUT_COMPLETE_VARIABLES | INPUT_COMPLETE_USERNAMES | INPUT_COMPLETE_CD |
-                   INPUT_COMPLETE_SHELL_ESC);
+    group_add_widget (g, label_new (y++, UX, _ ("Command")));
+    pname = input_new (y++, UX, input_colors, panelize_cols - UX * 2, "", "in",
+                       INPUT_COMPLETE_FILENAMES | INPUT_COMPLETE_HOSTNAMES | INPUT_COMPLETE_COMMANDS
+                           | INPUT_COMPLETE_VARIABLES | INPUT_COMPLETE_USERNAMES | INPUT_COMPLETE_CD
+                           | INPUT_COMPLETE_SHELL_ESC);
     group_add_widget (g, pname);
 
     group_add_widget (g, hline_new (y++, -1, -1));
@@ -228,11 +225,11 @@ external_panelize_init (void)
     {
         WButton *b;
 
-        b = button_new (y, x,
-                        panelize_but[i].ret_cmd, panelize_but[i].flags, panelize_but[i].text, NULL);
+        b = button_new (y, x, panelize_but[i].ret_cmd, panelize_but[i].flags, panelize_but[i].text,
+                        NULL);
         group_add_widget (g, b);
 
-        x += button_get_len (b) + 1;
+        x += widget_get_columns (WIDGET (b)) + 1;
     }
 
     widget_select (WIDGET (l_panelize));
@@ -273,9 +270,8 @@ add2panelize_cmd (void)
     {
         char *label;
 
-        label = input_dialog (_("Add to external panelize"),
-                              _("Enter command label:"), MC_HISTORY_FM_PANELIZE_ADD, "",
-                              INPUT_COMPLETE_NONE);
+        label = input_dialog (_ ("Add to external panelize"), _ ("Enter command label:"),
+                              MC_HISTORY_FM_PANELIZE_ADD, "", INPUT_COMPLETE_NONE);
         if (label == NULL || *label == '\0')
             g_free (label);
         else
@@ -288,7 +284,7 @@ add2panelize_cmd (void)
 static void
 remove_from_panelize (panelize_entry_t *entry)
 {
-    if (strcmp (entry->label, _("Other command")) != 0)
+    if (strcmp (entry->label, _ ("Other command")) != 0)
     {
         panelize = g_slist_remove (panelize, entry);
         panelize_entry_free (entry);
@@ -308,12 +304,12 @@ do_external_panelize (const char *command)
     external = mc_popen (command, TRUE, TRUE, &error);
     if (external == NULL)
     {
-        message (D_ERROR, _("External panelize"), "%s", error->message);
+        message (D_ERROR, _ ("External panelize"), "%s", error->message);
         g_error_free (error);
         return;
     }
 
-    /* Clear the counters and the directory list */
+    // Clear the counters and the directory list
     panel_clean_dir (current_panel);
 
     panel_panelize_change_root (current_panel, current_panel->cwd_vpath);
@@ -325,7 +321,7 @@ do_external_panelize (const char *command)
         GString *line;
         gboolean ok;
 
-        /* init buffers before call of mc_pread() */
+        // init buffers before call of mc_pread()
         external->out.len = MC_PIPE_BUFSIZE;
         external->err.len = MC_PIPE_BUFSIZE;
         external->err.null_term = TRUE;
@@ -334,13 +330,13 @@ do_external_panelize (const char *command)
 
         if (error != NULL)
         {
-            message (D_ERROR, MSG_ERROR, _("External panelize:\n%s"), error->message);
+            message (D_ERROR, MSG_ERROR, _ ("External panelize:\n%s"), error->message);
             g_error_free (error);
             break;
         }
 
         if (external->err.len > 0)
-            message (D_ERROR, MSG_ERROR, _("External panelize:\n%s"), external->err.buf);
+            message (D_ERROR, MSG_ERROR, _ ("External panelize:\n%s"), external->err.buf);
 
         if (external->out.len == MC_PIPE_STREAM_EOF)
             break;
@@ -350,9 +346,9 @@ do_external_panelize (const char *command)
 
         if (external->out.len == MC_PIPE_ERROR_READ)
         {
-            message (D_ERROR, MSG_ERROR,
-                     _("External panelize:\nfailed to read data from child stdout:\n%s"),
-                     unix_error_string (external->out.error));
+            errno = external->out.error;
+            file_error_message (_ ("External panelize:\nfailed to read data from child stdout:"),
+                                NULL);
             break;
         }
 
@@ -364,15 +360,15 @@ do_external_panelize (const char *command)
             gboolean link_to_dir, stale_link;
             struct stat st;
 
-            /* handle a \n-separated file list */
+            // handle a \n-separated file list
 
             if (line->str[line->len - 1] == '\n')
             {
-                /* entire file name or last chunk */
+                // entire file name or last chunk
 
                 g_string_truncate (line, line->len - 1);
 
-                /* join filename chunks */
+                // join filename chunks
                 if (remain_file_name != NULL)
                 {
                     g_string_append_len (remain_file_name, line->str, line->len);
@@ -383,7 +379,7 @@ do_external_panelize (const char *command)
             }
             else
             {
-                /* first or middle chunk of file name */
+                // first or middle chunk of file name
 
                 if (remain_file_name == NULL)
                     remain_file_name = line;
@@ -425,6 +421,7 @@ do_external_panelize (const char *command)
 
     current_panel->is_panelized = TRUE;
     panel_panelize_absolutize_if_needed (current_panel);
+    panel_panelize_save (current_panel);
 
     panel_set_current_by_name (current_panel, NULL);
     panel_re_sort (current_panel);
@@ -440,14 +437,14 @@ external_panelize_cmd (void)
 {
     if (!vfs_current_is_local ())
     {
-        message (D_ERROR, MSG_ERROR, _("Cannot run external panelize in a non-local directory"));
+        message (D_ERROR, MSG_ERROR, _ ("Cannot run external panelize in a non-local directory"));
         return;
     }
 
     external_panelize_init ();
 
-    /* display file info */
-    tty_setcolor (SELECTED_COLOR);
+    // display file info
+    tty_setcolor (CORE_SELECTED_COLOR);
 
     switch (dlg_run (panelize_dlg))
     {
@@ -459,13 +456,13 @@ external_panelize_cmd (void)
         break;
 
     case B_REMOVE:
-        {
-            panelize_entry_t *entry;
+    {
+        panelize_entry_t *entry;
 
-            listbox_get_current (l_panelize, NULL, (void **) &entry);
-            remove_from_panelize (entry);
-            break;
-        }
+        listbox_get_current (l_panelize, NULL, (void **) &entry);
+        remove_from_panelize (entry);
+        break;
+    }
 
     case B_ENTER:
         if (!input_is_empty (pname))
@@ -497,18 +494,18 @@ external_panelize_load (void)
 
     keys = mc_config_get_keys (mc_global.main_config, panelize_section, NULL);
 
-    add2panelize (g_strdup (_("Other command")), g_strdup (""));
+    add2panelize (g_strdup (_ ("Other command")), g_strdup (""));
 
     if (*keys == NULL)
     {
-        add2panelize (g_strdup (_("Modified git files")), g_strdup ("git ls-files --modified"));
-        add2panelize (g_strdup (_("Find rejects after patching")),
+        add2panelize (g_strdup (_ ("Modified git files")), g_strdup ("git ls-files --modified"));
+        add2panelize (g_strdup (_ ("Find rejects after patching")),
                       g_strdup ("find . -name \\*.rej -print"));
-        add2panelize (g_strdup (_("Find *.orig after patching")),
+        add2panelize (g_strdup (_ ("Find *.orig after patching")),
                       g_strdup ("find . -name \\*.orig -print"));
-        add2panelize (g_strdup (_("Find SUID and SGID programs")),
-                      g_strdup
-                      ("find . \\( \\( -perm -04000 -a -perm /011 \\) -o \\( -perm -02000 -a -perm /01 \\) \\) -print"));
+        add2panelize (g_strdup (_ ("Find SUID and SGID programs")),
+                      g_strdup ("find . \\( \\( -perm -04000 -a -perm /011 \\) -o \\( -perm -02000 "
+                                "-a -perm /01 \\) \\) -print"));
     }
     else
     {
@@ -530,9 +527,9 @@ external_panelize_load (void)
                     g_string_assign (buffer, *profile_keys);
             }
 
-            add2panelize (g_string_free (buffer, FALSE),
-                          mc_config_get_string (mc_global.main_config, panelize_section,
-                                                *profile_keys, ""));
+            add2panelize (
+                g_string_free (buffer, FALSE),
+                mc_config_get_string (mc_global.main_config, panelize_section, *profile_keys, ""));
         }
 
         str_close_conv (conv);
@@ -554,9 +551,9 @@ external_panelize_save (void)
     {
         panelize_entry_t *current = (panelize_entry_t *) l->data;
 
-        if (strcmp (current->label, _("Other command")) != 0)
-            mc_config_set_string (mc_global.main_config,
-                                  panelize_section, current->label, current->command);
+        if (strcmp (current->label, _ ("Other command")) != 0)
+            mc_config_set_string (mc_global.main_config, panelize_section, current->label,
+                                  current->command);
     }
 }
 

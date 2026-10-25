@@ -1,7 +1,7 @@
 /*
    src/editor - tests for edit_complete_word_cmd() function
 
-   Copyright (C) 2013-2025
+   Copyright (C) 2013-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -21,7 +21,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #define TEST_SUITE_NAME "/src/editor"
@@ -30,17 +30,13 @@
 
 #include <ctype.h>
 
-#ifdef HAVE_CHARSET
 #include "lib/charsets.h"
-#endif
 #include "lib/strutil.h"
 
 #include "src/vfs/local/local.c"
-#ifdef HAVE_CHARSET
 #include "src/selcodepage.h"
-#endif
 #include "src/editor/editwidget.h"
-#include "src/editor/editmacros.h"      /* edit_load_macro_cmd() */
+#include "src/editor/editmacros.h"  // edit_load_macro_cmd()
 #include "src/editor/editcomplete.h"
 
 static WGroup owner;
@@ -160,10 +156,8 @@ my_setup (void)
     vfs_init_localfs ();
     vfs_setup_work_dir ();
 
-#ifdef HAVE_CHARSET
     mc_global.sysconfig_dir = (char *) TEST_SHARE_DIR;
     load_codepages_list ();
-#endif /* HAVE_CHARSET */
 
     mc_global.main_config = mc_config_init ("edit_complete_word_cmd.ini", FALSE);
     mc_config_set_bool (mc_global.main_config, CONFIG_APP_SECTION,
@@ -172,7 +166,7 @@ my_setup (void)
     edit_options.filesize_threshold = (char *) "64M";
 
     rect_init (&r, 0, 0, 24, 80);
-    arg.file_vpath = vfs_path_from_str ("test-data.txt");
+    arg.file_vpath = vfs_path_from_str ("edit_complete_word_cmd_test_data.txt");
     arg.line_number = 1;
     test_edit = edit_init (NULL, &r, &arg);
     memset (&owner, 0, sizeof (owner));
@@ -192,21 +186,14 @@ my_teardown (void)
     g_free (test_edit);
 
     mc_config_deinit (mc_global.main_config);
-
-#ifdef HAVE_CHARSET
     free_codepages_list ();
-#endif /* HAVE_CHARSET */
-
     vfs_shut ();
-
     str_uninit_strings ();
 }
 
 /* --------------------------------------------------------------------------------------------- */
 
-#ifdef HAVE_CHARSET
 /* @DataSource("test_autocomplete_ds") */
-/* *INDENT-OFF* */
 static const struct test_autocomplete_ds
 {
     off_t input_position;
@@ -220,9 +207,9 @@ static const struct test_autocomplete_ds
     int expected_compl_word_count;
     int input_completed_word_start_pos;
     const char *expected_completed_word;
-} test_autocomplete_ds[] =
-{
-    { /* 0. */
+} test_autocomplete_ds[] = {
+    {
+        // 0. KOI8-R/UTF-8 - эъйцукен
         102,
         "KOI8-R",
         0,
@@ -233,32 +220,29 @@ static const struct test_autocomplete_ds
         16,
         2,
         98,
-        "эъйцукен"
+        "эъйцукен",
     },
-    { /* 1. */
+    {
+        // 1. UTF-8/KOI8-R - эъйцукен
         138,
         "UTF-8",
         1,
         "KOI8-R",
         0,
-        "\xDC\xDF\xCA\xC3\xD5\xCB\xC5\xCE", // эъйцукен
+        "\xDC\xDF\xCA\xC3\xD5\xCB\xC5\xCE",
 
         8,
         2,
         136,
-        "\xDC\xDF\xCA\xC3\xD5\xCB\xC5\xCE" // эъйцукен
+        "\xDC\xDF\xCA\xC3\xD5\xCB\xC5\xCE",
     },
 };
-/* *INDENT-ON* */
 
 /* @Test(dataSource = "test_autocomplete_ds") */
-/* *INDENT-OFF* */
 START_PARAMETRIZED_TEST (test_autocomplete, test_autocomplete_ds)
-/* *INDENT-ON* */
 {
-    /* given */
+    // given
     edit_completion_dialog_show__return_value = g_strdup (data->input_completed_word);
-
 
     mc_global.source_codepage = data->input_source_codepage_id;
     mc_global.display_codepage = data->input_display_codepage_id;
@@ -268,11 +252,11 @@ START_PARAMETRIZED_TEST (test_autocomplete, test_autocomplete_ds)
     do_set_codepage (0);
     edit_set_codeset (test_edit);
 
-    /* when */
+    // when
     edit_cursor_move (test_edit, data->input_position);
     edit_complete_word_cmd (test_edit);
 
-    /* then */
+    // then
     mctest_assert_ptr_eq (edit_completion_dialog_show__edit, test_edit);
     ck_assert_int_eq (g_queue_get_length (edit_completion_dialog_show__compl),
                       data->expected_compl_word_count);
@@ -288,9 +272,8 @@ START_PARAMETRIZED_TEST (test_autocomplete, test_autocomplete_ds)
         {
             int chr;
 
-            chr =
-                edit_buffer_get_byte (&test_edit->buffer,
-                                      data->input_completed_word_start_pos + i++);
+            chr = edit_buffer_get_byte (&test_edit->buffer,
+                                        data->input_completed_word_start_pos + i++);
             if (isspace (chr))
                 break;
             g_string_append_c (actual_completed_str, chr);
@@ -299,14 +282,11 @@ START_PARAMETRIZED_TEST (test_autocomplete, test_autocomplete_ds)
         g_string_free (actual_completed_str, TRUE);
     }
 }
-/* *INDENT-OFF* */
 END_PARAMETRIZED_TEST
-/* *INDENT-ON* */
 
 /* --------------------------------------------------------------------------------------------- */
 
 /* @DataSource("test_autocomplete_single_ds") */
-/* *INDENT-OFF* */
 static const struct test_autocomplete_single_ds
 {
     off_t input_position;
@@ -318,9 +298,9 @@ static const struct test_autocomplete_single_ds
     int input_completed_word_start_pos;
 
     const char *expected_completed_word;
-} test_autocomplete_single_ds[] =
-{
-    { /* 0. */
+} test_autocomplete_single_ds[] = {
+    {
+        // 0. UTF-8/KOI8-R - фыва
         146,
         "UTF-8",
         1,
@@ -328,17 +308,14 @@ static const struct test_autocomplete_single_ds
         0,
 
         145,
-        "\xC6\xD9\xD7\xC1" // фыва
+        "\xC6\xD9\xD7\xC1",
     },
 };
-/* *INDENT-ON* */
 
 /* @Test(dataSource = "test_autocomplete_single_ds") */
-/* *INDENT-OFF* */
 START_PARAMETRIZED_TEST (test_autocomplete_single, test_autocomplete_single_ds)
-/* *INDENT-ON* */
 {
-    /* given */
+    // given
     mc_global.source_codepage = data->input_source_codepage_id;
     mc_global.display_codepage = data->input_display_codepage_id;
     cp_source = data->input_editor_code_page;
@@ -347,11 +324,11 @@ START_PARAMETRIZED_TEST (test_autocomplete_single, test_autocomplete_single_ds)
     do_set_codepage (0);
     edit_set_codeset (test_edit);
 
-    /* when */
+    // when
     edit_cursor_move (test_edit, data->input_position);
     edit_complete_word_cmd (test_edit);
 
-    /* then */
+    // then
     {
         off_t i = 0;
         GString *actual_completed_str;
@@ -362,9 +339,8 @@ START_PARAMETRIZED_TEST (test_autocomplete_single, test_autocomplete_single_ds)
         {
             int chr;
 
-            chr =
-                edit_buffer_get_byte (&test_edit->buffer,
-                                      data->input_completed_word_start_pos + i++);
+            chr = edit_buffer_get_byte (&test_edit->buffer,
+                                        data->input_completed_word_start_pos + i++);
             if (isspace (chr))
                 break;
             g_string_append_c (actual_completed_str, chr);
@@ -373,12 +349,7 @@ START_PARAMETRIZED_TEST (test_autocomplete_single, test_autocomplete_single_ds)
         g_string_free (actual_completed_str, TRUE);
     }
 }
-/* *INDENT-OFF* */
 END_PARAMETRIZED_TEST
-/* *INDENT-ON* */
-
-
-#endif /* HAVE_CHARSET */
 
 /* --------------------------------------------------------------------------------------------- */
 
@@ -391,12 +362,10 @@ main (void)
 
     tcase_add_checked_fixture (tc_core, my_setup, my_teardown);
 
-    /* Add new tests here: *************** */
-#ifdef HAVE_CHARSET
+    // Add new tests here: ***************
     mctest_add_parameterized_test (tc_core, test_autocomplete, test_autocomplete_ds);
     mctest_add_parameterized_test (tc_core, test_autocomplete_single, test_autocomplete_single_ds);
-#endif /* HAVE_CHARSET */
-    /* *********************************** */
+    // ***********************************
 
     return mctest_run_all (tc_core);
 }

@@ -84,11 +84,6 @@ The features include:
 
 	* FTP proxy is supported.
 
-	* Linux file recovery: If you are using Linux, you can recover
-	  deleted files from an ext2 or ext3 partition with the undelete
-	  file system.  This is a low level file recovery function that
-	  can recover files deleted by any program on Linux.
-
 	* External panelization: You can run any arbitrary external
 	  command and GNU Midnight Commander will display the output
 	  generated as a file listing that can be manipulated as a
@@ -141,26 +136,21 @@ Where to get more information
 
 There is a webpage for GNU Midnight Commander at
 
-* https://www.midnight-commander.org
+* https://midnight-commander.org
 
 This page also has current information about mailing lists and some
 useful advices how to report bugs.
 
 You can download the latest version of GNU Midnight Commander from
 
-* https://www.midnight-commander.org/downloads/
-
-The Midnight Commander distribution is placed at:
-
-* http://ftp.osuosl.org/pub/midnightcommander/
-* ftp://ftp.osuosl.org/pub/midnightcommander/
+* https://ftp.osuosl.org/pub/midnightcommander/
 
 Reporting problems
 ------------------
 
-You can report bug on our site, please read 
+You can report bugs on our site:
 
-https://www.midnight-commander.org/wiki/doc/reportDefects
+https://github.com/MidnightCommander/mc/issues
 
 Also you can use mc mailing lists to discuss problems.
 

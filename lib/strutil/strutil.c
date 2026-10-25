@@ -1,7 +1,7 @@
 /*
    Common strings utilities
 
-   Copyright (C) 2007-2025
+   Copyright (C) 2007-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -20,7 +20,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -31,7 +31,7 @@
 #include <errno.h>
 
 #include "lib/global.h"
-#include "lib/util.h"           /* MC_PTR_FREE */
+#include "lib/util.h"  // MC_PTR_FREE
 #include "lib/strutil.h"
 
 /*** global variables ****************************************************************************/
@@ -52,23 +52,27 @@ GIConv str_cnv_not_convert = INVALID_CONV;
 static const char *const str_utf8_encodings[] = {
     "utf-8",
     "utf8",
-    NULL
+    NULL,
 };
 
 /* standard 8bit encodings, no wide or multibytes characters */
 static const char *const str_8bit_encodings[] = {
     "cp-1251",
     "cp1251",
-    /* solaris */
+
+    // solaris
     "ansi-1251",
     "ansi1251",
+
     "cp-1250",
     "cp1250",
     "cp-866",
     "cp866",
-    /* glibc */
+
+    // glibc
     "ibm-866",
     "ibm866",
+
     "cp-850",
     "cp850",
     "cp-852",
@@ -76,7 +80,8 @@ static const char *const str_8bit_encodings[] = {
     "iso-8859",
     "iso8859",
     "koi8",
-    NULL
+
+    NULL,
 };
 
 /* terminal encoding */
@@ -106,7 +111,7 @@ _str_convert (GIConv coder, const char *string, int size, GString *buffer)
     gsize bytes_read = 0;
     gsize bytes_written = 0;
 
-    errno = 0;                  /* FIXME: is it really needed? */
+    errno = 0;  // FIXME: is it really needed?
 
     if (coder == INVALID_CONV)
         return ESTR_FAILURE;
@@ -137,8 +142,8 @@ _str_convert (GIConv coder, const char *string, int size, GString *buffer)
         gchar *tmp_buff;
         GError *mcerror = NULL;
 
-        tmp_buff = g_convert_with_iconv ((const gchar *) string,
-                                         left, coder, &bytes_read, &bytes_written, &mcerror);
+        tmp_buff = g_convert_with_iconv ((const gchar *) string, left, coder, &bytes_read,
+                                         &bytes_written, &mcerror);
         if (mcerror != NULL)
         {
             int code = mcerror->code;
@@ -149,17 +154,17 @@ _str_convert (GIConv coder, const char *string, int size, GString *buffer)
             switch (code)
             {
             case G_CONVERT_ERROR_NO_CONVERSION:
-                /* Conversion between the requested character sets is not supported. */
+                // Conversion between the requested character sets is not supported.
                 g_free (tmp_buff);
                 mc_g_string_append_c_len (buffer, '?', strlen (string));
                 return ESTR_FAILURE;
 
             case G_CONVERT_ERROR_ILLEGAL_SEQUENCE:
-                /* Invalid byte sequence in conversion input. */
+                // Invalid byte sequence in conversion input.
                 if ((tmp_buff == NULL) && (bytes_read != 0))
-                    /* recode valid byte sequence */
-                    tmp_buff = g_convert_with_iconv ((const gchar *) string,
-                                                     bytes_read, coder, NULL, NULL, NULL);
+                    // recode valid byte sequence
+                    tmp_buff = g_convert_with_iconv ((const gchar *) string, bytes_read, coder,
+                                                     NULL, NULL, NULL);
 
                 if (tmp_buff != NULL)
                 {
@@ -178,16 +183,16 @@ _str_convert (GIConv coder, const char *string, int size, GString *buffer)
                 break;
 
             case G_CONVERT_ERROR_PARTIAL_INPUT:
-                /* Partial character sequence at end of input. */
+                // Partial character sequence at end of input.
                 g_string_append (buffer, tmp_buff);
                 g_free (tmp_buff);
                 if ((int) bytes_read < left)
                     mc_g_string_append_c_len (buffer, '?', left - bytes_read);
                 return ESTR_PROBLEM;
 
-            case G_CONVERT_ERROR_BAD_URI:      /* Don't know how handle this error :( */
-            case G_CONVERT_ERROR_NOT_ABSOLUTE_PATH:    /* Don't know how handle this error :( */
-            case G_CONVERT_ERROR_FAILED:       /* Conversion failed for some reason. */
+            case G_CONVERT_ERROR_BAD_URI:            // Don't know how handle this error :(
+            case G_CONVERT_ERROR_NOT_ABSOLUTE_PATH:  // Don't know how handle this error :(
+            case G_CONVERT_ERROR_FAILED:             // Conversion failed for some reason.
             default:
                 g_free (tmp_buff);
                 return ESTR_FAILURE;
@@ -263,8 +268,8 @@ str_crt_conv_to (const char *to_enc)
 GIConv
 str_crt_conv_from (const char *from_enc)
 {
-    return (!str_test_not_convert (from_enc))
-        ? g_iconv_open (codeset, from_enc) : str_cnv_not_convert;
+    return (!str_test_not_convert (from_enc)) ? g_iconv_open (codeset, from_enc)
+                                              : str_cnv_not_convert;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -346,16 +351,18 @@ str_insert_replace_char (GString *buffer)
 /* --------------------------------------------------------------------------------------------- */
 
 estr_t
-str_translate_char (GIConv conv, const char *keys, size_t ch_size, char *output, size_t out_size)
+str_translate_char (GIConv conv, const char *keys, const ssize_t ch_size, char *output,
+                    const size_t out_size)
 {
     size_t left;
     size_t cnv;
+    size_t osize = out_size;
 
     g_iconv (conv, NULL, NULL, NULL, NULL);
 
-    left = (ch_size == (size_t) (-1)) ? strlen (keys) : ch_size;
+    left = ch_size < 0 ? strlen (keys) : (size_t) ch_size;
 
-    cnv = g_iconv (conv, (gchar **) & keys, &left, &output, &out_size);
+    cnv = g_iconv (conv, (gchar **) &keys, &left, &output, &osize);
     if (cnv == (size_t) (-1))
         return (errno == EINVAL) ? ESTR_PROBLEM : ESTR_FAILURE;
 
@@ -426,7 +433,7 @@ str_uninit_strings (void)
 {
     if (str_cnv_not_convert != INVALID_CONV)
         g_iconv_close (str_cnv_not_convert);
-    /* NULL-ize pointers to avoid double free in unit tests */
+    // NULL-ize pointers to avoid double free in unit tests
     MC_PTR_FREE (term_encoding);
     MC_PTR_FREE (codeset);
 }
@@ -450,7 +457,7 @@ str_fit_to_term (const char *text, int width, align_crt_t just_mode)
 /* --------------------------------------------------------------------------------------------- */
 
 const char *
-str_term_trim (const char *text, int width)
+str_term_trim (const char *text, const ssize_t width)
 {
     return used_class.term_trim (text, width);
 }
@@ -645,15 +652,21 @@ str_is_valid_char (const char *ch, size_t size)
 int
 str_term_width1 (const char *text)
 {
-    return used_class.term_width1 (text);
+    // Reduce bitwidth size_t -> int
+    // str_term_width1() is widely used to caclulate widget coordinates and sizes
+    // that are of type int (see WRect structure).
+    // It's very unlikely that used_class.term_width1() will return a value greater than MAX_INT.
+    return (int) used_class.term_width1 (text);
 }
 
 /* --------------------------------------------------------------------------------------------- */
 
 int
-str_term_width2 (const char *text, size_t length)
+str_term_width2 (const char *text, const ssize_t width)
 {
-    return used_class.term_width2 (text, length);
+    // Reduce bitwidth size_t -> int
+    // See comment in str_term_width1().
+    return (int) used_class.term_width2 (text, width);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -779,7 +792,7 @@ str_iscombiningmark (const char *ch)
 /* --------------------------------------------------------------------------------------------- */
 
 const char *
-str_trunc (const char *text, int width)
+str_trunc (const char *text, const ssize_t width)
 {
     return used_class.trunc (text, width);
 }
@@ -1012,6 +1025,24 @@ parse_integer (const char *str, gboolean *invalid)
     }
 
     return n;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+/**
+ * Strips single right (trailing) EOL (\\r, \\n, or \\r\\n), NULL-safe
+ */
+void
+str_rstrip_eol (char *s)
+{
+    if (s == NULL || *s == '\0')
+        return;
+
+    const size_t len = strlen (s);
+    if (len >= 2 && s[len - 2] == '\r' && s[len - 1] == '\n')  // removes \r\n
+        s[len - 2] = '\0';
+    else if (len >= 1 && (s[len - 1] == '\n' || s[len - 1] == '\r'))  // removes \n or \r
+        s[len - 1] = '\0';
 }
 
 /* --------------------------------------------------------------------------------------------- */

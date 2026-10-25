@@ -1,6 +1,6 @@
 skindir = $(pkgdatadir)/skins
 
-skin_DATA = \
+SKINS = \
 	dotname-light.ini \
 	dotname-dark.ini \
 	dotname-light-root.ini \
@@ -16,6 +16,7 @@ skin_DATA = \
 	gray-orange-blue256.ini \
 	julia256.ini \
 	julia256root.ini \
+	mashdark256.ini \
 	mc46.ini \
 	modarcon16-defbg.ini \
 	modarcon16-defbg-thin.ini \
@@ -39,11 +40,16 @@ skin_DATA = \
 	seasons-spring16M.ini \
 	seasons-summer16M.ini \
 	seasons-winter16M.ini \
+	tokyo-night-16M.ini \
 	xoria256-thin.ini \
 	xoria256.ini \
 	xoria256root-thin.ini \
 	yadt256-defbg.ini \
 	yadt256.ini
 
+skin_DATA = \
+	README.txt \
+	$(SKINS)
+
 EXTRA_DIST = \
-    $(skin_DATA)
+	$(skin_DATA)

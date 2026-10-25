@@ -2,7 +2,7 @@
    Internal file viewer for the Midnight Commander
    Functions for searching in nroff-like view
 
-   Copyright (C) 1994-2025
+   Copyright (C) 1994-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -30,7 +30,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -38,9 +38,7 @@
 #include "lib/global.h"
 #include "lib/tty/tty.h"
 #include "lib/skin.h"
-#ifdef HAVE_CHARSET
 #include "lib/charsets.h"
-#endif
 
 #include "internal.h"
 
@@ -63,19 +61,17 @@ mcview_nroff_get_char (mcview_nroff_t *nroff, int *ret_val, off_t nroff_index)
 {
     int c = 0;
 
-#ifdef HAVE_CHARSET
     if (nroff->view->utf8)
     {
         if (!mcview_get_utf (nroff->view, nroff_index, &c, &nroff->char_length))
         {
-            /* we need got symbol in any case */
+            // we need got symbol in any case
             nroff->char_length = 1;
             if (!mcview_get_byte (nroff->view, nroff_index, &c) || !g_ascii_isprint (c))
                 return FALSE;
         }
     }
     else
-#endif
     {
         nroff->char_length = 1;
         if (!mcview_get_byte (nroff->view, nroff_index, &c))
@@ -109,10 +105,13 @@ mcview__get_nroff_real_len (WView *view, off_t start, off_t length)
         switch (nroff->type)
         {
         case NROFF_TYPE_BOLD:
-            ret += 1 + nroff->char_length;      /* real char length and 0x8 */
+            ret += nroff->char_length + 1;  // letter + '\b'
             break;
         case NROFF_TYPE_UNDERLINE:
-            ret += 2;           /* underline symbol and ox8 */
+            ret += 2;  // '_' + '\b'
+            break;
+        case NROFF_TYPE_BOLD_UNDERLINE:
+            ret += 2 + nroff->char_length + 1;  // '_' + '\b' + letter + '\b'
             break;
         default:
             break;
@@ -148,7 +147,6 @@ mcview_nroff_t *
 mcview_nroff_seq_new (WView *view)
 {
     return mcview_nroff_seq_new_num (view, (off_t) 0);
-
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -166,7 +164,7 @@ mcview_nroff_seq_free (mcview_nroff_t **nroff)
 nroff_type_t
 mcview_nroff_seq_info (mcview_nroff_t *nroff)
 {
-    int next, next2;
+    int next, next2, next3, next4;
 
     if (nroff == NULL)
         return NROFF_TYPE_NONE;
@@ -181,11 +179,19 @@ mcview_nroff_seq_info (mcview_nroff_t *nroff)
     if (!mcview_nroff_get_char (nroff, &next2, nroff->index + 1 + nroff->char_length))
         return nroff->type;
 
-    if (nroff->current_char == '_' && next2 == '_')
+    if (nroff->current_char == '_'
+        && mcview_get_byte (nroff->view, nroff->index + 2 + nroff->char_length, &next3)
+        && next3 == '\b'
+        && mcview_nroff_get_char (nroff, &next4, nroff->index + 2 + nroff->char_length + 1)
+        && next2 == next4)
     {
-        nroff->type = (nroff->prev_type == NROFF_TYPE_BOLD)
-            ? NROFF_TYPE_BOLD : NROFF_TYPE_UNDERLINE;
-
+        nroff->current_char = next2;
+        nroff->type = NROFF_TYPE_BOLD_UNDERLINE;
+    }
+    else if (nroff->current_char == '_' && next2 == '_')
+    {
+        nroff->type =
+            (nroff->prev_type == NROFF_TYPE_BOLD) ? NROFF_TYPE_BOLD : NROFF_TYPE_UNDERLINE;
     }
     else if (nroff->current_char == next2)
     {
@@ -195,10 +201,6 @@ mcview_nroff_seq_info (mcview_nroff_t *nroff)
     {
         nroff->current_char = next2;
         nroff->type = NROFF_TYPE_UNDERLINE;
-    }
-    else if (nroff->current_char == '+' && next2 == 'o')
-    {
-        /* ??? */
     }
     return nroff->type;
 }
@@ -216,10 +218,13 @@ mcview_nroff_seq_next (mcview_nroff_t *nroff)
     switch (nroff->type)
     {
     case NROFF_TYPE_BOLD:
-        nroff->index += 1 + nroff->char_length;
+        nroff->index += nroff->char_length + 1;  // letter + '\b'
         break;
     case NROFF_TYPE_UNDERLINE:
-        nroff->index += 2;
+        nroff->index += 2;  // '_' + '\b'
+        break;
+    case NROFF_TYPE_BOLD_UNDERLINE:
+        nroff->index += 2 + nroff->char_length + 1;  // '_' + '\b' + letter + '\b'
         break;
     default:
         break;

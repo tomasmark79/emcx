@@ -14,9 +14,9 @@ Consejo: Para seleccionar directorios añadir «/» tras el patrón a buscar.
 
 Consejo: Si no funcionan las teclas de función, ESC+número sirve.
 
-Consejo: El sitio oficial del Midnight Commander es https://www.midnight-commander.org
+Consejo: El sitio oficial del Midnight Commander es https://midnight-commander.org
 
-Consejo: Comunique cualquier defecto a mc-devel@lists.midnight-commander.org
+Hint: Please file any bug reports at https://github.com/MidnightCommander/mc/issues
 
 Consejo: El tabulador cambia de panel.
 

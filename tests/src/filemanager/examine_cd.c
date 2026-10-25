@@ -1,7 +1,7 @@
 /*
    src/filemanager - examine_cd() function testing
 
-   Copyright (C) 2012-2025
+   Copyright (C) 2012-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -21,20 +21,16 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #define TEST_SUITE_NAME "/src/filemanager"
 
 #include "tests/mctest.h"
 
-#include <stdio.h>
-
 #include "src/filemanager/cd.c"
 
 /* --------------------------------------------------------------------------------------------- */
-
-WPanel *current_panel = NULL;
 
 panel_view_mode_t
 get_current_type (void)
@@ -60,29 +56,16 @@ sync_tree (const vfs_path_t *vpath)
 
 /* --------------------------------------------------------------------------------------------- */
 
-static void
-setup (void)
-{
-}
+#define check_examine_cd(input, etalon)                                                            \
+    {                                                                                              \
+        result = examine_cd (input);                                                               \
+        ck_assert_msg (strcmp (result->str, etalon) == 0,                                          \
+                       "\ninput (%s)\nactial (%s) not equal to\netalon (%s)", input, result->str,  \
+                       etalon);                                                                    \
+        g_string_free (result, TRUE);                                                              \
+    }
 
-static void
-teardown (void)
-{
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-#define check_examine_cd(input, etalon) \
-{ \
-    result = examine_cd (input); \
-    ck_assert_msg (strcmp (result->str, etalon) == 0, \
-    "\ninput (%s)\nactial (%s) not equal to\netalon (%s)", input, result->str, etalon); \
-    g_string_free (result, TRUE); \
-}
-
-/* *INDENT-OFF* */
 START_TEST (test_examine_cd)
-/* *INDENT-ON* */
 {
     GString *result;
 
@@ -119,9 +102,7 @@ START_TEST (test_examine_cd)
     check_examine_cd ("/test/path/\\${AAA}test2", "/test/path/${AAA}test2");
     check_examine_cd ("/test/path/test1\\${AAA}test2", "/test/path/test1${AAA}test2");
 }
-/* *INDENT-OFF* */
 END_TEST
-/* *INDENT-ON* */
 
 /* --------------------------------------------------------------------------------------------- */
 
@@ -132,11 +113,9 @@ main (void)
 
     tc_core = tcase_create ("Core");
 
-    tcase_add_checked_fixture (tc_core, setup, teardown);
-
-    /* Add new tests here: *************** */
+    // Add new tests here: ***************
     tcase_add_test (tc_core, test_examine_cd);
-    /* *********************************** */
+    // ***********************************
 
     return mctest_run_all (tc_core);
 }

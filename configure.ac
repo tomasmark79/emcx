@@ -6,8 +6,8 @@ dnl 2.64 is required at least for m4_esyscmd_s()
 AC_PREREQ([2.64])
 
 AC_INIT([GNU Midnight Commander], m4_esyscmd_s([./version.sh .]),
-        [https://www.midnight-commander.org/wiki/NewTicket], [mc],
-        [https://www.midnight-commander.org/])
+        [https://github.com/MidnightCommander/mc/issues], [mc],
+        [https://midnight-commander.org])
 
 m4_pattern_forbid(MC_)
 AC_CONFIG_MACRO_DIR([m4])
@@ -16,7 +16,10 @@ AC_CONFIG_SRCDIR(src/main.c)
 AC_CONFIG_HEADERS(config.h)
 
 dnl Apply "no-define" to avoid defining the VERSION macro in config.h
-AM_INIT_AUTOMAKE([no-define])
+dnl Use "foreign" to stop `automake --add-missing --force-missing` from replacing
+dnl our INSTALL symlink with the stock GNU file; "-Wportability" and "-Wgnu" keep
+dnl the warnings that "gnu" strictness enables by default
+AM_INIT_AUTOMAKE([foreign -Wportability -Wgnu no-define])
 dnl PACKAGE macro isn't defined if "no-define" is applied
 AC_DEFINE([PACKAGE], ["mc"], [Name of package])
 
@@ -64,17 +67,7 @@ if test "x$enable_werror" = xyes; then
     AX_APPEND_COMPILE_FLAGS([-Werror], [mc_configured_cflags])
 fi
 
-dnl Compiler can generate warnings for unrecognized flags added to CFLAGS
-dnl which causes attribute checks to fail
-ax_gcc_func_attribute_save_flags=$[]_AC_LANG_PREFIX[]FLAGS
-_AC_LANG_PREFIX[]FLAGS=
-AX_GCC_FUNC_ATTRIBUTE([fallthrough])
-AX_GCC_FUNC_ATTRIBUTE([weak])
-AX_GCC_FUNC_ATTRIBUTE([unused])
-_AC_LANG_PREFIX[]FLAGS=$ax_gcc_func_attribute_save_flags
-unset ax_gcc_func_attribute_save_flags
-
-LT_INIT
+LT_INIT([disable-shared])
 
 
 dnl ############################################################################
@@ -218,7 +211,6 @@ dnl ############################################################################
 dnl Check for other tools
 dnl ############################################################################
 
-AC_CHECK_TOOLS([INDENT], [gindent indent])
 mc_UNIT_TESTS
 
 
@@ -229,7 +221,6 @@ dnl ############################################################################
 mc_CHECK_GLIB
 mc_G_MODULE_SUPPORTED
 mc_WITH_SCREEN
-mc_CHECK_SEARCH_TYPE
 dnl X11 support. Used to read keyboard modifiers when running under X11.
 mc_WITH_X
 
@@ -277,6 +268,8 @@ AC_CHECK_TYPE([minor_t], [unsigned int])
 AC_STRUCT_ST_BLOCKS
 AC_CHECK_MEMBERS([struct stat.st_blksize, struct stat.st_rdev, struct stat.st_mtim, struct stat.st_mtimespec, struct stat.st_mtimensec])
 gl_STAT_SIZE
+
+AC_STRUCT_DIRENT_D_TYPE
 
 AH_TEMPLATE([sig_atomic_t],
             [/* Define to `int' if <signal.h> doesn't define.])
@@ -343,7 +336,7 @@ AC_CHECK_FUNCS([setlocale])
 AM_GNU_GETTEXT([external], [need-ngettext])
 AM_GNU_GETTEXT_VERSION([0.18.2])
 
-mc_I18N
+mc_ENCODING
 
 dnl ############################################################################
 dnl OS specific stuff
@@ -390,11 +383,41 @@ case $host_os in
     AC_DEFINE([PTY_ZEROREAD], [1], [read(1) can return 0 for a non-closed fd])
 esac
 
-dnl Check linux/fs.h for FICLONE to support BTRFS's file clone operation
+dnl Check for file cloning support
 case $host_os in
-linux*)
+darwin*) AC_CHECK_HEADERS([sys/clonefile.h]) ;;  # clonefile(2) (macOS 10.12+)
+freebsd*) AC_CHECK_FUNCS(copy_file_range) ;;     # copy_file_range(2) (FreeBSD 13+)
+solaris*) AC_CHECK_FUNCS(reflink) ;;             # reflink(3C) (Solaris 11.3+)
+linux*)                                          # FICLONERANGE (Linux 4.5+)
     AC_CHECK_HEADERS([linux/fs.h])
+    AC_MSG_CHECKING([for FICLONERANGE])
+    AC_EGREP_CPP([FICLONERANGE_IS_DEFINED],
+        [
+            #include <linux/fs.h>
+            #ifdef FICLONERANGE
+            FICLONERANGE_IS_DEFINED
+            #endif
+        ],
+        [
+            have_ficlonerange=yes
+            AC_DEFINE(HAVE_FICLONERANGE, 1, [Define if FICLONERANGE is supported on Linux])
+            AC_MSG_RESULT(yes)
+        ],
+        [
+            AC_MSG_RESULT(no)
+        ])
+    ;;
 esac
+
+if test "x$have_ficlonerange" = xyes || \
+   test "x$ac_cv_func_copy_file_range" = xyes; then
+    AC_DEFINE([HAVE_FILE_CLONING_BY_RANGE], [1], [Define if system can clone files by range])
+fi
+
+if test "x$ac_cv_header_sys_clonefile_h" = xyes || \
+   test "x$ac_cv_func_reflink" = xyes; then
+    AC_DEFINE([HAVE_FILE_CLONING_BY_PATH], [1], [Define if system can clone files by path])
+fi
 
 dnl Check if the OS is supported by the console saver.
 cons_saver=""
@@ -424,34 +447,6 @@ linux*)
     fi
     ;;
 esac
-
-
-dnl ############################################################################
-dnl libmc
-dnl ############################################################################
-
-LIBMC_VERSION="0.0.1"
-LIBMC_RELEASE="1"
-AC_SUBST(LIBMC_VERSION)
-AC_SUBST(LIBMC_RELEASE)
-
-AC_ARG_ENABLE([mclib],
-        [AS_HELP_STRING([--enable-mclib], [Compile shared library libmc.so @<:@no@:>@])],
-        [
-            if test "x$enableval" = "xno" ; then
-                enable_mclib=no
-            else
-                if test "x$enable_shared" = "xno" ; then
-                    AC_MSG_WARN([Build of shared library is disabled. Specify --enable-shared first])
-                    enable_mclib=no
-                else
-                    enable_mclib=yes
-                fi
-            fi
-        ],
-        [enable_mclib=no])
-
-AM_CONDITIONAL([ENABLE_MCLIB], [test x$enable_mclib = xyes])
 
 
 dnl ############################################################################
@@ -538,17 +533,6 @@ for h_lang in $ALL_DOC_LINGUAS; do
 done
 AC_SUBST(DOC_LINGUAS)
 
-DX_HTML_FEATURE(ON)
-DX_CHM_FEATURE(OFF)
-DX_CHI_FEATURE(OFF)
-DX_MAN_FEATURE(OFF)
-DX_RTF_FEATURE(OFF)
-DX_XML_FEATURE(OFF)
-DX_PDF_FEATURE(OFF)
-DX_PS_FEATURE(OFF)
-DX_INIT_DOXYGEN(mc,doxygen.cfg,devel)
-
-
 dnl ############################################################################
 dnl Configure results
 dnl ############################################################################
@@ -567,7 +551,6 @@ AM_CONDITIONAL(USE_SCREEN_SLANG, [test x"$with_screen" = xslang])
 AM_CONDITIONAL(USE_INTERNAL_EDIT, [test x"$use_internal_edit" = xyes ])
 AM_CONDITIONAL(USE_ASPELL, [test x"$enable_aspell" = xyes ])
 AM_CONDITIONAL(USE_DIFF, [test -n "$use_diff"])
-AM_CONDITIONAL(CHARSET, [test -n "$have_charset"])
 AM_CONDITIONAL(CONS_SAVER, [test -n "$cons_saver"])
 dnl Clarify do we really need GModule
 AM_CONDITIONAL([HAVE_GMODULE], [test -n "$g_module_supported" && \
@@ -602,7 +585,6 @@ misc/mc-clipboard:misc/mc-clipboard.py
 misc/mcedit.menu
 misc/skins/Makefile
 misc/ext.d/Makefile
-misc/ext.d/doc.sh
 misc/ext.d/misc.sh
 misc/ext.d/text.sh
 misc/macros.d/Makefile
@@ -626,6 +608,7 @@ src/vfs/extfs/helpers/Makefile
 src/vfs/extfs/helpers/a+
 src/vfs/extfs/helpers/apt+
 src/vfs/extfs/helpers/audio
+src/vfs/extfs/helpers/brotli
 src/vfs/extfs/helpers/deb
 src/vfs/extfs/helpers/deba
 src/vfs/extfs/helpers/debd
@@ -650,6 +633,7 @@ src/vfs/extfs/helpers/ulha
 src/vfs/extfs/helpers/ulib
 src/vfs/extfs/helpers/unar
 src/vfs/extfs/helpers/urar
+src/vfs/extfs/helpers/usqfs
 src/vfs/extfs/helpers/uwim
 src/vfs/extfs/helpers/uzip
 src/vfs/extfs/helpers/uzoo
@@ -666,8 +650,6 @@ src/vfs/local/Makefile
 src/vfs/sfs/Makefile
 
 src/vfs/tar/Makefile
-
-src/vfs/undelfs/Makefile
 
 lib/Makefile
 lib/event/Makefile
@@ -719,6 +701,7 @@ tests/Makefile
 tests/lib/Makefile
 tests/lib/mcconfig/Makefile
 tests/lib/search/Makefile
+tests/lib/skin/Makefile
 tests/lib/strutil/Makefile
 tests/lib/vfs/Makefile
 tests/lib/vfs/mc.charsets
@@ -726,13 +709,15 @@ tests/lib/widget/Makefile
 tests/src/Makefile
 tests/src/filemanager/Makefile
 tests/src/editor/Makefile
-tests/src/editor/test-data.txt
+tests/src/editor/edit_complete_word_cmd_test_data.txt
 tests/src/vfs/Makefile
+tests/src/vfs/cpio/Makefile
 tests/src/vfs/extfs/Makefile
 tests/src/vfs/extfs/helpers-list/Makefile
 tests/src/vfs/extfs/helpers-list/data/config.sh
 tests/src/vfs/extfs/helpers-list/misc/Makefile
 tests/src/vfs/ftpfs/Makefile
+tests/src/vfs/local/Makefile
 ])
 
 AC_OUTPUT
@@ -756,8 +741,6 @@ Configuration:
   With ext2fs attributes support: ${ext2fs_attr_msg}
   Internal editor:                ${edit_msg}
   Diff viewer:                    ${diff_msg}
-  Support for charset:            ${charset_msg}
-  Search type:                    ${SEARCH_TYPE}
 ])
 
 dnl option checking is disable by default due to AC_CONFIG_SUBDIRS

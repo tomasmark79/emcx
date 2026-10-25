@@ -1,7 +1,7 @@
 /*
    Widgets for the Midnight Commander
 
-   Copyright (C) 2020-2025
+   Copyright (C) 2020-2026
    The Free Software Foundation, Inc.
 
    Authors:
@@ -20,7 +20,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 /** \file frame.c
@@ -36,7 +36,7 @@
 #include "lib/tty/color.h"
 #include "lib/skin.h"
 #include "lib/strutil.h"
-#include "lib/util.h"           /* MC_PTR_FREE */
+#include "lib/util.h"  // MC_PTR_FREE
 #include "lib/widget.h"
 
 /*** global variables ****************************************************************************/
@@ -75,15 +75,16 @@ frame_draw (const WFrame *f)
     colors = widget_get_colors (wf);
 
     if (mc_global.tty.shadows)
-        tty_draw_box_shadow (w->y, w->x, w->lines, w->cols, SHADOW_COLOR);
+        tty_draw_box_shadow (w->y, w->x, w->lines, w->cols, CORE_SHADOW_COLOR);
 
     tty_setcolor (colors[FRAME_COLOR_NORMAL]);
     tty_fill_region (w->y, w->x, w->lines, w->cols, ' ');
+    tty_setcolor (colors[FRAME_COLOR_FRAME]);
     tty_draw_box (w->y + d, w->x + d, w->lines - 2 * d, w->cols - 2 * d, f->single);
 
     if (f->title != NULL)
     {
-        /* TODO: truncate long title */
+        // TODO: truncate long title
         tty_setcolor (colors[FRAME_COLOR_TITLE]);
         widget_gotoyx (f, d, (w->cols - str_term_width1 (f->title)) / 2);
         tty_print_string (f->title);
@@ -147,7 +148,7 @@ frame_set_title (WFrame *f, const char *title)
 {
     MC_PTR_FREE (f->title);
 
-    /* Strip existing spaces, add one space before and after the title */
+    // Strip existing spaces, add one space before and after the title
     if (title != NULL && *title != '\0')
     {
         char *t;

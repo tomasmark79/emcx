@@ -6,7 +6,7 @@
 #ifndef MC__COLOR_INTERNAL_H
 #define MC__COLOR_INTERNAL_H
 
-#include <sys/types.h>          /* size_t */
+#include <sys/types.h>  // size_t
 
 #include "lib/global.h"
 
@@ -14,20 +14,14 @@
 #include "tty-slang.h"
 #else
 #include "tty-ncurses.h"
-#endif /* HAVE_SLANG */
+#endif
 
 /*** typedefs(not structures) and defined constants **********************************************/
 
-/*** enums ***************************************************************************************/
+#define FLAG_TRUECOLOR   (1 << 24)
+#define COLORS_TRUECOLOR (1 << 24)
 
-/* *INDENT-OFF* */
-typedef enum {
-    SPEC_A_REVERSE              = -100,
-    SPEC_A_BOLD                 = -101,
-    SPEC_A_BOLD_REVERSE         = -102,
-    SPEC_A_UNDERLINE            = -103
-} tty_special_color_t;
-/* *INDENT-ON* */
+/*** enums ***************************************************************************************/
 
 /*** structures declarations (and typedefs of structures)*****************************************/
 
@@ -45,18 +39,24 @@ typedef struct
 
 extern gboolean use_colors;
 extern gboolean mc_tty_color_disable;
+extern gboolean need_convert_256color;
 
 /*** declarations of public functions ************************************************************/
 
 const char *tty_color_get_name_by_index (int idx);
 int tty_color_get_index_by_name (const char *color_name);
 int tty_attr_get_bits (const char *attrs);
+int convert_256color_to_truecolor (int color);
 
 void tty_color_init_lib (gboolean disable, gboolean force);
 void tty_color_deinit_lib (void);
 
-void tty_color_try_alloc_lib_pair (tty_color_lib_pair_t * mc_color_pair);
+void tty_color_try_alloc_lib_pair (tty_color_lib_pair_t *mc_color_pair);
+
+int tty_maybe_map_color (int color);
+
+void tty_colorize_area (int y, int x, int rows, int cols, int color);
 
 /*** inline functions ****************************************************************************/
 
-#endif /* MC__COLOR_INTERNAL_H */
+#endif

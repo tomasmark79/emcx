@@ -2,7 +2,7 @@
    Search text engine.
    Common share code for module.
 
-   Copyright (C) 2009-2025
+   Copyright (C) 2009-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -22,7 +22,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -33,21 +33,17 @@
 #include "lib/global.h"
 #include "lib/strutil.h"
 #include "lib/search.h"
-#ifdef HAVE_CHARSET
 #include "lib/charsets.h"
-#endif
 
 #include "internal.h"
 
 /*** global variables ****************************************************************************/
 
-/* *INDENT-OFF* */
-const char *STR_E_NOTFOUND = N_("Search string not found");
-const char *STR_E_UNKNOWN_TYPE = N_("Not implemented yet");
+const char *STR_E_NOTFOUND = N_ ("Search string not found");
+const char *STR_E_UNKNOWN_TYPE = N_ ("Not implemented yet");
 const char *STR_E_RPL_NOT_EQ_TO_FOUND =
-            N_("Num of replace tokens not equal to num of found tokens");
-const char *STR_E_RPL_INVALID_TOKEN = N_("Invalid token number %d");
-/* *INDENT-ON* */
+    N_ ("Num of replace tokens not equal to num of found tokens");
+const char *STR_E_RPL_INVALID_TOKEN = N_ ("Invalid token number %d");
 
 /*** file scope macro definitions ****************************************************************/
 
@@ -71,7 +67,6 @@ mc_search__change_case_str (const char *charset, const GString *str, case_conv_f
     gchar *dst_str;
     gchar *dst_ptr;
     gsize dst_len;
-#ifdef HAVE_CHARSET
     GString *converted_str;
 
     if (charset == NULL)
@@ -79,11 +74,11 @@ mc_search__change_case_str (const char *charset, const GString *str, case_conv_f
 
     converted_str = mc_search__recode_str (str->str, str->len, charset, cp_display);
 
-    dst_len = converted_str->len + 1;   /* +1 is required for str_toupper/str_tolower */
+    dst_len = converted_str->len + 1;  // +1 is required for str_toupper/str_tolower
     dst_str = g_malloc (dst_len);
 
-    for (src_ptr = converted_str->str, dst_ptr = dst_str;
-         case_conv (src_ptr, &dst_ptr, &dst_len); src_ptr += str_length_char (src_ptr))
+    for (src_ptr = converted_str->str, dst_ptr = dst_str; case_conv (src_ptr, &dst_ptr, &dst_len);
+         src_ptr += str_length_char (src_ptr))
         ;
     *dst_ptr = '\0';
 
@@ -92,20 +87,7 @@ mc_search__change_case_str (const char *charset, const GString *str, case_conv_f
 
     ret = mc_search__recode_str (dst_str, dst_len, cp_display, charset);
     g_free (dst_str);
-#else
-    (void) charset;
 
-    dst_len = str->len + 1;     /* +1 is required for str_toupper/str_tolower */
-    dst_str = g_malloc (dst_len);
-
-    for (src_ptr = str->str, dst_ptr = dst_str;
-         case_conv (src_ptr, &dst_ptr, &dst_len); src_ptr += str_length_char (src_ptr))
-        ;
-    *dst_ptr = '\0';
-
-    ret = g_string_new_len (dst_str, dst_len);
-    g_free (dst_str);
-#endif
     return ret;
 }
 
@@ -158,34 +140,22 @@ mc_search__get_one_symbol (const char *charset, const char *str, gsize str_len,
     GString *converted_str;
     const gchar *next_char;
 
-#ifdef HAVE_CHARSET
     GString *converted_str2;
 
     if (charset == NULL)
         charset = cp_source;
 
     converted_str = mc_search__recode_str (str, str_len, charset, cp_display);
-#else
-    (void) charset;
-
-    converted_str = g_string_new_len (str, str_len);
-#endif
-
     next_char = str_cget_next_char (converted_str->str);
     g_string_set_size (converted_str, (gsize) (next_char - converted_str->str));
 
-#ifdef HAVE_CHARSET
     converted_str2 =
         mc_search__recode_str (converted_str->str, converted_str->len, cp_display, charset);
-#endif
     if (just_letters != NULL)
         *just_letters = str_isalnum (converted_str->str) && !str_isdigit (converted_str->str);
-#ifdef HAVE_CHARSET
     g_string_free (converted_str, TRUE);
+
     return converted_str2;
-#else
-    return converted_str;
-#endif
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -223,7 +193,7 @@ mc_search_get_types_strings_array (size_t *num)
     for (lc_index = 0, type_str = types_str; type_str->str != NULL; type_str++, lc_index++)
         ret[lc_index] = g_strdup (type_str->str);
 
-    /* don't count last NULL item */
+    // don't count last NULL item
     if (num != NULL)
         *num = (size_t) lc_index;
 

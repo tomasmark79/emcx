@@ -1,7 +1,7 @@
 /*
    libmc - checks for processing esc sequences in replace string
 
-   Copyright (C) 2011-2025
+   Copyright (C) 2011-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -21,62 +21,44 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #define TEST_SUITE_NAME "lib/search/glob"
 
 #include "tests/mctest.h"
 
-#include "glob.c"               /* for testing static functions */
+#include "glob.c"  // for testing static functions
 
 /* --------------------------------------------------------------------------------------------- */
 
 /* @DataSource("test_translate_replace_glob_to_regex_ds") */
-/* *INDENT-OFF* */
 static const struct test_translate_replace_glob_to_regex_ds
 {
     const char *input_value;
     const char *expected_result;
-} test_translate_replace_glob_to_regex_ds[] =
-{
-    {
-        "a&a?a",
-        "a\\&a\\1a"
-    },
-    {
-        "a\\&a?a",
-        "a\\&a\\1a"
-    },
-    {
-        "a&a\\?a",
-        "a\\&a\\?a"
-    },
-    {
-        "a\\&a\\?a",
-        "a\\&a\\?a"
-    },
+} test_translate_replace_glob_to_regex_ds[] = {
+    { "a&a?a", "a\\&a\\1a" },
+    { "a\\&a?a", "a\\&a\\1a" },
+    { "a&a\\?a", "a\\&a\\?a" },
+    { "a\\&a\\?a", "a\\&a\\?a" },
 };
-/* *INDENT-ON* */
 
 /* @Test(dataSource = "test_translate_replace_glob_to_regex_ds") */
-/* *INDENT-OFF* */
-START_PARAMETRIZED_TEST (test_translate_replace_glob_to_regex, test_translate_replace_glob_to_regex_ds)
-/* *INDENT-ON* */
+START_PARAMETRIZED_TEST (test_translate_replace_glob_to_regex,
+                         test_translate_replace_glob_to_regex_ds)
 {
-    /* given */
+    // given
     GString *dest_str;
 
-    /* when */
+    // when
     dest_str = mc_search__translate_replace_glob_to_regex (data->input_value);
 
-    /* then */
+    // then
     mctest_assert_str_eq (dest_str->str, data->expected_result);
     g_string_free (dest_str, TRUE);
 }
-/* *INDENT-OFF* */
 END_PARAMETRIZED_TEST
-/* *INDENT-ON* */
 
 /* --------------------------------------------------------------------------------------------- */
 
@@ -87,10 +69,10 @@ main (void)
 
     tc_core = tcase_create ("Core");
 
-    /* Add new tests here: *************** */
+    // Add new tests here: ***************
     mctest_add_parameterized_test (tc_core, test_translate_replace_glob_to_regex,
                                    test_translate_replace_glob_to_regex_ds);
-    /* *********************************** */
+    // ***********************************
 
     return mctest_run_all (tc_core);
 }

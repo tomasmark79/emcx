@@ -18,14 +18,14 @@
 #define HAVE_S_ISREG 1
 #else
 #define HAVE_S_ISREG 0
-#define S_ISREG(x) 0
+#define S_ISREG(x)   0
 #endif
 
 #ifdef S_ISDIR
 #define HAVE_S_ISDIR 1
 #else
 #define HAVE_S_ISDIR 0
-#define S_ISDIR(x) 0
+#define S_ISDIR(x)   0
 #endif
 
 /* Replacement for permission bits missing in sys/stat.h */
@@ -33,35 +33,35 @@
 #define HAVE_S_ISLNK 1
 #else
 #define HAVE_S_ISLNK 0
-#define S_ISLNK(x) 0
+#define S_ISLNK(x)   0
 #endif
 
 #ifdef S_ISSOCK
 #define HAVE_S_ISSOCK 1
 #else
 #define HAVE_S_ISSOCK 0
-#define S_ISSOCK(x) 0
+#define S_ISSOCK(x)   0
 #endif
 
 #ifdef S_ISFIFO
 #define HAVE_S_ISFIFO 1
 #else
 #define HAVE_S_ISFIFO 0
-#define S_ISFIFO(x) 0
+#define S_ISFIFO(x)   0
 #endif
 
 #ifdef S_ISCHR
 #define HAVE_S_ISCHR 1
 #else
 #define HAVE_S_ISCHR 0
-#define S_ISCHR(x) 0
+#define S_ISCHR(x)   0
 #endif
 
 #ifdef S_ISBLK
 #define HAVE_S_ISBLK 1
 #else
 #define HAVE_S_ISBLK 0
-#define S_ISBLK(x) 0
+#define S_ISBLK(x)   0
 #endif
 
 /* Door is something that only exists on Solaris */
@@ -69,7 +69,7 @@
 #define HAVE_S_ISDOOR 1
 #else
 #define HAVE_S_ISDOOR 0
-#define S_ISDOOR(x) 0
+#define S_ISDOOR(x)   0
 #endif
 
 /* Special named files are widely used in QNX6 */
@@ -77,7 +77,7 @@
 #define HAVE_S_ISNAM 1
 #else
 #define HAVE_S_ISNAM 0
-#define S_ISNAM(x) 0
+#define S_ISNAM(x)   0
 #endif
 
 #ifndef PATH_MAX
@@ -105,8 +105,8 @@
 
 #define MC_MAXFILENAMELEN MAXNAMLEN
 
-#define DIR_IS_DOT(x) ((x)[0] == '.' && (x)[1] == '\0')
-#define DIR_IS_DOTDOT(x) ((x)[0] == '.' && (x)[1] == '.' && (x)[2] == '\0')
+#define DIR_IS_DOT(x)     ((x)[0] == '.' && (x)[1] == '\0')
+#define DIR_IS_DOTDOT(x)  ((x)[0] == '.' && (x)[1] == '.' && (x)[2] == '\0')
 
 /*** enums ***************************************************************************************/
 

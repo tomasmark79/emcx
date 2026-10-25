@@ -35,9 +35,6 @@ endif
 
 AM_CPPFLAGS += -I$(top_srcdir) $(GLIB_CFLAGS)
 
-localedir = $(datadir)/locale
-pkglibexecdir = $(libexecdir)/@PACKAGE@
-
 bin_PROGRAMS = mc
 
 if USE_INTERNAL_EDIT
@@ -59,15 +56,8 @@ libinternal_la_LIBADD = \
 	$(DIFFLIB) $(EDITLIB) $(SUBSHELLLIB)
 
 mc_LDADD = \
-	libinternal.la
-
-if ENABLE_MCLIB
-libinternal_la_LIBADD += \
+	libinternal.la \
 	$(top_builddir)/lib/libmc.la
-else
-mc_LDADD += \
-	$(top_builddir)/lib/libmc.la
-endif
 
 SRC_mc_conssaver = \
 	cons.handler.c consaver/cons.saver.h
@@ -86,15 +76,11 @@ libinternal_la_SOURCES = \
 	history.h \
 	keymap.c keymap.h \
 	learn.c learn.h \
+	selcodepage.c selcodepage.h \
 	setup.c setup.h \
 	textconf.c textconf.h \
 	usermenu.c usermenu.h \
 	util.c util.h
-
-if CHARSET
-    libinternal_la_SOURCES += selcodepage.c selcodepage.h
-endif
-
 
 if ENABLE_BACKGROUND
     libinternal_la_SOURCES += background.c background.h

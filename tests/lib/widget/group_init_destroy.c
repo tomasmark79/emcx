@@ -1,7 +1,7 @@
 /*
    libmc - checks for initialization and deinitialization of WGroup widget
 
-   Copyright (C) 2020-2025
+   Copyright (C) 2020-2026
    The Free Software Foundation, Inc.
 
    Written by:
@@ -20,18 +20,14 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #define TEST_SUITE_NAME "lib/widget/group"
 
-#include <config.h>
-
-#include <check.h>
+#include "tests/mctest.h"
 
 #include "lib/widget.h"
-
-#include "tests/mctest.h"
 
 /* --------------------------------------------------------------------------------------------- */
 
@@ -79,9 +75,7 @@ group_callback (Widget *w, Widget *sender, widget_msg_t msg, int parm, void *dat
 
 /* --------------------------------------------------------------------------------------------- */
 
-/* *INDENT-OFF* */
 START_TEST (test_group_init_deinit)
-/* *INDENT-ON* */
 {
     WGroup *g, *g0;
     Widget *w0;
@@ -136,9 +130,7 @@ START_TEST (test_group_init_deinit)
 
     ck_assert_msg (ref == 0, "ref (%d) != 0", ref);
 }
-/* *INDENT-OFF* */
 END_TEST
-/* *INDENT-ON* */
 
 /* --------------------------------------------------------------------------------------------- */
 
@@ -149,9 +141,9 @@ main (void)
 
     tc_core = tcase_create ("Core");
 
-    /* Add new tests here: *************** */
+    // Add new tests here: ***************
     tcase_add_test (tc_core, test_group_init_deinit);
-    /* *********************************** */
+    // ***********************************
 
     return mctest_run_all (tc_core);
 }

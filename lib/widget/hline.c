@@ -1,7 +1,7 @@
 /*
    Widgets for the Midnight Commander
 
-   Copyright (C) 1994-2025
+   Copyright (C) 1994-2026
    Free Software Foundation, Inc.
 
    Authors:
@@ -25,7 +25,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 /** \file hline.c
@@ -100,24 +100,19 @@ hline_callback (Widget *w, Widget *sender, widget_msg_t msg, int parm, void *dat
         return MSG_HANDLED;
 
     case MSG_DRAW:
-        if (l->transparent)
-            tty_setcolor (DEFAULT_COLOR);
-        else
-        {
-            const int *colors;
+    {
+        const int *colors = widget_get_colors (w);
 
-            colors = widget_get_colors (w);
-            tty_setcolor (colors[DLG_COLOR_NORMAL]);
-        }
+        tty_setcolor (colors[DLG_COLOR_FRAME]);
 
-        tty_draw_hline (w->rect.y, w->rect.x + 1, ACS_HLINE, w->rect.cols - 2);
+        tty_draw_hline (w->rect.y, w->rect.x + 1, mc_tty_frm[MC_TTY_FRM_HORIZ], w->rect.cols - 2);
 
         if (l->auto_adjust_cols)
         {
             widget_gotoyx (w, 0, 0);
-            tty_print_alt_char (ACS_LTEE, FALSE);
+            tty_print_char (mc_tty_frm[MC_TTY_FRM_DLEFTMIDDLE]);
             widget_gotoyx (w, 0, w->rect.cols - 1);
-            tty_print_alt_char (ACS_RTEE, FALSE);
+            tty_print_char (mc_tty_frm[MC_TTY_FRM_DRIGHTMIDDLE]);
         }
 
         if (l->text != NULL)
@@ -129,6 +124,7 @@ hline_callback (Widget *w, Widget *sender, widget_msg_t msg, int parm, void *dat
             tty_print_string (l->text);
         }
         return MSG_HANDLED;
+    }
 
     case MSG_DESTROY:
         g_free (l->text);
@@ -156,7 +152,6 @@ hline_new (int y, int x, int width)
     widget_init (w, &r, hline_callback, NULL);
     l->text = NULL;
     l->auto_adjust_cols = (width < 0);
-    l->transparent = FALSE;
 
     return l;
 }
@@ -182,7 +177,7 @@ void
 hline_set_textv (WHLine *l, const char *format, ...)
 {
     va_list args;
-    char buf[BUF_1K];           /* FIXME: is it enough? */
+    char buf[BUF_1K];  // FIXME: is it enough?
 
     va_start (args, format);
     g_vsnprintf (buf, sizeof (buf), format, args);

@@ -1,7 +1,7 @@
 /*
    lib/strutil - tests for lib/strutil/parse_integer function.
 
-   Copyright (C) 2013-2025
+   Copyright (C) 2013-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -20,7 +20,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #define TEST_SUITE_NAME "/lib/strutil"
@@ -33,110 +33,43 @@
 
 /* --------------------------------------------------------------------------------------------- */
 
-/* @Before */
-static void
-setup (void)
-{
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-/* @After */
-static void
-teardown (void)
-{
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
 /* @DataSource("parse_integer_test_ds") */
-/* *INDENT-OFF* */
 static const struct parse_integer_test_ds
 {
     const char *haystack;
     uintmax_t expected_result;
     gboolean invalid;
-} parse_integer_test_ds[] =
-{
-    {
-        /* too big */
-        "99999999999999999999999999999999999999999999999999999999999999999999",
-        0,
-        TRUE
-    },
-    {
-        "x",
-        0,
-        TRUE
-    },
-    {
-        "9x",
-        0,
-        TRUE
-    },
-    {
-        "1",
-        1,
-        FALSE
-    },
-    {
-        "-1",
-        0,
-        TRUE
-    },
-    {
-        "1k",
-        1024,
-        FALSE
-    },
-    {
-        "1K",
-        1024,
-        FALSE
-    },
-    {
-        "1M",
-        1024 * 1024,
-        FALSE
-    },
-    {
-        "1m",
-        0,
-        TRUE
-    },
-    {
-        "64M",
-        64 * 1024 * 1024,
-        FALSE
-    },
-    {
-        "1G",
-        1 * 1024 * 1024 * 1024,
-        FALSE
-    }
+} parse_integer_test_ds[] = {
+    { // too big
+      "99999999999999999999999999999999999999999999999999999999999999999999", 0, TRUE },
+    { "x", 0, TRUE },
+    { "9x", 0, TRUE },
+    { "1", 1, FALSE },
+    { "-1", 0, TRUE },
+    { "1k", 1024, FALSE },
+    { "1K", 1024, FALSE },
+    { "1M", 1024 * 1024, FALSE },
+    { "1m", 0, TRUE },
+    { "64M", 64 * 1024 * 1024, FALSE },
+    { "1G", 1 * 1024 * 1024 * 1024, FALSE },
 };
-/* *INDENT-ON* */
 
 /* @Test(dataSource = "parse_integer_test_ds") */
-/* *INDENT-OFF* */
 START_PARAMETRIZED_TEST (parse_integer_test, parse_integer_test_ds)
-/* *INDENT-ON* */
 {
-    /* given */
+    // given
     uintmax_t actual_result;
     gboolean invalid = FALSE;
 
-    /* when */
+    // when
     actual_result = parse_integer (data->haystack, &invalid);
 
-    /* then */
+    // then
     ck_assert_msg (invalid == data->invalid && actual_result == data->expected_result,
-                   "actual ( %" PRIuMAX ") not equal to\nexpected (%" PRIuMAX ")",
-                   actual_result, data->expected_result);
+                   "actual ( %" PRIuMAX ") not equal to\nexpected (%" PRIuMAX ")", actual_result,
+                   data->expected_result);
 }
-/* *INDENT-OFF* */
 END_PARAMETRIZED_TEST
-/* *INDENT-ON* */
 
 /* --------------------------------------------------------------------------------------------- */
 
@@ -147,11 +80,9 @@ main (void)
 
     tc_core = tcase_create ("Core");
 
-    tcase_add_checked_fixture (tc_core, setup, teardown);
-
-    /* Add new tests here: *************** */
+    // Add new tests here: ***************
     mctest_add_parameterized_test (tc_core, parse_integer_test, parse_integer_test_ds);
-    /* *********************************** */
+    // ***********************************
 
     return mctest_run_all (tc_core);
 }

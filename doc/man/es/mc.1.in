@@ -41,13 +41,6 @@ Colores
 .\"Colors"
 para más información.
 .TP
-.I \-C arg, \-\-colors=arg
-Usado para especificar un juego de colores diferentes desde la línea de
-órdenes.  El formato de arg está documentado en la sección
-.\"LINK2"
-Colores\&. 
-.\"Colors"
-.TP
 .I \-\-configure\-options
 Muestra opciones de configuración compiladas.
 .TP
@@ -70,11 +63,6 @@ en Midnight Commander.
 Fuerza el uso de ratón en modo de seguimiento «normal». Se usa para
 terminales compatibles con xterm (tmux/screen).
 .TP
-.I \-k, \-\-resetsoft
-Restablece las softkeys a su valor por defecto según la base de datos de
-termcap/terminfo.  Solo útil en terminales HP cuando las teclas de función
-no funcionan.
-.TP
 .I \-K arch, \-\-keymap=arch
 Carga desde un archivo la configuración de teclas para la línea de órdenes.
 .TP
@@ -92,16 +80,18 @@ usada directamente, sino desde un guión de shell adecuado, para dejar
 como directorio activo el directorio que estaba en uso dentro de
 Midnight Commander.  Consúltese en los archivos
 .B %pkglibexecdir%/mc.sh
-(usuarios de bash y zsh) y
+(usuarios de bash y zsh),
 .B %pkglibexecdir%/mc.csh
-(usuarios de tcsh) la manera de definir
+(usuarios de tcsh) y
+.B %pkglibexecdir%/mc.fish
+(usuarios de fish) la manera de definir
 .B mc
 como un alias para el correspondiente guión de shell.
 .TP
 .I \-s, \-\-slow
 Activa el modo para terminales lentos. En este modo el programa no
 dibuja bordes con líneas de caracteres y desactiva el modo detallado.
-Si no se rellena la sección [Lines] el marco pseudo\-gráfico estará
+Si no se rellena la sección [lines] el marco pseudo\-gráfico estará
 formado por espacios; en caso contrario el marco se contruye con
 caracteres de texto según los parámetros siguientes:
 .TP
@@ -527,7 +517,7 @@ rota el listado de pantalla actual para mostrar el siguiente modo
 de listado. Con esto es posible intercambiar rápidamente de un listado
 completo al regular o breve, así como al modo de listado definido por el usuario.
 .TP
-.B Ctrl\-\\\\ (control\-Contrabarra)
+.B Ctrl\-\e (control\-Contrabarra)
 muestra la lista de sitios
 .\"LINK2"
 Favoritos
@@ -559,8 +549,8 @@ Finalmente, si no se activa
 .I Distinguir May/min
 la selección se hará sin distinguir caracteres en mayúsculas o minúsculas.
 .TP
-.B \- (menos) o \\\\ (contrabarra)
-usaremos las teclas «\-» o «\\» para deseleccionar un grupo de archivos.  Esta es
+.B \- (menos) o \e (contrabarra)
+usaremos las teclas «\-» o «\e» para deseleccionar un grupo de archivos.  Esta es
 la operación opuesta a la realizada por la tecla «+».
 
 .TP
@@ -1128,12 +1118,20 @@ para ediotres externos.
 Sobreimpresiona una ventana de entrada con destino por defecto al directorio del
 panel no seleccionado y copia el archivo actualmente seleccionado (o
 los archivos marcados, si hay al menos uno marcado) al directorio especificado
-por el usuario en la ventana. Space for destination file may be preallocated
-relative to preallocate_space configure option. Durante este proceso, podemos
-pulsar
+por el usuario en la ventana.
+Si la opción
+.I Reservar espacio
+(preallocate_space) está activada, Midnight Commander intentará preasignar
+espacio para todo el archivo de destino antes de copiarlo.
+Si la opción
+.I Usar clonación de archivos COW
+está habilitada (configuración predeterminada), Midnight Commander intenta usar
+la clonación de datos mediante copia en escritura en los sistemas de archivos
+locales compatibles.
+Durante el proceso de copia, podemos pulsar
 .IR Ctrl\-c " o " Esc
 para anular la operación. Para más detalles sobre la máscara de origen
-(que será normalmente * o ^\\(.*\\)$ dependiendo
+(que será normalmente * o ^\e(.*\e)$ dependiendo
 de la selección de Uso de los patrones del shell) y los posibles comodines en destino
 véase
 .\"LINK2"
@@ -1235,7 +1233,7 @@ Finalmente, si no se activa
 .I Distinguir May/min
 la selección se hará sin distinguir caracteres en mayúsculas o minúsculas.
 .PP
-.B De\-seleccionar Grupo (\\\\)
+.B De\-seleccionar Grupo (\e)
 .PP
 Utilizado para deseleccionar un grupo de archivos. Es la operación antagonista al comando
 .IR "Selecciona grupo" .
@@ -1292,7 +1290,7 @@ de los comandos escritos. El comando seleccionado es copiado a la línea de órd
 El histórico de comandos puede ser accedido también tecleando Alt\-p ó Alt\-n.
 .PP
 .\"LINK2"
-Favoritos (Ctrl\-\\)
+Favoritos (Ctrl\-\e)
 .\"Hotlist"
 permite acceder con facilidad a directorios y sitios utilizados con frecuencia.
 .PP
@@ -1416,8 +1414,8 @@ el directorio inicial en el
 .\"Directory Tree"
 .PP
 El campo de contenidos puede aceptar expresiones regulares similares a egrep(1). En 
-ese caso podremos proteger caracteres con significado especial para egrep anteponiendo «\\»,
-p.ej. si buscamos «strcmp (» tendremos que introducir «strcmp \\(".
+ese caso podremos proteger caracteres con significado especial para egrep anteponiendo «\e»,
+p.ej. si buscamos «strcmp (» tendremos que introducir «strcmp \e(".
 .PP
 Con la opción «Palabras completas» se puede limitar la búsqueda a archivos donde
 la parte coincidente forme una palabra completa.  Eso se corresponde con la función
@@ -1708,12 +1706,6 @@ podemos seleccionar un «skin» o apariencia para el programa.
 .PP
 En
 .\"LINK2"
-Juego de Caracteres
-.\"Display bits"
-podemos seleccionar qué caracteres es capaz de mostrar nuestro terminal.
-.PP
-En
-.\"LINK2"
 Aprender Teclas
 .\"Learn keys"
 podemos verificar teclas que no funcionan en algunos terminales y
@@ -1768,6 +1760,11 @@ directorio actual en el panbel activo. Está deshabilitado por defecto.
 .I Reservar Espacio.
 Antes de comenzar una copia reserva espacio para el archivo destino
 completo. Por defecto está desactivado.
+.PP
+.I Usar clonación de archivos COW.
+Intentar utilizar la clonación de datos copy\-on\-write en sistemas de archivos
+locales compatibles durante las operaciones de copia y movimiento.
+Por defecto, está activa.
 .PP
 .B Tecla de Escape.
 .PP
@@ -1959,7 +1956,7 @@ está activado.
 Mostrar tamaños de archivos en bytes con prefijos según el SI, Sistema
 Internacional de Unidades, o sea, en base de 10. Por defecto, está
 desactivada: los tamaños se calculan con prefijos según el IEC, empleando
-base de 2. Véase al respecto ISO/IEC 80000-13.
+base de 2. Véase al respecto ISO/IEC 80000\-13.
 .PP
 .I Mezclar Archivos y Directorios.
 Cuando esta opción está habilitada, todos los archivos y directorios
@@ -2074,16 +2071,6 @@ Véase la sección sobre
 Skins
 .\"Skins"
 para conocer los detalles de los archivos de definición de estos «skins».
-.\"NODE "    Display bits"
-.SH "    Juego de caracteres"
-Esta opción permite configurar el conjunto de caracteres visibles en la
-pantalla.  Este puede ser 7\-bits si nuestro terminal/curses soporta
-solo siete bits de salida, alguna de las tablas del estándar ISO\-8859 y
-diversas codificaciones comunes de PC con ocho bits por carácter, o UTF\-8
-para Unicode.
-.PP
-Para soportar teclados con caracteres locales debemos marcar la opción de
-.IR "Aceptar entrada de 8 bits" .
 .\"NODE "    Learn keys"
 .SH "    Aprender teclas"
 Este diálogo nos permite comprobar si nuestras teclas F1\-F20, Inicio, Fin, etc. funcionan adecuadamente
@@ -2578,11 +2565,11 @@ Si esta opción no está activa se aplica el valor actual de umask.
 .PP
 Usando Patrones Shell nos permite usar los caracteres comodín '*' y '?'
 en la máscara de origen. Funcionará igual que en la línea de órdenes. En
-la máscara destino, solo están permitidos los comodines '*' y '\\<número>'.
+la máscara destino, solo están permitidos los comodines '*' y '\e<número>'.
 El primer '*' en la máscara destino corresponde al primer grupo del comodín
 en la máscara de origen, el segundo '*' al segundo grupo, etcétera.
-El comodín '\\1' corresponde al primer grupo en la máscara de origen,
-el comodín '\\2' al segundo y así sucesivamente hasta '\\9'. El comodín '\\0'
+El comodín '\e1' corresponde al primer grupo en la máscara de origen,
+el comodín '\e2' al segundo y así sucesivamente hasta '\e9'. El comodín '\e0'
 es el nombre completo del archivo fuente.
 .PP
 Dos ejemplos:
@@ -2593,46 +2580,46 @@ en "/blas".
 .PP
 Supongamos que queremos intercambiar el nombre y la extensión de modo que
 "archivo.c" se convierta en "c.archivo". La máscara origen será "*.*" y
-la de destino "\\2.\\1".
+la de destino "\e2.\e1".
 .PP
 .B "Usando Patrones Shell desactivado"
 .PP
 Cuando la opción de Patrones Shell está desactivada MC no realiza una
-agrupación automática. Deberemos usar expresiones '\\(...\\)' en la máscara
+agrupación automática. Deberemos usar expresiones '\e(...\e)' en la máscara
 origen para especificar el significado de los comodines en la máscara destino.
 Esto es más flexible pero también necesita más escritura. Por lo demás,
 las máscaras destino son similares al caso de Patrones Shell activos.
 .PP
 Dos ejemplos:
 .PP
-Si la máscara de origen es "^\\(.*\\)\\.tar\\.gz$", el destino es
+Si la máscara de origen es "^\e(.*\e)\e.tar\e.gz$", el destino es
 "/blas/*.tgz" y el archivo a ser copiado es "coco.tar.gz", la copia
 será "/blas/coco.tgz".
 .PP
 Si queremos intercambiar el nombre y la extensión para que "archivo.c"
 sea "c.archivo", la máscara de origen puede ser
-"^\\(.*\\)\\.\\(.*\\)$" y la de destino "\\2.\\1".
+"^\e(.*\e)\e.\e(.*\e)$" y la de destino "\e2.\e1".
 .PP
 .B "Capitalización"
 .PP
 Podemos hacer cambios entre mayúsculas y minúsculas en los nombres de archivos.
-Si usamos '\\u' o '\\l' en la máscara destino, el siguiente carácter será convertido a
+Si usamos '\eu' o '\el' en la máscara destino, el siguiente carácter será convertido a
 mayúsculas o minúsculas respectivamente.
 .PP
-Si usamos '\\U' o '\\L' en la máscara destino, los siguientes caracteres
+Si usamos '\eU' o '\eL' en la máscara destino, los siguientes caracteres
 serán convertidos a mayúsculas o minúsculas respectivamente hasta encontrar
-\&'\\E' o un segundo '\\U' o '\\L' o el fin del nombre del archivo.
+\&'\eE' o un segundo '\eU' o '\eL' o el fin del nombre del archivo.
 .PP
-\&'\\u' y '\\l' tienen prioridad sobre '\\U' y '\\L'.
+\&'\eu' y '\el' tienen prioridad sobre '\eU' y '\eL'.
 .PP
-Por ejemplo, si la máscara fuente es '*' (con Patrones Shell activo) o '^\\(.*\\)$'
-(Patrones Shell desactivado) y la máscara destino es '\\L\\u*' los nombres de archivos
+Por ejemplo, si la máscara fuente es '*' (con Patrones Shell activo) o '^\e(.*\e)$'
+(Patrones Shell desactivado) y la máscara destino es '\eL\eu*' los nombres de archivos
 serán convertidos para que tengan su inicial en mayúscula y el resto del nombre en
 minúsculas.
 .PP
-También podemos usar '\\' como carácter de escape evitando la interpretación de todos
-estos caracteres especiales. Por ejemplo, '\\\\' es
-una contrabarra y '\\*' es un asterisco.
+También podemos usar '\e' como carácter de escape evitando la interpretación de todos
+estos caracteres especiales. Por ejemplo, '\e\e' es
+una contrabarra y '\e*' es un asterisco.
 .\"NODE "Select/Unselect Files"
 .SH "Seleccionar/Deseleccionar Archivos"
 El diálogo permite seleccionar o deseleccionar grupos de archivos y
@@ -3004,7 +2991,7 @@ por segunda vez; con la primera Midnight Commander solo emite un pitido.
 .PP
 Aplica escapes a los símbolos
 .BR ? ", " * " y " &
-(como \fB\\?\fR, \fB\\*\fR, \fB\\&\fR )
+(como \fB\e?\fR, \fB\e*\fR, \fB\e&\fR )
 en los nombres de archivo para evitar su interpretación en expresiones
 regulares al realizar sustituciones en la línea de entrada.
 .\"NODE "Virtual File System"
@@ -3188,30 +3175,6 @@ Ejemplos:
     sftp://pepe@maquina.ssh.edu:2222/privado
 .fi
 
-.\"NODE "  Undelete File System"
-.SH "  Sistema de archivos de Recuperación"
-En sistemas Linux, si el programa de configuración nos preguntó si queríamos usar
-las facilidades de recuperación de archivos de ext2fs, tendremos el sistema de archivos
-recuperables accesible.
-La recuperación de archivos borrados está disponible solo en los sistemas de archivos ext2. El
-sistema de archivos recuperable es solo un interface de la librería ext2fs con:
-restaurar todos los archivos borrados en un ext2fs y proporciona
-la extracción selectiva de archivos en una partición regular.
-.PP
-Para usar este sistema de archivos, tendremos que hacer un chdir a un nombre de archivo especial
-formado por el prefijo "/undel://" y el nombre de archivo donde se encuentra el
-sistema de archivos actual.
-.PP
-Por ejemplo, para recuperar archivos borrados en la segunda partición del
-primer disco scsi en Linux, usaríamos el siguiente nombre de ruta:
-.PP
-.nf
-    undel://sda2
-.fi
-.PP
-Esto le llevaría un tiempo a undelfs para cargar la información
-antes de empezar a navegar por los archivos allí contenidos.
-
 .\"NODE "  EXTernal File System"
 .SH "  Sistema de archivos EXTerno (extfs)"
 .B extfs
@@ -3275,10 +3238,6 @@ acceso y audición de CDs
 o
 .IR "cd dispositivo/audio://" ).
 .TP
-.B bpp
-paquete de la distribución GNU/Linux Bad Penguin
-.RI ( "cd archivo.bpp/bpp://" ).
-.TP
 .B deb
 paquete de la distribución GNU/Linux Debian
 .RI ( "cd archivo.deb/deb://" ).
@@ -3331,7 +3290,7 @@ de Midnight Commander. He aquí, a modo de ejemplo, una entrada para
 paquetes Debian:
 .PP
 .nf
-  regex/\.deb$
+  regex/\e.deb$
           Open=%cd %p/deb://
 .fi
 .\"NODE "Colors"
@@ -3363,105 +3322,6 @@ color_terminals=nombre\-terminal1,nombre\-terminal2...
 El programa puede compilarse con ncurses y S\-Lang, ncurses no
 ofrece la posibilidad de forzar el modo en color: ncurses utiliza la
 información de la base de datos de terminales.
-.PP
-Midnight Commander ofrece una forma de cambiar los colores por defecto.
-Actualmente los colores se configuran a través de la variable de entorno
-.B MC_COLOR_TABLE
-o en la sección Colors del archivo de inicialización.
-.PP
-En la sección Colors, el mapa de colores por defecto se carga desde la variable
-.IR base_color .
-Podemos especificar un mapa de colores alternativo para un terminal
-utilizando el nombre del terminal como clave en esta sección. Ejemplo:
-.PP
-.nf
-[Colors]
-base_color=
-xterm=menu=magenta:marked=,magenta:markselect=,red
-.fi
-.PP
-El formato de la definición de color es:
-.PP
-.nf
-  <PalabraClave>=<ColorTexto>,<ColorFondo>:<PalabraClave>= ...
-.fi
-.PP
-los colores son opcionales, y las palabras claves son: normal, selected,
-disabled, marked, markselect, errors, input, inputmark, inputunchanged,
-commandlinemark, reverse, gauge, header, inputhistory, commandhistory;
-los colores de la barra de botones: bbarhotkey, bbarbutton; los colores
-de la barra de estado: statusbar; los colores de menú: menunormal,
-menusel, menuhot, menuhotsel, menuinactive; los colores de los diálogos:
-dnormal, dfocus, dhotnormal, dhotfocus, dtitle; los colores de los diálogos
-de error: errdfocus, errdhotnormal, errdhotfocus, errdtitle; los colores
-de la ayuda: helpnormal, helpitalic, helpbold, helplink, helpslink,
-helptitle; los colores del visor: viewnormal, viewbold, viewunderline,
-viewselected; loc colores del editor: editnormal, editbold, editmarked,
-editwhitespace, editnonprintable, editlinestate; los colores de los menús
-desplegables: pmenunormal, pmenusel, pmenutitle.
-.PP
-.I header
-determina el color del encabezado de los paneles, la línea con los
-títulos de columna y el modo de ordenación.
-.PP
-.I input
-determina el color de las líneas de entrada de texto en los diálogos.
-.PP
-.I gauge (indicador)
-determina el color de la parte completada de la barra de progresión (gauge), que muestra
-qué porcentaje de archivos fueron copiados etc. de modo gráfico.
-.PP
-.I disabled
-detemina el color de los componentes inactivos.
-.PP
-Los cuadros de diálogo usan los siguientes colores:
-.I dnormal
-usado para el texto normal,
-.I dfocus
-usado para el componente actualmente seleccionado,
-.I dhotnormal
-usado para diferenciar el color de la tecla activa
-en los componentes normales, mientras que el color
-.I dhotfocus
-se utiliza para el color resaltado en el componente seleccionado.
-.PP
-Los menús utilizan el mismo esquema equivalente con los nombres menunormal,
-menusel, menuhot, menuhotsel and menuinactive en lugar de los anteriores.
-.PP
-La ayuda utiliza los siguientes colores:
-.I helpnormal
-texto normal,
-.I helpitalic
-utilizado para el texto enfatizado con letra itálica en la página del manual,
-.I helpbold
-usado para el texto enfatizado en negrita en la página del manual,
-.I helplink
-usado para los hiperenlaces no seleccionados y
-.I helpslink
-es utilizado para el hiperenlace seleccionado.
-.PP
-En los menús desplegables:
-.I pmenunormal
-se usa como color del fondo y de los elementos no seleccionados,
-.I menusel
-se usa para el elemento seleccionado,
-.I pmenutitle
-se usa para el titulo del menú.
-
-.PP
-Los colores posibles son: negro (black), gris (gray), rojo (red), rojo brillante (brightred), verde (green),
-verde claro (brightgreen), marrón (brown), amarillo (yellow), azul oscuro (blue), azul brillante (brightblue),
-rosa (magenta), rosa claro (brightmagenta),
-azul celeste (cyan), celeste claro (brightcyan), gris claro (lightgray) y blanco (white).
-Hay una palabra clave especial para obtener un fondo transparente. Se trata de 'default'. 'default'
-solo se puede utilizar como color de fondo. Otra palabra especial es 'base' que hace referencia a los
-colores generales. Cuando se puede disponer de 256 colores se pueden referir como color16 hasta
-color255. Ejemplo:
-.PP
-.nf
-[Colors]
-base_color=normal=white,default:marked=magenta,default
-.fi
 
 .\"NODE "Skins"
 .SH "Skins"
@@ -3501,7 +3361,7 @@ del archivo de configuración.
 .PP
 En línea de órdenes, en la variable de entorno o el parámetro de la
 configuración pueden contener la ruta absoluta al archivo de skin con
-o sin su extensión \.ini. De no indicar la ruta se realiza la búsqueda,
+o sin su extensión .ini. De no indicar la ruta se realiza la búsqueda,
 en orden, en:
 .IP
 1)
@@ -3737,20 +3597,14 @@ Colores\&.
 .\"NODE "  Skins lines"
 .SH "  Trazado de líneas"
 Trazos de líneas de la sección
-.B [Lines]
+.B [lines]
 del archivo de skins.  Por defecto se utilizan líneas sencillas, pero
 se pueden redefinir empleando cualquier símbolo utf\-8 (por ejemplo,
 líneas dobles).
-.PP
-.I ¡¡¡ATENCIÓN!!!
-Si se compila Midnight Commander empleando la biblioteca de pantalla
-ncurses, entonces el trazado de líneas está limitado. Es posible que
-solo se puedan utilizar líneas simples. Para consultas y comentarios
-contactar con los desarrolladores de ncurses.
 
 .PP
 Descripción de parámetros de la sección
-.BR [Lines] :
+.BR [lines] :
 .TP
 .I lefttop
 esquina superior izquierda.
@@ -3919,19 +3773,6 @@ Cambiar el formato de fecha y hora empleado para fechas más antiguas que seis
 meses.  Véanse las páginas de manual de strftime o date para la descripción del formato a
 emplear. Sin esta opción se emplea el formato por defecto.
 .TP
-.I torben_fj_mode
-Si este modificador existe, entonces las teclas Inicio y Fin funcionarán de manera
-diferente en los paneles, en lugar de mover la selección al primer
-o último archivo en los paneles, actuarán como sigue:
-.IP
-La tecla Inicio: Irá a la línea central del panel, si está bajo ella; sino va a
-la primera línea a menos que ya esté allí, en este caso
-irá al primer archivo del panel.
-.IP
-La tecla Fin tiene un comportamiento similar: Irá a la línea central del panel, si
-está situada en la mitad superior del panel; si no irá a la línea inferior del panel a menos que
-ya estemos ahí, en cuyo caso moverá la selección al último nombre de archivo del panel.
-.TP
 .I use_file_to_guess_type
 Si esta variable está activada (por defecto lo está) se recurrirá al
 comando «file» para reconocer los tipos de archivo referidos en el archivo
@@ -4027,7 +3868,7 @@ o en el del usuario
 en la sección "terminal:nuestro\-terminal" y si no en "terminal:general".
 Cada línea comienza con el identificador de la tecla, seguido de un signo
 de igual y la definición de la tecla. Para representar el carácter de escape
-se utiliza \\e y ^x para el carácter control\-x.
+se utiliza \ee y ^x para el carácter control\-x.
 .PP
 Los identificadores de tecla son:
 .PP
@@ -4052,7 +3893,7 @@ a la tecla de insertar, hay que colocar en el archivo
 .BR ~/.config/mc/ini :
 .PP
 .nf
-insert=\\e[Op
+insert=\ee[Op
 .fi
 .PP
 También se pueden usar
@@ -4060,13 +3901,13 @@ También se pueden usar
 Por ejemplo:
 
 .nf
-    ctrl\-alt\-right=\\e[[1;6C
-    ctrl\-alt\-left=\\e[[1;6D
+    ctrl\-alt\-right=\ee[[1;6C
+    ctrl\-alt\-left=\ee[[1;6D
 .fi
 
 .PP
 Esto significa que Ctrl + Alt + Izquierda envía la secuencia de escape
-\\e[[1;6D y que entonces Midnight Commander debe interpretar "\\e[[1;6D"
+\ee[[1;6D y que entonces Midnight Commander debe interpretar "\ee[[1;6D"
 como Ctrl\-Alt\-Izquierda.
 .PP
 El identificador
@@ -4161,7 +4002,7 @@ carencia de garantía.
 .\"NODE "AVAILABILITY"
 .SH "DISPONIBILIDAD"
 La última versión de este programa se puede encontrar en
-http://ftp.midnight\-commander.org/.
+\X'tty: link https://ftp.osuosl.org/pub/midnightcommander/'https://ftp.osuosl.org/pub/midnightcommander/\X'tty: link' .
 .\"NODE "SEE ALSO"
 .SH "VÉASE TAMBIÉN"
 mcedit(1), sh(1), bash(1), tcsh(1), zsh(1), ed(1), view(1),
@@ -4169,7 +4010,7 @@ terminfo(1), gpm(1).
 .PP
 .nf
 La página web de Midnight Commander está en:
-	https://www.midnight\-commander.org/
+	\X'tty: link https://midnight\-commander.org'https://midnight\-commander.org\X'tty: link'
 .fi
 .PP
 La presente documentación recoge información relativa a la versión 4.8
@@ -4189,8 +4030,8 @@ distribución.
 .SH "ERRORES"
 Véase el archivo "TODO" en la distribución para saber qué falta por hacer.
 .PP
-Para informar de problemas con el programa, introducir una nueva incidencia
-en https://www.midnight\-commander.org/.
+Para informar de problemas con el programa, introducir una nueva incidencia en
+\X'tty: link https://github.com/MidnightCommander/mc/issues'https://github.com/MidnightCommander/mc/issues\X'tty: link' .
 .PP
 Se debe proporcionar una descripción detallada del problema, la
 versión del programa (que se obtiene con

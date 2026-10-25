@@ -1,7 +1,7 @@
 /*
    Widgets for the Midnight Commander
 
-   Copyright (C) 1994-2025
+   Copyright (C) 1994-2026
    Free Software Foundation, Inc.
 
    Authors:
@@ -25,7 +25,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 /** \file label.c
@@ -68,54 +68,53 @@ label_callback (Widget *w, Widget *sender, widget_msg_t msg, int parm, void *dat
     switch (msg)
     {
     case MSG_DRAW:
-        {
-            char *p = l->text;
-            int y = 0;
-            gboolean disabled;
-            align_crt_t align;
+    {
+        char *p = l->text;
+        int y = 0;
+        gboolean disabled;
+        align_crt_t align;
 
-            if (l->text == NULL)
-                return MSG_HANDLED;
-
-            disabled = widget_get_state (w, WST_DISABLED);
-
-            if (l->transparent)
-                tty_setcolor (disabled ? DISABLED_COLOR : DEFAULT_COLOR);
-            else
-            {
-                const int *colors;
-
-                colors = widget_get_colors (w);
-                tty_setcolor (disabled ? DISABLED_COLOR : colors[DLG_COLOR_NORMAL]);
-            }
-
-            align = (w->pos_flags & WPOS_CENTER_HORZ) != 0 ? J_CENTER_LEFT : J_LEFT;
-
-            while (TRUE)
-            {
-                char *q;
-                char c = '\0';
-
-
-                q = strchr (p, '\n');
-                if (q != NULL)
-                {
-                    c = q[0];
-                    q[0] = '\0';
-                }
-
-                widget_gotoyx (w, y, 0);
-                tty_print_string (str_fit_to_term (p, w->rect.cols, align));
-
-                if (q == NULL)
-                    break;
-
-                q[0] = c;
-                p = q + 1;
-                y++;
-            }
+        if (l->text == NULL)
             return MSG_HANDLED;
+
+        disabled = widget_get_state (w, WST_DISABLED);
+
+        if (l->color != NULL)
+            tty_setcolor (l->color[disabled ? LABEL_COLOR_DISABLED : LABEL_COLOR_MAIN]);
+        else
+        {
+            const int *colors;
+
+            colors = widget_get_colors (w);
+            tty_setcolor (disabled ? CORE_DISABLED_COLOR : colors[DLG_COLOR_NORMAL]);
         }
+
+        align = (w->pos_flags & WPOS_CENTER_HORZ) != 0 ? J_CENTER_LEFT : J_LEFT;
+
+        while (TRUE)
+        {
+            char *q;
+            char c = '\0';
+
+            q = strchr (p, '\n');
+            if (q != NULL)
+            {
+                c = q[0];
+                q[0] = '\0';
+            }
+
+            widget_gotoyx (w, y, 0);
+            tty_print_string (str_fit_to_term (p, w->rect.cols, align));
+
+            if (q == NULL)
+                break;
+
+            q[0] = c;
+            p = q + 1;
+            y++;
+        }
+        return MSG_HANDLED;
+    }
 
     case MSG_DESTROY:
         g_free (l->text);
@@ -146,7 +145,10 @@ label_new (int y, int x, const char *text)
 
     l->text = g_strdup (text);
     l->auto_adjust_cols = TRUE;
-    l->transparent = FALSE;
+
+    // Most of the labels inherit the colors from the parent widget, so don't take it as a parameter
+    // to the constructor. Instead have a separate call to replace these colors when needed.
+    l->color = NULL;
 
     return l;
 }
@@ -161,7 +163,7 @@ label_set_text (WLabel *label, const char *text)
     int newlines;
 
     if (label->text != NULL && text != NULL && strcmp (label->text, text) == 0)
-        return;                 /* Flickering is not nice */
+        return;  // Flickering is not nice
 
     g_free (label->text);
 
@@ -189,7 +191,7 @@ void
 label_set_textv (WLabel *label, const char *format, ...)
 {
     va_list args;
-    char buf[BUF_1K];           /* FIXME: is it enough? */
+    char buf[BUF_1K];  // FIXME: is it enough?
 
     va_start (args, format);
     g_vsnprintf (buf, sizeof (buf), format, args);

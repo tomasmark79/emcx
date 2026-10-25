@@ -1,7 +1,7 @@
 /*
    Network utilities for the Midnight Commander Virtual File System.
 
-   Copyright (C) 1995-2025
+   Copyright (C) 1995-2026
    Free Software Foundation, Inc.
 
    This file is part of the Midnight Commander.
@@ -17,7 +17,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 /**
@@ -29,7 +29,7 @@
 
 #include <stdlib.h>
 #include <signal.h>
-#include <string.h>             /* memset() */
+#include <string.h>  // memset()
 
 #include "lib/global.h"
 #include "lib/util.h"

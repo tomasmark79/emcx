@@ -1,7 +1,7 @@
 #! @PERL_FOR_BUILD@
 #
 #  Man page to help file converter
-#  Copyright (C) 1994-2025
+#  Copyright (C) 1994-2026
 #  The Free Software Foundation, Inc.
 #
 #  Originally written by:
@@ -23,7 +23,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 # \file man2hlp
 # \brief Source: man page to help file converter
@@ -305,6 +305,12 @@ sub print_string($)
                         $backslash_flag = 0;
                         next;
                     }
+                    if ($_ eq 'e' && $backslash_flag)
+                    {
+                        print $f_out '\\';
+                        $backslash_flag = 0;
+                        next;
+                    }
                     if ($_ eq '\\' && !$backslash_flag)
                     {
                         $backslash_flag = 1;
@@ -349,8 +355,8 @@ sub handle_node($$)
     }
     else
     {
-        # Remove quotes
-        $buffer =~ s/^"// and $buffer =~ s/"$//;
+        # Remove quotes and escaping from dashes
+        $buffer =~ s/^"// and $buffer =~ s/"$// and $buffer =~ s/\\-/-/;
         # Calculate heading level
         $heading_level = 0;
         $heading_level++ while substr($buffer, $heading_level, 1) eq ' ';
@@ -768,6 +774,7 @@ sub main
         }
 
         $in_row++;
+        $input_line =~ s/\X'tty:.*?'//g;  # Eliminate OSC 8 hyperlink targets
         $len = length($input_line);
 
         if ($verbatim_flag)

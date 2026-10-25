@@ -1,8 +1,10 @@
 # Modern Midnight Commander
 
 An enhanced version of [Midnight Commander](https://github.com/MidnightCommander/mc),
-based on MC 4.8.33, with convenient file actions and refreshed themes.
-The `mc-modern` branch contains the changes on top of the upstream release.
+based on upstream `master`, with convenient file actions and refreshed themes.
+The Nix package fetches upstream through its `mc-upstream` flake input and
+applies the Modern patch set. The `mc-modern` branch also maintains the merged
+source tree for native builds.
 The original documentation remains in `README`.
 
 The standard installation includes GIO trash actions, Wayland clipboard support,
@@ -140,7 +142,27 @@ They do not write to the actual desktop clipboard. To test a native build, set
 to `misc/mc-clipboard.py`, make `python3`, `tmux`, and `unshare` available,
 and run `python3 dotname/tests/run.py`.
 
-Keep changes local until they have been reviewed and tested.
-Merge upstream fixes into the `mc-modern` branch and verify the build and regression
-tests. The archive version is stored in `dotname/VERSION`.
+Keep changes local until they have been reviewed and tested. Update the package's
+upstream source with `nix flake update mc-upstream`, then build and run the tests.
+`flake.lock` pins the selected master revision; a build does not silently fetch
+new code. Consumers can override or follow `mc-upstream` independently of this
+fork, so updating upstream does not require publishing a new Modern revision.
+If a new upstream revision conflicts with our patches, the build fails until
+the integration is repaired.
+
+When maintaining the native source tree and refreshing the Modern patch set:
+
+```bash
+git fetch upstream master
+git merge upstream/master
+# Resolve conflicts and stage the resolved source files if necessary.
+python3 nix/update-modern-patch.py
+nix flake update mc-upstream
+nix build .#mc
+nix run .#mc-tests
+```
+
+The patch exporter includes only application sources and assets, excluding
+repository workflows and documentation. `dotname/VERSION` records the Modern
+version; the Nix package appends the upstream revision to the displayed version.
 The original license terms remain in effect; see `COPYING`.

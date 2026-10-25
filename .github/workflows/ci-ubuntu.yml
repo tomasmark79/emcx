@@ -8,13 +8,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
+    permissions:
+      contents: read
+
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install dependencies
         run: |
-          sudo apt-get install -y autoconf autopoint check gettext indent libtool pkg-config
-          sudo apt-get install -y e2fslibs-dev libaspell-dev libglib2.0-dev libgpm-dev libncurses5-dev libpcre2-dev libslang2-dev libssh2-1-dev libx11-dev unzip
+          sudo apt-get update
+          sudo apt-get install -y autoconf autopoint check gettext libtool pkg-config
+          sudo apt-get install -y e2fslibs-dev libaspell-dev libglib2.0-dev libgpm-dev libncurses5-dev libslang2-dev libssh2-1-dev libx11-dev unzip
 
       - name: Bootstrap build system
         run: ./autogen.sh
@@ -34,20 +38,14 @@ jobs:
 
           ../configure \
               --prefix="$(pwd)/install" \
-              --enable-mclib \
               --enable-aspell \
-              --enable-vfs-undelfs \
               --enable-werror
-
-          make indent
-          # TODO: exit 1
-          git ls-files --modified
 
           make -j$(nproc)
           make check
           make install
 
-      - name: Build ncurses & pcre2 configuration
+      - name: Build ncurses configuration
         run: |
           tar -xjf $(ls build-distrib/mc-*.tar.bz2) --one-top-level=build-ncurses
           cd build-ncurses
@@ -55,7 +53,6 @@ jobs:
           ../configure \
               --prefix="$(pwd)/install" \
               --with-screen=ncurses \
-              --with-search-engine=pcre2 \
               --enable-werror
 
           make -j$(nproc)
@@ -74,13 +71,10 @@ jobs:
               --disable-largefile \
               --disable-nls \
               --disable-rpath \
-              --disable-charset \
-              --disable-mclib \
               --disable-assert \
               --disable-aspell \
               --disable-background \
               --disable-vfs \
-              --disable-doxygen-doc \
               --without-x \
               --without-gpm-mouse \
               --without-internal-edit \
@@ -92,7 +86,7 @@ jobs:
             make -j$(nproc)
             make check
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: test-suite-logs-ubuntu

@@ -1,7 +1,7 @@
 /*
    Widgets for the Midnight Commander
 
-   Copyright (C) 1994-2025
+   Copyright (C) 1994-2026
    Free Software Foundation, Inc.
 
    Authors:
@@ -25,7 +25,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 /** \file history.c
@@ -34,15 +34,22 @@
 
 #include <config.h>
 
+#include <errno.h>
+#include <fcntl.h>  // open(2)
 #include <stdlib.h>
 #include <sys/types.h>
+#include <sys/stat.h>  // chmod(2)
+#include <unistd.h>    // close(2)
 
 #include "lib/global.h"
 
-#include "lib/tty/tty.h"        /* LINES, COLS */
+#include "lib/tty/tty.h"  // LINES, COLS
 #include "lib/strutil.h"
 #include "lib/widget.h"
-#include "lib/keybind.h"        /* CK_* */
+#include "lib/keybind.h"   // CK_*
+#include "lib/fileloc.h"   // MC_HISTORY_FILE
+#include "lib/event.h"     // mc_event_raise()
+#include "lib/mcconfig.h"  // num_history_items_recorded
 
 /*** global variables ****************************************************************************/
 
@@ -76,7 +83,7 @@ history_dlg_reposition (WDialog *dlg_head)
     int x = 0, y, he, wi;
     WRect r;
 
-    /* guard checks */
+    // guard checks
     if (dlg_head == NULL || dlg_head->data.p == NULL)
         return MSG_NOT_HANDLED;
 
@@ -123,28 +130,28 @@ history_dlg_callback (Widget *w, Widget *sender, widget_msg_t msg, int parm, voi
         return history_dlg_reposition (DIALOG (w));
 
     case MSG_NOTIFY:
+    {
+        // message from listbox
+        WDialog *d = DIALOG (w);
+
+        switch (parm)
         {
-            /* message from listbox */
-            WDialog *d = DIALOG (w);
-
-            switch (parm)
-            {
-            case CK_View:
-                d->ret_value = B_VIEW;
-                break;
-            case CK_Edit:
-                d->ret_value = B_EDIT;
-                break;
-            case CK_Enter:
-                d->ret_value = B_ENTER;
-                break;
-            default:
-                return MSG_NOT_HANDLED;
-            }
-
-            dlg_close (d);
-            return MSG_HANDLED;
+        case CK_View:
+            d->ret_value = B_VIEW;
+            break;
+        case CK_Edit:
+            d->ret_value = B_EDIT;
+            break;
+        case CK_Enter:
+            d->ret_value = B_ENTER;
+            break;
+        default:
+            return MSG_NOT_HANDLED;
         }
+
+        dlg_close (d);
+        return MSG_HANDLED;
+    }
 
     default:
         return dlg_default_callback (w, sender, msg, parm, data);
@@ -184,6 +191,74 @@ history_release_item (history_descriptor_t *hd, WLEntry *le)
 /*** public functions ****************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
+/**
+ * Load widget history from the ${XDG_DATA_HOME}/mc/history file
+ *
+ * @param h WDialog object, the event group area
+ * @param w Widget object whose history should be loaded. If NULL, history of all widgets of @h
+ *                 will be loaded.
+ */
+void
+history_load (const WDialog *h, Widget *w)
+{
+    char *profile;
+    ev_history_load_save_t event_data;
+
+    if (num_history_items_recorded == 0)  // this is how to disable
+        return;
+
+    profile = mc_config_get_full_path (MC_HISTORY_FILE);
+    event_data.cfg = mc_config_init (profile, TRUE);
+    event_data.receiver = w;
+
+    mc_event_raise (h->event_group, MCEVENT_HISTORY_LOAD, &event_data);
+
+    mc_config_deinit (event_data.cfg);
+    g_free (profile);
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+/**
+ * Save widget history to the ${XDG_DATA_HOME}/mc/history file
+ *
+ * @param h WDialog object, the event group area
+ * @param w Widget object whose history should be saved. If NULL, history of all widgets of @h
+ *                 will be saved.
+ */
+void
+history_save (const WDialog *h, Widget *w)
+{
+    char *profile;
+    int i;
+
+    if (num_history_items_recorded == 0)  // this is how to disable
+        return;
+
+    profile = mc_config_get_full_path (MC_HISTORY_FILE);
+    i = open (profile, O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
+    if (i != -1)
+        close (i);
+
+    // Make sure the history is only readable by the user
+    if (chmod (profile, S_IRUSR | S_IWUSR) != -1 || errno == ENOENT)
+    {
+        ev_history_load_save_t event_data;
+
+        event_data.cfg = mc_config_init (profile, FALSE);
+        event_data.receiver = w;
+
+        mc_event_raise (h->event_group, MCEVENT_HISTORY_SAVE, &event_data);
+
+        mc_config_save_file (event_data.cfg, NULL);
+        mc_config_deinit (event_data.cfg);
+    }
+
+    g_free (profile);
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
 void
 history_descriptor_init (history_descriptor_t *hd, int y, int x, GList *history, int current)
 {
@@ -195,7 +270,7 @@ history_descriptor_init (history_descriptor_t *hd, int y, int x, GList *history,
     hd->text = NULL;
     hd->max_width = 0;
     hd->listbox = listbox_new (1, 1, 2, 2, TRUE, NULL);
-    /* in most cases history list contains string only and no any other data */
+    // in most cases history list contains string only and no any other data
     hd->create = history_create_item;
     hd->release = history_release_item;
     hd->free = g_free;
@@ -215,11 +290,11 @@ history_show (history_descriptor_t *hd)
     if (hd == NULL || hd->list == NULL)
         return;
 
-    hd->max_width = str_term_width1 (_("History")) + 2;
+    hd->max_width = str_term_width1 (_ ("History")) + 2;
 
     for (z = hd->list; z != NULL; z = g_list_previous (z))
         hd->create (hd, z->data);
-    /* after this, the order of history items is following: recent at begin, oldest at end */
+    // after this, the order of history items is following: recent at begin, oldest at end
 
     count = listbox_get_length (hd->listbox);
 
@@ -228,9 +303,8 @@ history_show (history_descriptor_t *hd)
     hist_data.count = count;
     hist_data.max_width = hd->max_width;
 
-    query_dlg =
-        dlg_create (TRUE, 0, 0, 4, 4, WPOS_KEEP_DEFAULT, TRUE, dialog_colors, history_dlg_callback,
-                    NULL, "[History-query]", _("History"));
+    query_dlg = dlg_create (TRUE, 0, 0, 4, 4, WPOS_KEEP_DEFAULT, TRUE, dialog_colors,
+                            history_dlg_callback, NULL, "[History-query]", _ ("History"));
     query_dlg->data.p = &hist_data;
 
     /* this call makes list stick to all sides of dialog, effectively make
@@ -246,8 +320,8 @@ history_show (history_descriptor_t *hd)
 
     if (WIDGET (query_dlg)->rect.y < hd->y)
     {
-        /* history is above base widget -- revert order to place recent item at bottom */
-        /* revert history direction */
+        // history is above base widget -- revert order to place recent item at bottom
+        // revert history direction
         g_queue_reverse (hd->listbox->list);
         if (hd->current < 0 || (size_t) hd->current >= count)
             listbox_select_last (hd->listbox);
@@ -256,7 +330,7 @@ history_show (history_descriptor_t *hd)
     }
     else
     {
-        /* history is below base widget -- keep order to place recent item on top  */
+        // history is below base widget -- keep order to place recent item on top
         if (hd->current > 0)
             listbox_set_current (hd->listbox, hd->current);
     }
@@ -282,13 +356,13 @@ history_show (history_descriptor_t *hd)
         hd->text = g_strdup (q);
     }
 
-    /* get modified history from dialog */
+    // get modified history from dialog
     z = NULL;
     for (hi = listbox_get_first_link (hd->listbox); hi != NULL; hi = g_list_next (hi))
-        /* history is being reverted here again */
+        // history is being reverted here again
         z = g_list_prepend (z, hd->release (hd, LENTRY (hi->data)));
 
-    /* restore history direction */
+    // restore history direction
     if (WIDGET (query_dlg)->rect.y < hd->y)
         z = g_list_reverse (z);
 

@@ -1,7 +1,7 @@
 /*
    libmc - check if library is independent to $(topsrc)/src directory
 
-   Copyright (C) 2011-2025
+   Copyright (C) 2011-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -20,7 +20,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #define TEST_SUITE_NAME "lib/library_independ"
@@ -29,14 +29,8 @@
 
 /* --------------------------------------------------------------------------------------------- */
 
-/* *INDENT-OFF* */
-START_TEST (test_library_independ)
-/* *INDENT-ON* */
-{
-}
-/* *INDENT-OFF* */
+START_TEST (test_library_independ) {}
 END_TEST
-/* *INDENT-ON* */
 
 /* --------------------------------------------------------------------------------------------- */
 
@@ -47,9 +41,9 @@ main (void)
 
     tc_core = tcase_create ("Core");
 
-    /* Add new tests here: *************** */
+    // Add new tests here: ***************
     tcase_add_test (tc_core, test_library_independ);
-    /* *********************************** */
+    // ***********************************
 
     return mctest_run_all (tc_core);
 }

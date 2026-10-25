@@ -1,7 +1,7 @@
 /*
    libmc - check mcconfig submodule. Get full paths to user's config files.
 
-   Copyright (C) 2011-2025
+   Copyright (C) 2011-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -20,7 +20,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #define TEST_SUITE_NAME "lib/mcconfig"
@@ -34,10 +34,10 @@
 #include "lib/mcconfig.h"
 #include "src/vfs/local/local.c"
 
-#define HOME_DIR "/home/testuser"
+#define HOME_DIR   "/home/testuser"
 
-#define CONF_MAIN HOME_DIR PATH_SEP_STR ".config"
-#define CONF_DATA HOME_DIR PATH_SEP_STR ".local" PATH_SEP_STR "share"
+#define CONF_MAIN  HOME_DIR PATH_SEP_STR ".config"
+#define CONF_DATA  HOME_DIR PATH_SEP_STR ".local" PATH_SEP_STR "share"
 #define CONF_CACHE HOME_DIR PATH_SEP_STR ".cache"
 
 /* --------------------------------------------------------------------------------------------- */
@@ -68,138 +68,63 @@ teardown (void)
 /* --------------------------------------------------------------------------------------------- */
 
 /* @DataSource("test_user_config_paths_ds") */
-/* *INDENT-OFF* */
 static const struct test_user_config_paths_ds
 {
     const char *input_base_dir;
     const char *input_file_name;
-} test_user_config_paths_ds[] =
-{
-    { /* 0. */
-        CONF_MAIN,
-        MC_CONFIG_FILE
-    },
-    { /* 1. */
-        CONF_MAIN,
-        MC_FHL_INI_FILE
-    },
-    { /* 2. */
-        CONF_MAIN,
-        MC_HOTLIST_FILE
-    },
-    { /* 3. */
-        CONF_MAIN,
-        GLOBAL_KEYMAP_FILE
-    },
-    { /* 4. */
-        CONF_MAIN,
-        MC_USERMENU_FILE
-    },
-    { /* 5. */
-        CONF_DATA,
-        EDIT_SYNTAX_FILE
-    },
-    { /* 6. */
-        CONF_MAIN,
-        EDIT_HOME_MENU
-    },
-    { /* 7. */
-        CONF_MAIN,
-        MC_PANELS_FILE
-    },
-    { /* 8. */
-        CONF_MAIN,
-        MC_EXT_FILE
-    },
-    { /* 9. */
-        CONF_DATA,
-        MC_SKINS_DIR
-    },
-    { /* 10. */
-        CONF_DATA,
-        VFS_SHELL_PREFIX
-    },
-    { /* 11. */
-        CONF_DATA,
-        MC_ASHRC_FILE
-    },
-    { /* 12. */
-        CONF_DATA,
-        MC_BASHRC_FILE
-    },
-    { /* 13. */
-        CONF_DATA,
-        MC_INPUTRC_FILE
-    },
-    { /* 14. */
-        CONF_DATA,
-        MC_ZSHRC_FILE
-    },
-    { /* 15. */
-        CONF_DATA,
-        MC_EXTFS_DIR
-    },
-    { /* 16. */
-        CONF_DATA,
-        MC_HISTORY_FILE
-    },
-    { /* 17. */
-        CONF_DATA,
-        MC_FILEPOS_FILE
-    },
-    { /* 18. */
-        CONF_DATA,
-        EDIT_HOME_CLIP_FILE
-    },
-    { /* 19. */
-        CONF_DATA,
-        MC_MACRO_FILE
-    },
-    { /* 20. */
-        CONF_CACHE,
-        "mc.log"
-    },
-    { /* 21. */
-        CONF_CACHE,
-        MC_TREESTORE_FILE
-    },
-    { /* 22. */
-        CONF_CACHE,
-        EDIT_HOME_TEMP_FILE
-    },
-    { /* 23. */
-        CONF_CACHE,
-        EDIT_HOME_BLOCK_FILE
-    },
+} test_user_config_paths_ds[] = {
+    { CONF_MAIN, MC_CONFIG_FILE },
+    { CONF_MAIN, MC_FHL_INI_FILE },
+    { CONF_MAIN, MC_HOTLIST_FILE },
+    { CONF_MAIN, GLOBAL_KEYMAP_FILE },
+    { CONF_MAIN, MC_USERMENU_FILE },
+    { CONF_DATA, EDIT_SYNTAX_FILE },
+    { CONF_MAIN, EDIT_HOME_MENU },
+    { CONF_MAIN, MC_PANELS_FILE },
+    { CONF_MAIN, MC_EXT_FILE },
+    { CONF_DATA, MC_SKINS_DIR },
+    { CONF_DATA, VFS_SHELL_PREFIX },
+
+    { CONF_DATA, MC_ASHRC_CUSTOM_PROFILE_FILE },
+    { CONF_DATA, MC_BASHRC_CUSTOM_PROFILE_FILE },
+    { CONF_DATA, MC_KSHRC_CUSTOM_PROFILE_FILE },
+    { CONF_DATA, MC_MKSHRC_CUSTOM_PROFILE_FILE },
+    { CONF_DATA, MC_ZSHRC_CUSTOM_PROFILE_FILE },
+
+    { CONF_DATA, MC_INPUTRC_FILE },
+
+    { CONF_DATA, MC_EXTFS_DIR },
+    { CONF_DATA, MC_HISTORY_FILE },
+    { CONF_DATA, MC_FILEPOS_FILE },
+    { CONF_DATA, EDIT_HOME_CLIP_FILE },
+    { CONF_DATA, MC_MACRO_FILE },
+    { CONF_CACHE, "mc.log" },
+    { CONF_CACHE, MC_TREESTORE_FILE },
+    { CONF_CACHE, EDIT_HOME_TEMP_FILE },
+    { CONF_CACHE, EDIT_HOME_BLOCK_FILE },
 };
-/* *INDENT-ON* */
 
 /* @Test(dataSource = "test_user_config_paths_ds") */
-/* *INDENT-OFF* */
 START_PARAMETRIZED_TEST (test_user_config_paths, test_user_config_paths_ds)
-/* *INDENT-ON* */
 {
-    /* given */
+    // given
     char *actual_result;
 
-    /* when */
+    // when
     actual_result = mc_config_get_full_path (data->input_file_name);
 
-    /* then */
+    // then
     {
         char *expected_file_path;
 
-        expected_file_path =
-            g_build_filename (data->input_base_dir, MC_USERCONF_DIR, data->input_file_name,
-                              (char *) NULL);
+        expected_file_path = g_build_filename (data->input_base_dir, MC_USERCONF_DIR,
+                                               data->input_file_name, (char *) NULL);
         mctest_assert_str_eq (actual_result, expected_file_path);
         g_free (expected_file_path);
     }
     g_free (actual_result);
 }
-/* *INDENT-OFF* */
 END_PARAMETRIZED_TEST
-/* *INDENT-ON* */
 
 /* --------------------------------------------------------------------------------------------- */
 
@@ -212,9 +137,9 @@ main (void)
 
     tcase_add_checked_fixture (tc_core, setup, teardown);
 
-    /* Add new tests here: *************** */
+    // Add new tests here: ***************
     mctest_add_parameterized_test (tc_core, test_user_config_paths, test_user_config_paths_ds);
-    /* *********************************** */
+    // ***********************************
 
     return mctest_run_all (tc_core);
 }

@@ -1,7 +1,7 @@
 /*
    Dialog box features module for the Midnight Commander
 
-   Copyright (C) 1994-2025
+   Copyright (C) 1994-2026
    Free Software Foundation, Inc.
 
    This file is part of the Midnight Commander.
@@ -17,7 +17,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 /** \file dialog.c
@@ -26,13 +26,7 @@
 
 #include <config.h>
 
-#include <ctype.h>
-#include <errno.h>
 #include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 
 #include "lib/global.h"
 
@@ -40,10 +34,8 @@
 #include "lib/skin.h"
 #include "lib/tty/key.h"
 #include "lib/strutil.h"
-#include "lib/fileloc.h"        /* MC_HISTORY_FILE */
-#include "lib/event.h"          /* mc_event_raise() */
-#include "lib/util.h"           /* MC_PTR_FREE */
-#include "lib/mcconfig.h"       /* num_history_items_recorded */
+#include "lib/event.h"  // mc_event_raise()
+#include "lib/util.h"   // MC_PTR_FREE
 
 #include "lib/widget.h"
 #include "lib/widget/mouse.h"
@@ -51,9 +43,26 @@
 /*** global variables ****************************************************************************/
 
 /* Color styles for normal and error dialogs */
-dlg_colors_t dialog_colors;
-dlg_colors_t alarm_colors;
-dlg_colors_t listbox_colors;
+const dlg_colors_t dialog_colors = {
+    [DLG_COLOR_NORMAL] = DIALOG_NORMAL_COLOR,
+    [DLG_COLOR_FOCUS] = DIALOG_FOCUS_COLOR,
+    [DLG_COLOR_HOT_NORMAL] = DIALOG_HOT_NORMAL_COLOR,
+    [DLG_COLOR_HOT_FOCUS] = DIALOG_HOT_FOCUS_COLOR,
+    [DLG_COLOR_SELECTED_NORMAL] = DIALOG_SELECTED_NORMAL_COLOR,
+    [DLG_COLOR_SELECTED_FOCUS] = DIALOG_SELECTED_FOCUS_COLOR,
+    [DLG_COLOR_TITLE] = DIALOG_TITLE_COLOR,
+    [DLG_COLOR_FRAME] = DIALOG_FRAME_COLOR,
+};
+const dlg_colors_t alarm_colors = {
+    [DLG_COLOR_NORMAL] = ERROR_NORMAL_COLOR,
+    [DLG_COLOR_FOCUS] = ERROR_FOCUS_COLOR,
+    [DLG_COLOR_HOT_NORMAL] = ERROR_HOT_NORMAL_COLOR,
+    [DLG_COLOR_HOT_FOCUS] = ERROR_HOT_FOCUS_COLOR,
+    [DLG_COLOR_SELECTED_NORMAL] = ERROR_HOT_FOCUS_COLOR,  // unused
+    [DLG_COLOR_SELECTED_FOCUS] = ERROR_FOCUS_COLOR,       // unused
+    [DLG_COLOR_TITLE] = ERROR_TITLE_COLOR,
+    [DLG_COLOR_FRAME] = ERROR_FRAME_COLOR,
+};
 
 /* A hook list for idle events */
 hook_t *idle_hook = NULL;
@@ -82,30 +91,6 @@ dlg_default_get_colors (const Widget *w)
 }
 
 /* --------------------------------------------------------------------------------------------- */
-/**
-  * Read histories from the ${XDG_DATA_HOME}/mc/history file
-  */
-static void
-dlg_read_history (WDialog *h)
-{
-    char *profile;
-    ev_history_load_save_t event_data;
-
-    if (num_history_items_recorded == 0)        /* this is how to disable */
-        return;
-
-    profile = mc_config_get_full_path (MC_HISTORY_FILE);
-    event_data.cfg = mc_config_init (profile, TRUE);
-    event_data.receiver = NULL;
-
-    /* create all histories in dialog */
-    mc_event_raise (h->event_group, MCEVENT_HISTORY_LOAD, &event_data);
-
-    mc_config_deinit (event_data.cfg);
-    g_free (profile);
-}
-
-/* --------------------------------------------------------------------------------------------- */
 
 static void
 refresh_cmd (void)
@@ -114,10 +99,10 @@ refresh_cmd (void)
     tty_touch_screen ();
     mc_refresh ();
 #else
-    /* Use this if the refreshes fail */
+    // Use this if the refreshes fail
     tty_clear_screen ();
     repaint_screen ();
-#endif /* HAVE_SLANG */
+#endif
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -230,7 +215,7 @@ dlg_key_event (WDialog *h, int d_key)
     if (g->current == NULL)
         g->current = g->widgets;
 
-    /* TAB used to cycle */
+    // TAB used to cycle
     if (!widget_get_options (w, WOP_WANT_TAB))
     {
         if (d_key == '\t')
@@ -245,7 +230,7 @@ dlg_key_event (WDialog *h, int d_key)
         }
     }
 
-    /* first can dlalog handle the key itself */
+    // first can dlalog handle the key itself
     handled = send_message (h, NULL, MSG_KEY, d_key, NULL);
 
     if (handled == MSG_NOT_HANDLED)
@@ -285,7 +270,7 @@ frontend_dlg_run (WDialog *h)
 
     event.x = -1;
 
-    /* close opened editors, viewers, etc */
+    // close opened editors, viewers, etc
     if (!widget_get_state (wh, WST_MODAL) && mc_global.midnight_shutdown)
     {
         send_message (h, NULL, MSG_VALIDATE, 0, NULL);
@@ -307,14 +292,14 @@ frontend_dlg_run (WDialog *h)
             while (widget_get_state (wh, WST_IDLE) && is_idle ())
                 send_message (wh, NULL, MSG_IDLE, 0, NULL);
 
-            /* Allow terminating the dialog from the idle handler */
+            // Allow terminating the dialog from the idle handler
             if (!widget_get_state (wh, WST_ACTIVE))
                 break;
         }
 
         widget_update_cursor (wh);
 
-        /* Clear interrupt flag */
+        // Clear interrupt flag
         tty_got_interrupt ();
         d_key = tty_get_event (&event, GROUP (h)->mouse_status == MOU_REPEAT, TRUE);
 
@@ -332,8 +317,8 @@ dlg_default_destroy (Widget *w)
 {
     WDialog *h = DIALOG (w);
 
-    /* if some widgets have history, save all histories at one moment here */
-    dlg_save_history (h);
+    // if some widgets have history, save all histories at one moment here
+    history_save (h, NULL);
     group_default_callback (w, NULL, MSG_DESTROY, 0, NULL);
     send_message (w, NULL, MSG_DESTROY, 0, NULL);
     mc_event_group_del (h->event_group);
@@ -354,16 +339,16 @@ dlg_default_callback (Widget *w, Widget *sender, widget_msg_t msg, int parm, voi
     switch (msg)
     {
     case MSG_INIT:
-        /* nothing to init in dialog itself */
+        // nothing to init in dialog itself
         return MSG_HANDLED;
 
     case MSG_IDLE:
-        /* we don't want endless loop */
+        // we don't want endless loop
         widget_idle (w, FALSE);
         return MSG_HANDLED;
 
     case MSG_DESTROY:
-        /* nothing to deinit in dialog itself */
+        // nothing to deinit in dialog itself
         return MSG_HANDLED;
 
     default:
@@ -387,7 +372,7 @@ dlg_default_mouse_callback (Widget *w, mouse_msg_t msg, mouse_event_t *event)
         break;
 
     default:
-        /* return MOU_UNHANDLED */
+        // return MOU_UNHANDLED
         event->result.abort = TRUE;
         break;
     }
@@ -415,7 +400,7 @@ dlg_create (gboolean modal, int y1, int x1, int lines, int cols, widget_pos_flag
     w->pos_flags = pos_flags;
     w->options |= WOP_SELECTABLE | WOP_TOP_SELECT;
     w->state |= WST_FOCUSED;
-    /* Temporary hack: dialog doesn't have an owner, own itself. */
+    // Temporary hack: dialog doesn't have an owner, own itself.
     w->owner = g;
 
     w->keymap = dialog_map;
@@ -441,34 +426,10 @@ dlg_create (gboolean modal, int y1, int x1, int lines, int cols, widget_pos_flag
         frame_set_title (FRAME (new_d->bg), title);
     }
 
-    /* unique name of event group for this dialog */
+    // unique name of event group for this dialog
     new_d->event_group = g_strdup_printf ("%s_%p", MCEVENT_GROUP_DIALOG, (void *) new_d);
 
     return new_d;
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-void
-dlg_set_default_colors (void)
-{
-    dialog_colors[DLG_COLOR_NORMAL] = COLOR_NORMAL;
-    dialog_colors[DLG_COLOR_FOCUS] = COLOR_FOCUS;
-    dialog_colors[DLG_COLOR_HOT_NORMAL] = COLOR_HOT_NORMAL;
-    dialog_colors[DLG_COLOR_HOT_FOCUS] = COLOR_HOT_FOCUS;
-    dialog_colors[DLG_COLOR_TITLE] = COLOR_TITLE;
-
-    alarm_colors[DLG_COLOR_NORMAL] = ERROR_COLOR;
-    alarm_colors[DLG_COLOR_FOCUS] = ERROR_FOCUS;
-    alarm_colors[DLG_COLOR_HOT_NORMAL] = ERROR_HOT_NORMAL;
-    alarm_colors[DLG_COLOR_HOT_FOCUS] = ERROR_HOT_FOCUS;
-    alarm_colors[DLG_COLOR_TITLE] = ERROR_TITLE;
-
-    listbox_colors[DLG_COLOR_NORMAL] = PMENU_ENTRY_COLOR;
-    listbox_colors[DLG_COLOR_FOCUS] = PMENU_SELECTED_COLOR;
-    listbox_colors[DLG_COLOR_HOT_NORMAL] = PMENU_ENTRY_COLOR;
-    listbox_colors[DLG_COLOR_HOT_FOCUS] = PMENU_SELECTED_COLOR;
-    listbox_colors[DLG_COLOR_TITLE] = PMENU_TITLE_COLOR;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -491,10 +452,10 @@ dlg_init (WDialog *h)
     if (top_dlg != NULL && widget_get_state (WIDGET (top_dlg->data), WST_MODAL))
         widget_set_state (wh, WST_MODAL, TRUE);
 
-    /* add dialog to the stack */
+    // add dialog to the stack
     top_dlg = g_list_prepend (top_dlg, h);
 
-    /* Initialize dialog manager and widgets */
+    // Initialize dialog manager and widgets
     if (widget_get_state (wh, WST_CONSTRUCT))
     {
         if (!widget_get_state (wh, WST_MODAL))
@@ -502,10 +463,10 @@ dlg_init (WDialog *h)
 
         send_message (h, NULL, MSG_INIT, 0, NULL);
         group_default_callback (wh, NULL, MSG_INIT, 0, NULL);
-        dlg_read_history (h);
+        history_load (h, NULL);
     }
 
-    /* Select the first widget that takes focus */
+    // Select the first widget that takes focus
     while (g->current != NULL && !widget_is_focusable (g->current->data))
         group_set_current_widget_next (g);
 
@@ -528,12 +489,12 @@ dlg_process_event (WDialog *h, int key, Gpm_Event *event)
         break;
 
     case EV_MOUSE:
-        {
-            Widget *w = WIDGET (h);
+    {
+        Widget *w = WIDGET (h);
 
-            GROUP (h)->mouse_status = w->mouse_handler (w, event);
-            break;
-        }
+        GROUP (h)->mouse_status = w->mouse_handler (w, event);
+        break;
+    }
 
     default:
         dlg_key_event (h, key);
@@ -577,45 +538,8 @@ dlg_run (WDialog *h)
 
 /* --------------------------------------------------------------------------------------------- */
 
-/**
-  * Write history to the ${XDG_DATA_HOME}/mc/history file
-  */
-void
-dlg_save_history (WDialog *h)
-{
-    char *profile;
-    int i;
-
-    if (num_history_items_recorded == 0)        /* this is how to disable */
-        return;
-
-    profile = mc_config_get_full_path (MC_HISTORY_FILE);
-    i = open (profile, O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
-    if (i != -1)
-        close (i);
-
-    /* Make sure the history is only readable by the user */
-    if (chmod (profile, S_IRUSR | S_IWUSR) != -1 || errno == ENOENT)
-    {
-        ev_history_load_save_t event_data;
-
-        event_data.cfg = mc_config_init (profile, FALSE);
-        event_data.receiver = NULL;
-
-        /* get all histories in dialog */
-        mc_event_raise (h->event_group, MCEVENT_HISTORY_SAVE, &event_data);
-
-        mc_config_save_file (event_data.cfg, NULL);
-        mc_config_deinit (event_data.cfg);
-    }
-
-    g_free (profile);
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
 char *
-dlg_get_title (const WDialog *h, size_t len)
+dlg_get_title (const WDialog *h, const ssize_t width)
 {
     char *t;
 
@@ -623,7 +547,7 @@ dlg_get_title (const WDialog *h, size_t len)
         abort ();
 
     if (h->get_title != NULL)
-        t = h->get_title (h, len);
+        t = h->get_title (h, width);
     else
         t = g_strdup ("");
 

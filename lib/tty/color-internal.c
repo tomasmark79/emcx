@@ -1,7 +1,7 @@
 /*
    Internal stuff of color setup
 
-   Copyright (C) 1994-2025
+   Copyright (C) 1994-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -22,7 +22,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 /** \file color-internal.c
@@ -31,9 +31,9 @@
 
 #include <config.h>
 
-#include <string.h>             /* strcmp */
+#include <string.h>  // strcmp
 
-#include "color.h"              /* colors and attributes */
+#include "color.h"  // colors and attributes
 #include "color-internal.h"
 
 /*** global variables ****************************************************************************/
@@ -57,42 +57,37 @@ typedef struct mc_tty_color_table_struct
 /*** file scope variables ************************************************************************/
 
 static mc_tty_color_table_t const color_table[] = {
-    {"black", COLOR_BLACK},
-    {"gray", COLOR_BLACK + COLOR_INTENSITY},
-    {"red", COLOR_RED},
-    {"brightred", COLOR_RED + COLOR_INTENSITY},
-    {"green", COLOR_GREEN},
-    {"brightgreen", COLOR_GREEN + COLOR_INTENSITY},
-    {"brown", COLOR_YELLOW},
-    {"yellow", COLOR_YELLOW + COLOR_INTENSITY},
-    {"blue", COLOR_BLUE},
-    {"brightblue", COLOR_BLUE + COLOR_INTENSITY},
-    {"magenta", COLOR_MAGENTA},
-    {"brightmagenta", COLOR_MAGENTA + COLOR_INTENSITY},
-    {"cyan", COLOR_CYAN},
-    {"brightcyan", COLOR_CYAN + COLOR_INTENSITY},
-    {"lightgray", COLOR_WHITE},
-    {"white", COLOR_WHITE + COLOR_INTENSITY},
-    {"default", -1},            /* default color of the terminal */
-    /* special colors */
-    {"A_REVERSE", SPEC_A_REVERSE},
-    {"A_BOLD", SPEC_A_BOLD},
-    {"A_BOLD_REVERSE", SPEC_A_BOLD_REVERSE},
-    {"A_UNDERLINE", SPEC_A_UNDERLINE},
-    /* End of list */
-    {NULL, 0}
+    { "black", COLOR_BLACK },
+    { "gray", COLOR_BLACK + COLOR_INTENSITY },
+    { "red", COLOR_RED },
+    { "brightred", COLOR_RED + COLOR_INTENSITY },
+    { "green", COLOR_GREEN },
+    { "brightgreen", COLOR_GREEN + COLOR_INTENSITY },
+    { "brown", COLOR_YELLOW },
+    { "yellow", COLOR_YELLOW + COLOR_INTENSITY },
+    { "blue", COLOR_BLUE },
+    { "brightblue", COLOR_BLUE + COLOR_INTENSITY },
+    { "magenta", COLOR_MAGENTA },
+    { "brightmagenta", COLOR_MAGENTA + COLOR_INTENSITY },
+    { "cyan", COLOR_CYAN },
+    { "brightcyan", COLOR_CYAN + COLOR_INTENSITY },
+    { "lightgray", COLOR_WHITE },
+    { "white", COLOR_WHITE + COLOR_INTENSITY },
+    { "default", -1 },  // default color of the terminal
+    // End of list
+    { NULL, 0 },
 };
 
 static mc_tty_color_table_t const attributes_table[] = {
-    {"bold", A_BOLD},
-#ifdef A_ITALIC                 /* available since ncurses-5.9-20130831 / slang-pre2.3.0-107 */
-    {"italic", A_ITALIC},
-#endif /* A_ITALIC */
-    {"underline", A_UNDERLINE},
-    {"reverse", A_REVERSE},
-    {"blink", A_BLINK},
-    /* End of list */
-    {NULL, 0}
+    { "bold", A_BOLD },
+#ifdef A_ITALIC  // available since ncurses-5.9-20130831 / slang-pre2.3.0-107
+    { "italic", A_ITALIC },
+#endif
+    { "underline", A_UNDERLINE },
+    { "reverse", A_REVERSE },
+    { "blink", A_BLINK },
+    // End of list
+    { NULL, 0 },
 };
 
 /* --------------------------------------------------------------------------------------------- */
@@ -118,20 +113,19 @@ parse_256_or_true_color_name (const char *color_name)
     int i;
     char dummy;
 
-    /* cppcheck-suppress invalidscanf */
     if (sscanf (color_name, "color%d%c", &i, &dummy) == 1 && i >= 0 && i < 256)
     {
         return i;
     }
-    /* cppcheck-suppress invalidscanf */
     if (sscanf (color_name, "gray%d%c", &i, &dummy) == 1 && i >= 0 && i < 24)
     {
         return 232 + i;
     }
-    if (strncmp (color_name, "rgb", 3) == 0 &&
-        color_name[3] >= '0' && color_name[3] < '6' &&
-        color_name[4] >= '0' && color_name[4] < '6' &&
-        color_name[5] >= '0' && color_name[5] < '6' && color_name[6] == '\0')
+    if (strncmp (color_name, "rgb", 3) == 0             //
+        && color_name[3] >= '0' && color_name[3] < '6'  //
+        && color_name[4] >= '0' && color_name[4] < '6'  //
+        && color_name[5] >= '0' && color_name[5] < '6'  //
+        && color_name[6] == '\0')
     {
         return 16 + 36 * (color_name[3] - '0') + 6 * (color_name[4] - '0') + (color_name[5] - '0');
     }
@@ -156,7 +150,7 @@ parse_256_or_true_color_name (const char *color_name)
                 i = (h[0] << 20) | (h[0] << 16) | (h[1] << 12) | (h[1] << 8) | (h[2] << 4) | h[2];
             else
                 i = (h[0] << 20) | (h[1] << 16) | (h[2] << 12) | (h[3] << 8) | (h[4] << 4) | h[5];
-            return (1 << 24) | i;
+            return FLAG_TRUECOLOR | i;
         }
     }
 
@@ -172,14 +166,14 @@ tty_color_get_name_by_index (int idx)
 {
     int i;
 
-    /* Find the real English name of the first 16 colors, */
-    /* as well as the A_* special values. */
+    // Find the real English name of the first 16 colors,
+    // as well as the A_* special values.
     for (i = 0; color_table[i].name != NULL; i++)
         if (idx == color_table[i].value)
             return color_table[i].name;
 
-    /* Create and return the strings in "colorNNN" or "#rrggbb" format. */
-    if ((idx >= 16 && idx < 256) || (idx & (1 << 24)) != 0)
+    // Create and return the strings in "colorNNN" or "#rrggbb" format.
+    if ((idx >= 16 && idx < 256) || (idx & FLAG_TRUECOLOR) != 0)
     {
         char name[9];
 
@@ -239,6 +233,50 @@ tty_attr_get_bits (const char *attrs)
         g_strfreev (attr_list);
     }
     return attr_bits;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+int
+convert_256color_to_truecolor (int color)
+{
+    int r, g, b;
+
+    // Invalid color
+    if (color > 255)
+        return 0;
+
+    if (color >= 232)  // Gray scale
+        r = g = b = (color - 231) * 10 + 8;
+    else if (color >= 16)  // 6x6x6 color cube
+    {
+        color -= 16;
+
+        r = (color / (6 * 6) % 6);
+        r = r > 0 ? r * 40 + 55 : 0;
+
+        g = (color / 6 % 6);
+        g = g > 0 ? g * 40 + 55 : 0;
+
+        b = (color % 6);
+        b = b > 0 ? b * 40 + 55 : 0;
+    }
+    else  // We don't convert basic 16 colors as they are terminal-dependent and user-configurable
+        return color;
+
+    color = FLAG_TRUECOLOR | (r << 16) | (g << 8) | b;
+
+    return color;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+int
+tty_maybe_map_color (int color)
+{
+    if (color >= TTY_COLOR_MAP_OFFSET)
+        return tty_color_role_to_pair[color - TTY_COLOR_MAP_OFFSET];
+    return color;
 }
 
 /* --------------------------------------------------------------------------------------------- */

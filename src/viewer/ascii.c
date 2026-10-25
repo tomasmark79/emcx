@@ -2,7 +2,7 @@
    Internal file viewer for the Midnight Commander
    Function for plain view
 
-   Copyright (C) 1994-2025
+   Copyright (C) 1994-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -32,7 +32,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
    ------------------------------------------------------------------------------------------------
 
@@ -48,7 +48,7 @@
    - A "paragraph" is the text between two adjacent newline characters. A "line" or "row" is a
    visual row on the screen. In wrap mode, the viewer formats a paragraph into one or more lines.
 
-   - The Unicode glossary <http://www.unicode.org/glossary/> doesn't seem to have a notion of "base
+   - The Unicode glossary <https://www.unicode.org/glossary/> doesn't seem to have a notion of "base
    character followed by zero or more combining characters". The closest matches are "Combining
    Character Sequence" meaning a base character followed by one or more combining characters, or
    "Grapheme" which seems to exclude non-printable characters such as newline. In this file,
@@ -149,12 +149,10 @@
 #include "lib/global.h"
 #include "lib/tty/tty.h"
 #include "lib/skin.h"
-#include "lib/util.h"           /* is_printable() */
-#ifdef HAVE_CHARSET
+#include "lib/util.h"  // is_printable()
 #include "lib/charsets.h"
-#endif
 
-#include "src/setup.h"          /* option_tab_spacing */
+#include "src/setup.h"  // option_tab_spacing
 
 #include "internal.h"
 
@@ -164,8 +162,8 @@
 
 /* The Unicode standard recommends that lonely combining characters are printed over a dotted
  * circle. If the terminal is not UTF-8, this will be replaced by a dot anyway. */
-#define BASE_CHARACTER_FOR_LONELY_COMBINING 0x25CC      /* dotted circle */
-#define MAX_COMBINING_CHARS 4   /* both slang and ncurses support exactly 4 */
+#define BASE_CHARACTER_FOR_LONELY_COMBINING 0x25CC  // dotted circle
+#define MAX_COMBINING_CHARS                 4       // both slang and ncurses support exactly 4
 
 /* I think anything other than space (e.g. arrows) just introduce visual clutter without actually
  * adding value. */
@@ -202,7 +200,6 @@
 static int
 mcview_wcwidth (const WView *view, int c)
 {
-#ifdef HAVE_CHARSET
     if (view->utf8)
     {
         if (g_unichar_iswide (c))
@@ -210,26 +207,16 @@ mcview_wcwidth (const WView *view, int c)
         if (g_unichar_iszerowidth (c))
             return 0;
     }
-#else
-    (void) view;
-    (void) c;
-#endif /* HAVE_CHARSET */
+
     return 1;
 }
 
 /* --------------------------------------------------------------------------------------------- */
 
-static gboolean
+static inline gboolean
 mcview_ismark (const WView *view, int c)
 {
-#ifdef HAVE_CHARSET
-    if (view->utf8)
-        return g_unichar_ismark (c);
-#else
-    (void) view;
-    (void) c;
-#endif /* HAVE_CHARSET */
-    return FALSE;
+    return (view->utf8 && g_unichar_ismark (c));
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -238,19 +225,13 @@ mcview_ismark (const WView *view, int c)
 static gboolean
 mcview_is_non_spacing_mark (const WView *view, int c)
 {
-#ifdef HAVE_CHARSET
     if (view->utf8)
     {
-        GUnicodeType type;
-
-        type = g_unichar_type (c);
+        const GUnicodeType type = g_unichar_type (c);
 
         return type == G_UNICODE_NON_SPACING_MARK || type == G_UNICODE_ENCLOSING_MARK;
     }
-#else
-    (void) view;
-    (void) c;
-#endif /* HAVE_CHARSET */
+
     return FALSE;
 }
 
@@ -260,31 +241,18 @@ mcview_is_non_spacing_mark (const WView *view, int c)
 static gboolean
 mcview_is_spacing_mark (const WView *view, int c)
 {
-#ifdef HAVE_CHARSET
-    if (view->utf8)
-        return g_unichar_type (c) == G_UNICODE_SPACING_MARK;
-#else
-    (void) view;
-    (void) c;
-#endif /* HAVE_CHARSET */
-    return FALSE;
+    return (view->utf8 && g_unichar_type (c) == G_UNICODE_SPACING_MARK);
 }
-#endif /* 0 */
+#endif
 
 /* --------------------------------------------------------------------------------------------- */
 
 static gboolean
 mcview_isprint (const WView *view, int c)
 {
-#ifdef HAVE_CHARSET
     if (!view->utf8)
         c = convert_from_8bit_to_utf_c ((unsigned char) c, view->converter);
     return g_unichar_isprint (c);
-#else
-    (void) view;
-    /* TODO this is very-very buggy by design: ticket 3257 comments 0-1 */
-    return is_printable (c);
-#endif /* HAVE_CHARSET */
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -292,7 +260,6 @@ mcview_isprint (const WView *view, int c)
 static int
 mcview_char_display (const WView *view, int c, char *s)
 {
-#ifdef HAVE_CHARSET
     if (mc_global.utf8_display)
     {
         if (!view->utf8)
@@ -310,18 +277,16 @@ mcview_char_display (const WView *view, int c, char *s)
         }
         if (g_unichar_iszerowidth (c))
             return 0;
-        /* TODO the is_printable check below will be broken for this */
+        // TODO the is_printable check below will be broken for this
         c = convert_from_utf_to_current_c (c, view->converter);
     }
     else
     {
-        /* TODO the is_printable check below will be broken for this */
+        // TODO the is_printable check below will be broken for this
         c = convert_to_display_c (c);
     }
-#else
-    (void) view;
-#endif /* HAVE_CHARSET */
-    /* TODO this is very-very buggy by design: ticket 3257 comments 0-1 */
+
+    // TODO this is very-very buggy by design: ticket 3257 comments 0-1
     if (!is_printable (c))
         c = '.';
     *s = c;
@@ -345,25 +310,24 @@ mcview_char_display (const WView *view, int c, char *s)
 static gboolean
 mcview_get_next_char (WView *view, mcview_state_machine_t *state, int *c)
 {
-    /* Pretend EOF if we reached force_max */
+    // Pretend EOF if we reached force_max
     if (view->force_max >= 0 && state->offset >= view->force_max)
         return FALSE;
 
-#ifdef HAVE_CHARSET
     if (view->utf8)
     {
         int char_length = 0;
 
         if (!mcview_get_utf (view, state->offset, c, &char_length))
             return FALSE;
-        /* Pretend EOF if we crossed force_max */
+        // Pretend EOF if we crossed force_max
         if (view->force_max >= 0 && state->offset + char_length > view->force_max)
             return FALSE;
 
         state->offset += char_length;
         return TRUE;
     }
-#endif /* HAVE_CHARSET */
+
     if (!mcview_get_byte (view, state->offset, c))
         return FALSE;
     state->offset++;
@@ -392,54 +356,66 @@ mcview_get_next_char (WView *view, mcview_state_machine_t *state, int *c)
 static gboolean
 mcview_get_next_maybe_nroff_char (WView *view, mcview_state_machine_t *state, int *c, int *color)
 {
-    mcview_state_machine_t state_after_nroff;
-    int c2, c3;
+    mcview_state_machine_t state_after_three_chars;
+    mcview_state_machine_t state_after_five_chars;
+    int c2, c3, c4, c5;
 
     if (color != NULL)
-        *color = VIEW_NORMAL_COLOR;
+        *color = VIEWER_NORMAL_COLOR;
 
     if (!view->mode_flags.nroff)
         return mcview_get_next_char (view, state, c);
 
     if (!mcview_get_next_char (view, state, c))
         return FALSE;
-    /* Don't allow nroff formatting around CR, LF, TAB or other special chars */
+    // Don't allow nroff formatting around CR, LF, TAB or other special chars
     if (!mcview_isprint (view, *c))
         return TRUE;
 
-    state_after_nroff = *state;
+    state_after_three_chars = *state;
 
-    if (!mcview_get_next_char (view, &state_after_nroff, &c2))
+    if (!mcview_get_next_char (view, &state_after_three_chars, &c2))
         return TRUE;
     if (c2 != '\b')
         return TRUE;
 
-    if (!mcview_get_next_char (view, &state_after_nroff, &c3))
+    if (!mcview_get_next_char (view, &state_after_three_chars, &c3))
         return TRUE;
     if (!mcview_isprint (view, c3))
         return TRUE;
 
-    if (*c == '_' && c3 == '_')
+    state_after_five_chars = state_after_three_chars;
+
+    /* Bold and underlined letter x is denoted by: _ \b x \b x */
+    if (*c == '_' && mcview_get_next_char (view, &state_after_five_chars, &c4) && c4 == '\b'
+        && mcview_get_next_char (view, &state_after_five_chars, &c5) && c3 == c5)
     {
-        *state = state_after_nroff;
+        *c = c3;
+        *state = state_after_five_chars;
+        if (color != NULL)
+            *color = VIEWER_BOLD_UNDERLINED_COLOR;
+    }
+    else if (*c == '_' && c3 == '_')
+    {
+        *state = state_after_three_chars;
         if (color != NULL)
             *color =
-                state->nroff_underscore_is_underlined ? VIEW_UNDERLINED_COLOR : VIEW_BOLD_COLOR;
+                state->nroff_underscore_is_underlined ? VIEWER_UNDERLINED_COLOR : VIEWER_BOLD_COLOR;
     }
     else if (*c == c3)
     {
-        *state = state_after_nroff;
+        *state = state_after_three_chars;
         state->nroff_underscore_is_underlined = FALSE;
         if (color != NULL)
-            *color = VIEW_BOLD_COLOR;
+            *color = VIEWER_BOLD_COLOR;
     }
     else if (*c == '_')
     {
         *c = c3;
-        *state = state_after_nroff;
+        *state = state_after_three_chars;
         state->nroff_underscore_is_underlined = TRUE;
         if (color != NULL)
-            *color = VIEW_UNDERLINED_COLOR;
+            *color = VIEWER_UNDERLINED_COLOR;
     }
 
     return TRUE;
@@ -473,15 +449,15 @@ mcview_get_next_maybe_nroff_char (WView *view, mcview_state_machine_t *state, in
  * @return the number of entries placed in cs, or 0 on EOF
  */
 static int
-mcview_next_combining_char_sequence (WView *view, mcview_state_machine_t *state, int *cs,
-                                     int clen, int *color)
+mcview_next_combining_char_sequence (WView *view, mcview_state_machine_t *state, int *cs, int clen,
+                                     int *color)
 {
     int i = 1;
 
     if (!mcview_get_next_maybe_nroff_char (view, state, cs, color))
         return 0;
 
-    /* Process \r and \r\n newlines. */
+    // Process \r and \r\n newlines.
     if (cs[0] == '\r')
     {
         int cnext;
@@ -494,7 +470,7 @@ mcview_next_combining_char_sequence (WView *view, mcview_state_machine_t *state,
         return 1;
     }
 
-    /* We don't want combining over non-printable characters. This includes '\n' and '\t' too. */
+    // We don't want combining over non-printable characters. This includes '\n' and '\t' too.
     if (!mcview_isprint (view, cs[0]))
         return 1;
 
@@ -502,12 +478,12 @@ mcview_next_combining_char_sequence (WView *view, mcview_state_machine_t *state,
     {
         if (!state->print_lonely_combining)
         {
-            /* First character is combining. Either just return it, ... */
+            // First character is combining. Either just return it, ...
             return 1;
         }
         else
         {
-            /* or place this (and subsequent combining ones) over a dotted circle. */
+            // or place this (and subsequent combining ones) over a dotted circle.
             cs[1] = cs[0];
             cs[0] = BASE_CHARACTER_FOR_LONELY_COMBINING;
             i = 2;
@@ -516,7 +492,7 @@ mcview_next_combining_char_sequence (WView *view, mcview_state_machine_t *state,
 
     if (mcview_wcwidth (view, cs[0]) == 2)
     {
-        /* Don't allow combining or spacing mark for wide characters, is this okay? */
+        // Don't allow combining or spacing mark for wide characters, is this okay?
         return 1;
     }
 
@@ -533,7 +509,7 @@ mcview_next_combining_char_sequence (WView *view, mcview_state_machine_t *state,
             return i;
         if (g_unichar_type (cs[i]) == G_UNICODE_SPACING_MARK)
         {
-            /* Only allow as the first combining char. Stop processing in either case. */
+            // Only allow as the first combining char. Stop processing in either case.
             if (i == 1)
             {
                 *state = state_after_combining;
@@ -572,14 +548,14 @@ mcview_next_combining_char_sequence (WView *view, mcview_state_machine_t *state,
  * @return the number of rows, that is, 0 if we were already at EOF, otherwise 1
  */
 static int
-mcview_display_line (WView *view, mcview_state_machine_t *state, int row,
-                     gboolean *paragraph_ended, off_t *linewidth)
+mcview_display_line (WView *view, mcview_state_machine_t *state, int row, gboolean *paragraph_ended,
+                     off_t *linewidth)
 {
     const WRect *r = &view->data_area;
     off_t dpy_text_column = view->mode_flags.wrap ? 0 : view->dpy_text_column;
     int col = 0;
     int cs[1 + MAX_COMBINING_CHARS];
-    char str[(1 + MAX_COMBINING_CHARS) * UTF8_CHAR_LEN + 1];
+    char str[(1 + MAX_COMBINING_CHARS) * MB_LEN_MAX + 1];
     int i, j;
 
     if (paragraph_ended != NULL)
@@ -616,11 +592,11 @@ mcview_display_line (WView *view, mcview_state_machine_t *state, int row,
         }
 
         if (view->search_start <= state->offset && state->offset < view->search_end)
-            color = VIEW_SELECTED_COLOR;
+            color = VIEWER_SELECTED_COLOR;
 
         if (cs[0] == '\n')
         {
-            /* New line: reset all formatting state for the next paragraph. */
+            // New line: reset all formatting state for the next paragraph.
             mcview_state_machine_init (state, state->offset);
             if (linewidth != NULL)
                 *linewidth = col;
@@ -629,11 +605,12 @@ mcview_display_line (WView *view, mcview_state_machine_t *state, int row,
 
         if (mcview_is_non_spacing_mark (view, cs[0]))
         {
-            /* Lonely combining character. Probably leftover after too many combining chars. Just ignore. */
+            // Lonely combining character. Probably leftover after too many combining chars. Just
+            // ignore.
             continue;
         }
 
-        /* Nonprintable, or lonely spacing mark */
+        // Nonprintable, or lonely spacing mark
         if ((!mcview_isprint (view, cs[0]) || mcview_ismark (view, cs[0])) && cs[0] != '\t')
             cs[0] = '.';
 
@@ -665,13 +642,13 @@ mcview_display_line (WView *view, mcview_state_machine_t *state, int row,
             return 1;
         }
 
-        /* Display, unless outside of the viewport. */
+        // Display, unless outside of the viewport.
         if (row >= 0 && row < r->lines)
         {
-            if ((off_t) col >= dpy_text_column &&
-                (off_t) col + charwidth <= dpy_text_column + (off_t) r->cols)
+            if ((off_t) col >= dpy_text_column
+                && (off_t) col + charwidth <= dpy_text_column + (off_t) r->cols)
             {
-                /* The combining character sequence fits entirely in the viewport. Print it. */
+                // The combining character sequence fits entirely in the viewport. Print it.
                 tty_setcolor (color);
                 widget_gotoyx (view, r->y + row, r->x + ((off_t) col - dpy_text_column));
                 if (cs[0] == '\t')
@@ -705,8 +682,8 @@ mcview_display_line (WView *view, mcview_state_machine_t *state, int row,
                     tty_print_anychar ((cs[0] == '\t') ? ' ' : PARTIAL_CJK_AT_LEFT_MARGIN);
                 }
             }
-            else if ((off_t) col < dpy_text_column + (off_t) r->cols &&
-                     (off_t) col + charwidth > dpy_text_column + (off_t) r->cols)
+            else if ((off_t) col < dpy_text_column + (off_t) r->cols
+                     && (off_t) col + charwidth > dpy_text_column + (off_t) r->cols)
             {
                 /* The combining character sequence would cross the right edge of the viewport
                  * and we're not wrapping. Print replacement character(s),
@@ -779,7 +756,7 @@ mcview_display_paragraph (WView *view, mcview_state_machine_t *state, int row)
         if (row < view->data_area.lines)
         {
             row++;
-            /* stop if bottom of screen reached */
+            // stop if bottom of screen reached
             if (row >= view->data_area.lines)
                 return lines;
         }
@@ -892,12 +869,12 @@ mcview_display_text (WView *view)
     view->dpy_end = state.offset;
     view->dpy_state_bottom = state;
 
-    tty_setcolor (VIEW_NORMAL_COLOR);
+    tty_setcolor (VIEWER_NORMAL_COLOR);
     if (mcview_show_eof != NULL && mcview_show_eof[0] != '\0')
         while (row < r->lines)
         {
             widget_gotoyx (view, r->y + row, r->x);
-            /* TODO: should make it no wider than the viewport */
+            // TODO: should make it no wider than the viewport
             tty_print_string (mcview_show_eof);
             row++;
         }
@@ -980,19 +957,18 @@ mcview_ascii_move_up (WView *view, off_t lines)
 
         while (lines > view->dpy_paragraph_skip_lines)
         {
-            /* We need to go back to the previous paragraph. */
+            // We need to go back to the previous paragraph.
             if (view->dpy_start == 0)
             {
-                /* Oops, we're already in the first paragraph. */
+                // Oops, we're already in the first paragraph.
                 view->dpy_paragraph_skip_lines = 0;
                 mcview_state_machine_init (&view->dpy_state_top, 0);
                 return;
             }
             lines -= view->dpy_paragraph_skip_lines;
             view->force_max = view->dpy_start;
-            view->dpy_start =
-                mcview_bol (view, view->dpy_start - 1,
-                            view->dpy_start - MAX_BACKWARDS_WALK_IN_PARAGRAPH);
+            view->dpy_start = mcview_bol (view, view->dpy_start - 1,
+                                          view->dpy_start - MAX_BACKWARDS_WALK_IN_PARAGRAPH);
             mcview_state_machine_init (&view->dpy_state_top, view->dpy_start);
             /* This is a tricky way of denoting that we're at the end of the paragraph.
              * Normally we'd jump to the next paragraph and reset paragraph_skip_lines. But for
@@ -1031,7 +1007,7 @@ mcview_ascii_moveto_eol (WView *view)
         mcview_state_machine_t state;
         off_t linewidth;
 
-        /* Get the width of the topmost paragraph. */
+        // Get the width of the topmost paragraph.
         mcview_state_machine_init (&state, view->dpy_start);
         mcview_display_line (view, &state, -1, NULL, &linewidth);
         view->dpy_text_column = DOZ (linewidth, (off_t) view->data_area.cols);

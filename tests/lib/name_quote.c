@@ -1,7 +1,7 @@
 /*
    lib - Quote file names
 
-   Copyright (C) 2011-2025
+   Copyright (C) 2011-2026
    Free Software Foundation, Inc.
 
    Written by:
@@ -20,7 +20,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #define TEST_SUITE_NAME "/lib/util"
@@ -31,99 +31,80 @@
 
 /* --------------------------------------------------------------------------------------------- */
 
-/* @Before */
-static void
-setup (void)
-{
-}
-
-/* @After */
-static void
-teardown (void)
-{
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
 /* @DataSource("data_source1") */
-/* *INDENT-OFF* */
 static const struct data_source1
 {
     gboolean input_quote_percent;
     const char *input_string;
 
     const char *expected_string;
-} data_source1[] =
-{
-    { TRUE, "%%", "%%%%"},
-    { FALSE, "%%", "%%"},
+} data_source1[] = {
+    { TRUE, "%%", "%%%%" },
+    { FALSE, "%%", "%%" },
 };
-/* *INDENT-ON* */
 
 /* @Test(dataSource = "data_source1") */
-/* *INDENT-OFF* */
 START_PARAMETRIZED_TEST (quote_percent_test, data_source1)
-/* *INDENT-ON* */
 {
-    /* given */
-    char *actual_string;
+    // given
+    GString *actual_string;
 
-    /* when */
+    // when
     actual_string = name_quote (data->input_string, data->input_quote_percent);
 
-    /* then */
-    mctest_assert_str_eq (actual_string, data->expected_string);
+    // then
+    mctest_assert_str_eq (actual_string->str, data->expected_string);
 
-    g_free (actual_string);
+    g_string_free (actual_string, TRUE);
 }
-/* *INDENT-OFF* */
 END_PARAMETRIZED_TEST
-/* *INDENT-ON* */
 
 /* --------------------------------------------------------------------------------------------- */
 
 /* @DataSource("data_source2") */
-/* *INDENT-OFF* */
 static const struct data_source2
 {
     const char *input_string;
 
     const char *expected_string;
-} data_source2[] =
-{
-    {NULL, NULL},
-    {"", NULL},
-    {"-", "./-"},
-    {"blabla-", "blabla-"},
-    {"\r\n\t", "\\\r\\\n\\\t"},
-    {"'\\\";?|[]{}<>`!$&*()", "\\'\\\\\\\"\\;\\?\\|\\[\\]\\{\\}\\<\\>\\`\\!\\$\\&\\*\\(\\)"},
-    {"a b c ", "a\\ b\\ c\\ "},
-    {"#", "\\#"},
-    {"blabla#", "blabla#"},
-    {"~", "\\~"},
-    {"blabla~", "blabla~"},
+} data_source2[] = {
+    { "", NULL },
+    { "-", "./-" },
+    { "blabla-", "blabla-" },
+    { "\r\n\t", "\\\r\\\n\\\t" },
+    { "'\\\";?|[]{}<>`!$&*()", "\\'\\\\\\\"\\;\\?\\|\\[\\]\\{\\}\\<\\>\\`\\!\\$\\&\\*\\(\\)" },
+    { "a b c ", "a\\ b\\ c\\ " },
+    { "#", "\\#" },
+    { "blabla#", "blabla#" },
+    { "~", "\\~" },
+    { "blabla~", "blabla~" },
+    {
+        NULL,
+        NULL,
+    },
 };
-/* *INDENT-ON* */
 
 /* @Test(dataSource = "data_source2") */
-/* *INDENT-OFF* */
 START_PARAMETRIZED_TEST (name_quote_test, data_source2)
-/* *INDENT-ON* */
 {
-    /* given */
-    char *actual_string;
+    // given
+    GString *actual_string;
 
-    /* when */
+    // when
     actual_string = name_quote (data->input_string, FALSE);
 
-    /* then */
-    mctest_assert_str_eq (actual_string, data->expected_string);
-
-    g_free (actual_string);
+    // then
+    if (actual_string == NULL)
+    {
+        mctest_assert_ptr_eq (NULL, data->expected_string);
+    }
+    else
+    {
+        mctest_assert_str_eq (actual_string->str, data->expected_string);
+        g_string_free (actual_string, TRUE);
+    }
 }
-/* *INDENT-OFF* */
 END_PARAMETRIZED_TEST
-/* *INDENT-ON* */
 
 /* --------------------------------------------------------------------------------------------- */
 
@@ -134,12 +115,10 @@ main (void)
 
     tc_core = tcase_create ("Core");
 
-    tcase_add_checked_fixture (tc_core, setup, teardown);
-
-    /* Add new tests here: *************** */
+    // Add new tests here: ***************
     mctest_add_parameterized_test (tc_core, quote_percent_test, data_source1);
     mctest_add_parameterized_test (tc_core, name_quote_test, data_source2);
-    /* *********************************** */
+    // ***********************************
 
     return mctest_run_all (tc_core);
 }

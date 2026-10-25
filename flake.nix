@@ -2,9 +2,13 @@
   description = "Modern Midnight Commander with DotName skins and enhanced file actions";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
+  inputs.mc-upstream = {
+    url = "github:MidnightCommander/mc/master";
+    flake = false;
+  };
 
   outputs =
-    { self, nixpkgs }:
+    { self, nixpkgs, mc-upstream }:
     let
       systems = [
         "x86_64-linux"
@@ -19,7 +23,7 @@
         system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
-          mc = pkgs.callPackage ./nix/package.nix { };
+          mc = pkgs.callPackage ./nix/package.nix { upstreamSource = mc-upstream; };
         in
         {
           inherit mc;
