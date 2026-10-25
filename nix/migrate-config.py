@@ -61,6 +61,8 @@ def migrate(apply=False):
             if menu.is_file():
                 text = menu.read_bytes()
                 updated = re.sub(rb"(?<![\w./-])mc-clipboard(?![\w.-])", b"emcx-clipboard", text)
+                updated = re.sub(rb"\bMC_(TMPDIR|SID|SKIN|KEYMAP|EXTFS_CACHE)\b",
+                                 rb"EMCX_\1", updated)
                 if updated != text:
                     menu.chmod(menu.stat().st_mode | 0o200)
                     menu.write_bytes(updated)

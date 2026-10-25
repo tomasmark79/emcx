@@ -96,7 +96,7 @@ class IdentityTests(unittest.TestCase):
         old = self.base / "config/mc"
         old.mkdir(parents=True)
         (old / "ini").write_text("original settings\n")
-        (old / "menu").write_text("c Copy path\n    mc-clipboard path %f\n")
+        (old / "menu").write_text("c Copy path\n    mc-clipboard path %f\n    echo $MC_TMPDIR\n")
         data = self.base / "data"
         data.mkdir()
         (data / "mc").symlink_to(old, target_is_directory=True)
@@ -108,6 +108,7 @@ class IdentityTests(unittest.TestCase):
             self.assertFalse((root / "emcx").is_symlink())
             self.assertEqual((root / "emcx/ini").read_text(), "original settings\n")
             self.assertIn("emcx-clipboard path", (root / "emcx/menu").read_text())
+            self.assertIn("$EMCX_TMPDIR", (root / "emcx/menu").read_text())
         (self.base / "config/emcx/ini").write_text("new profile\n")
         self.assertNotEqual(self.migrate("--apply").returncode, 0)
         self.assertEqual((old / "ini").read_text(), "original settings\n")

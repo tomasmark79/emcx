@@ -89,7 +89,7 @@ storedfilename (possibly with path if not located in archive's root
 [this is wrong. current extfs strips paths! -- pavel@ucw.cz])
 to file extractto.
 
-MC sets MC_EXTFS_CACHE to a private temporary file reserved for the open
+emcx sets EMCX_EXTFS_CACHE to a private temporary file reserved for the open
 archive. Helpers may use it as a lock and create an SDBM index with the
 suffixes .dir and .pag. MC removes all three files when the archive is
 released. Cache contents must be invalidated when the archive changes;

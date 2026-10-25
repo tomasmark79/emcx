@@ -59,7 +59,7 @@ f       Copy item to clipboard (Alt+Shift+C)
         done
 
 0       Edit a bug report and send it to root
-        I=`mktemp "${MC_TMPDIR:-/tmp}/mail.XXXXXX"` || exit 1
+        I=`mktemp "${EMCX_TMPDIR:-/tmp}/mail.XXXXXX"` || exit 1
         ${EDITOR-vi} "$I"
         test -r "$I" && mail root < "$I"
         rm -f "$I"
@@ -195,7 +195,7 @@ h       Strip headers from current newsarticle
         CHECK=`awk '{print $1 ; exit}' %f` 2>/dev/null
         case "$CHECK" in
             Newsgroups:|Path:)
-                I=`mktemp "${MC_TMPDIR:-/tmp}/news.XXXXXX"` || exit 1
+                I=`mktemp "${EMCX_TMPDIR:-/tmp}/news.XXXXXX"` || exit 1
                 cp %f "$I" && sed '/^'"$CHECK"' /,/^$/d' "$I" > %f
                 [ "$?" = "0" ] && rm "$I"
                 echo %f": header removed."
@@ -209,7 +209,7 @@ h       Strip headers from current newsarticle
 H       Strip headers from the marked newsarticles
         for i in %t ; do
             CHECK=`awk '{print $1 ; exit}' "$i"` 2>/dev/null
-            WFILE=`mktemp "${MC_TMPDIR:-/tmp}/news.XXXXXX"` || exit 1
+            WFILE=`mktemp "${EMCX_TMPDIR:-/tmp}/news.XXXXXX"` || exit 1
             case "$CHECK" in
                 Newsgroups:|Path:)
                     cp "$i" "$WFILE" && sed '/^'"$CHECK"' /,/^$/d' "$WFILE" > "$i"

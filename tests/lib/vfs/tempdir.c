@@ -41,7 +41,7 @@ static void
 setup (void)
 {
     // Ensure that tests behave consistently irrespectively of the environment
-    g_unsetenv ("MC_TMPDIR");
+    g_unsetenv ("EMCX_TMPDIR");
 
     str_init_strings (NULL);
 
@@ -71,7 +71,7 @@ START_TEST (test_mc_tmpdir)
 
     // when
     tmpdir = mc_tmpdir ();
-    env_tmpdir = g_getenv ("MC_TMPDIR");
+    env_tmpdir = g_getenv ("EMCX_TMPDIR");
 
     // then
     ck_assert_msg (g_file_test (tmpdir, G_FILE_TEST_EXISTS)

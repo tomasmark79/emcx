@@ -395,6 +395,136 @@ index 54109a8a3..9f7787373 100644
  EXTRA_DIST += mc-clipboard.py mc-clipboard.menu.in
 -CLEANFILES += mc-clipboard mc-clipboard.menu
 +CLEANFILES += emcx-clipboard mc-clipboard.menu
+diff --git a/misc/macros.d/macro.0.sh b/misc/macros.d/macro.0.sh
+index bc33de8d1..48f162c85 100644
+--- a/misc/macros.d/macro.0.sh
++++ b/misc/macros.d/macro.0.sh
+@@ -1,5 +1,5 @@
+ m       make
+-        TMPFILE=`mktemp ${MC_TMPDIR:-/tmp}/up.XXXXXX` || exit 1
++        TMPFILE=`mktemp ${EMCX_TMPDIR:-/tmp}/up.XXXXXX` || exit 1
+         make 2> $TMPFILE
+-        mcedit $TMPFILE
++        emcx-edit $TMPFILE
+         rm $TMPFILE
+diff --git a/misc/macros.d/macro.1.sh b/misc/macros.d/macro.1.sh
+index 93ca59feb..899ebde6e 100644
+--- a/misc/macros.d/macro.1.sh
++++ b/misc/macros.d/macro.1.sh
+@@ -1,6 +1,6 @@
+ #silent
+ u       Upper case selection
+-        TMPFILE=`mktemp ${MC_TMPDIR:-/tmp}/up.XXXXXX` || exit 1
++        TMPFILE=`mktemp ${EMCX_TMPDIR:-/tmp}/up.XXXXXX` || exit 1
+         cat %b > $TMPFILE
+         cat $TMPFILE| sed 's/\(.*\)/\U\1/' >%b
+         rm -f $TMPFILE
+diff --git a/misc/macros.d/macro.2.sh b/misc/macros.d/macro.2.sh
+index 9e58dd451..8f6aec72a 100644
+--- a/misc/macros.d/macro.2.sh
++++ b/misc/macros.d/macro.2.sh
+@@ -1,6 +1,6 @@
+ #silent
+ l       Lower case selection
+-        TMPFILE=`mktemp ${MC_TMPDIR:-/tmp}/up.XXXXXX` || exit 1
++        TMPFILE=`mktemp ${EMCX_TMPDIR:-/tmp}/up.XXXXXX` || exit 1
+         cat %b > $TMPFILE
+         cat $TMPFILE| sed 's/\(.*\)/\L\1/' >%b
+         rm -f $TMPFILE
+diff --git a/misc/macros.d/macro.3.sh b/misc/macros.d/macro.3.sh
+index 7dfd26397..5b1ddb081 100644
+--- a/misc/macros.d/macro.3.sh
++++ b/misc/macros.d/macro.3.sh
+@@ -1,6 +1,6 @@
+ #silent
+ S       Sort selection
+-        TMPFILE=`mktemp ${MC_TMPDIR:-/tmp}/up.XXXXXX` || exit 1
++        TMPFILE=`mktemp ${EMCX_TMPDIR:-/tmp}/up.XXXXXX` || exit 1
+         cat %b > $TMPFILE
+         cat $TMPFILE| sort >%b
+         rm -f $TMPFILE
+diff --git a/misc/macros.d/macro.6.sh b/misc/macros.d/macro.6.sh
+index 923a5f88f..dfe62a5dc 100644
+--- a/misc/macros.d/macro.6.sh
++++ b/misc/macros.d/macro.6.sh
+@@ -1,5 +1,5 @@
+ #silent
+ e       execute something
+-        TMPFILE=`mktemp ${MC_TMPDIR:-/tmp}/up.XXXXXX` || exit 1
++        TMPFILE=`mktemp ${EMCX_TMPDIR:-/tmp}/up.XXXXXX` || exit 1
+         cat %b > $TMPFILE
+         sh $TMPFILE > %b
+diff --git a/misc/macros.d/macro.7.sh b/misc/macros.d/macro.7.sh
+index 1f4e66d13..eaa7c6a1b 100644
+--- a/misc/macros.d/macro.7.sh
++++ b/misc/macros.d/macro.7.sh
+@@ -1,5 +1,5 @@
+ #silent
+ w       delete trailing whitespace
+-        TMPFILE=`mktemp ${MC_TMPDIR:-/tmp}/up.XXXXXX` || exit 1
++        TMPFILE=`mktemp ${EMCX_TMPDIR:-/tmp}/up.XXXXXX` || exit 1
+         cat %b > $TMPFILE
+         cat $TMPFILE | sed 's/[ \t]*$//' > %b
+diff --git a/misc/mc.menu.in b/misc/mc.menu.in
+index 81a4ed86f..b7abba94a 100644
+--- a/misc/mc.menu.in
++++ b/misc/mc.menu.in
+@@ -59,7 +59,7 @@ f       Copy item to clipboard (Alt+Shift+C)
+         done
+ 
+ 0       Edit a bug report and send it to root
+-        I=`mktemp "${MC_TMPDIR:-/tmp}/mail.XXXXXX"` || exit 1
++        I=`mktemp "${EMCX_TMPDIR:-/tmp}/mail.XXXXXX"` || exit 1
+         ${EDITOR-vi} "$I"
+         test -r "$I" && mail root < "$I"
+         rm -f "$I"
+@@ -195,7 +195,7 @@ h       Strip headers from current newsarticle
+         CHECK=`awk '{print $1 ; exit}' %f` 2>/dev/null
+         case "$CHECK" in
+             Newsgroups:|Path:)
+-                I=`mktemp "${MC_TMPDIR:-/tmp}/news.XXXXXX"` || exit 1
++                I=`mktemp "${EMCX_TMPDIR:-/tmp}/news.XXXXXX"` || exit 1
+                 cp %f "$I" && sed '/^'"$CHECK"' /,/^$/d' "$I" > %f
+                 [ "$?" = "0" ] && rm "$I"
+                 echo %f": header removed."
+@@ -209,7 +209,7 @@ h       Strip headers from current newsarticle
+ H       Strip headers from the marked newsarticles
+         for i in %t ; do
+             CHECK=`awk '{print $1 ; exit}' "$i"` 2>/dev/null
+-            WFILE=`mktemp "${MC_TMPDIR:-/tmp}/news.XXXXXX"` || exit 1
++            WFILE=`mktemp "${EMCX_TMPDIR:-/tmp}/news.XXXXXX"` || exit 1
+             case "$CHECK" in
+                 Newsgroups:|Path:)
+                     cp "$i" "$WFILE" && sed '/^'"$CHECK"' /,/^$/d' "$WFILE" > "$i"
+diff --git a/misc/mcedit.menu.in b/misc/mcedit.menu.in
+index 44b543b11..9b61dbcef 100644
+--- a/misc/mcedit.menu.in
++++ b/misc/mcedit.menu.in
+@@ -447,7 +447,7 @@ a       Author description header
+ 
+ #----------------------- Begin common section ---------------------------------
+ S       Sort selection
+-        TMPFILE=`mktemp ${MC_TMPDIR:-/tmp}/up.XXXXXX` || exit 1
++        TMPFILE=`mktemp ${EMCX_TMPDIR:-/tmp}/up.XXXXXX` || exit 1
+         cat %b > $TMPFILE
+         cat $TMPFILE| sort >%b
+         rm -f $TMPFILE
+@@ -474,13 +474,13 @@ o       Open bash to next free console
+         open -s -- /bin/bash
+ 
+ u       Upper case selection
+-        TMPFILE=`mktemp ${MC_TMPDIR:-/tmp}/up.XXXXXX` || exit 1
++        TMPFILE=`mktemp ${EMCX_TMPDIR:-/tmp}/up.XXXXXX` || exit 1
+         cat %b > $TMPFILE
+         sed 's/\(.*\)/\U\1/' $TMPFILE >%b
+         rm -f $TMPFILE
+ 
+ l       Lower case selection
+-        TMPFILE=`mktemp ${MC_TMPDIR:-/tmp}/up.XXXXXX` || exit 1
++        TMPFILE=`mktemp ${EMCX_TMPDIR:-/tmp}/up.XXXXXX` || exit 1
+         cat %b > $TMPFILE
+         sed 's/\(.*\)/\L\1/' $TMPFILE >%b
+         rm -f $TMPFILE
 diff --git a/src/Makefile.am b/src/Makefile.am
 index 0d2978f04..07757a926 100644
 --- a/src/Makefile.am
@@ -549,6 +679,19 @@ index e1a62fed7..da88323ba 100644
              g_string_free (quoted_cache_name, TRUE);
          }
      }
+diff --git a/src/vfs/extfs/helpers/README b/src/vfs/extfs/helpers/README
+index 40836978a..82c948533 100644
+--- a/src/vfs/extfs/helpers/README
++++ b/src/vfs/extfs/helpers/README
+@@ -89,7 +89,7 @@ storedfilename (possibly with path if not located in archive's root
+ [this is wrong. current extfs strips paths! -- pavel@ucw.cz])
+ to file extractto.
+ 
+-MC sets MC_EXTFS_CACHE to a private temporary file reserved for the open
++emcx sets EMCX_EXTFS_CACHE to a private temporary file reserved for the open
+ archive. Helpers may use it as a lock and create an SDBM index with the
+ suffixes .dir and .pag. MC removes all three files when the archive is
+ released. Cache contents must be invalidated when the archive changes;
 diff --git a/src/vfs/extfs/helpers/deb.in b/src/vfs/extfs/helpers/deb.in
 index 3313ab907..895b9545e 100644
 --- a/src/vfs/extfs/helpers/deb.in
@@ -688,6 +831,28 @@ index 5f00e7973..b295962df 100644
      trap 'cd /; rm -rf "$TMPDIR"' 0 1 2 3 5 13 15
      ARCHIVE="$TMPDIR/tmp.zoo"
      ln -sf "$1" "$ARCHIVE"
+diff --git a/tests/lib/vfs/tempdir.c b/tests/lib/vfs/tempdir.c
+index 962ea777a..1f45ff829 100644
+--- a/tests/lib/vfs/tempdir.c
++++ b/tests/lib/vfs/tempdir.c
+@@ -41,7 +41,7 @@ static void
+ setup (void)
+ {
+     // Ensure that tests behave consistently irrespectively of the environment
+-    g_unsetenv ("MC_TMPDIR");
++    g_unsetenv ("EMCX_TMPDIR");
+ 
+     str_init_strings (NULL);
+ 
+@@ -71,7 +71,7 @@ START_TEST (test_mc_tmpdir)
+ 
+     // when
+     tmpdir = mc_tmpdir ();
+-    env_tmpdir = g_getenv ("MC_TMPDIR");
++    env_tmpdir = g_getenv ("EMCX_TMPDIR");
+ 
+     // then
+     ck_assert_msg (g_file_test (tmpdir, G_FILE_TEST_EXISTS)
 diff --git a/version.sh b/version.sh
 index f92d7457b..502e59a77 100755
 --- a/version.sh
