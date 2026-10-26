@@ -12,6 +12,20 @@ and dark themes with root variants, live theme switching, Lynx-like navigation,
 and direct ZIP streaming through libzip. Defaults work with a clean profile.
 [Feature details, packaging, and tests](nix/README.md).
 
+## Install
+
+On Debian/Ubuntu, Fedora, Arch, openSUSE or Alpine, download and run the source
+installer as your normal user:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/tomasmark79/emcx/main/install.sh -o emcx-install.sh && sh emcx-install.sh
+```
+
+It installs dependencies, builds current upstream `master` with our patches,
+and installs into `/usr/local`, including `sudo emcx`. Rerun the same command
+to update. [Installer options and supported distributions](#native-source-builds).
+For NixOS, use the [declarative flake package](#nix-and-nixos).
+
 ## Commands and configuration
 
 | Command | Purpose |
@@ -116,42 +130,64 @@ our themes; it is not the application name.
 
 ## Native source builds
 
-The checked-in source tree also includes the functional and identity changes.
-On Debian (including ARM), install dependencies and build a system-wide copy
-under `/usr/local`. This makes `emcx` available to the regular user and root,
-including `sudo emcx`:
+[`install.sh`](install.sh) contains the distribution detection, dependency lists
+and build/install pipeline. It runs on POSIX `/bin/sh`, including Alpine's ash.
+The download command needs `curl`; an existing checkout can run
+`sh install.sh` directly. Administrator access is needed for dependencies and
+the system installation. Root shells are also supported.
 
-```bash
-sudo apt install build-essential autoconf automake autopoint gettext libtool \
-  pkg-config libglib2.0-dev libslang2-dev libssh2-1-dev libext2fs-dev libzip-dev \
-  python3 libglib2.0-bin wl-clipboard unzip zip
+| Distribution family | Package manager |
+|---|---|
+| Debian, Ubuntu, Mint, Pop!_OS, Kali, Raspberry Pi OS | `apt-get` |
+| Fedora | `dnf` |
+| RHEL, Rocky, AlmaLinux, CentOS Stream, Oracle Linux (9+) | `dnf`, with the repository option below |
+| Arch, Manjaro, EndeavourOS | `pacman` |
+| openSUSE Tumbleweed and Leap | `zypper` |
+| Alpine | `apk` |
 
-git clone --branch main https://github.com/tomasmark79/emcx.git
-cd emcx
-./autogen.sh
-./configure --prefix=/usr/local
-make -j"$(nproc)"
-sudo make install
-sudo python3 nix/finalize-install.py /usr/local
-sudo install -m755 nix/migrate-config.py /usr/local/bin/emcx-migrate-config
+Other derivatives are detected through `ID_LIKE` in `/etc/os-release`.
+Enterprise Linux needs its vendor CRB/CodeReady Builder repository and EPEL for
+the build dependencies. Enabling those repositories requires an explicit option:
 
-emcx --version
-sudo emcx --version
+```sh
+sh emcx-install.sh --enable-epel
 ```
 
-The Python finalization step only renames manuals, and `install` only installs
-the migration command. Neither imports your profile. To import your existing
-MC bookmarks, close MC and emcx, then run these commands as your normal user:
+RHEL must already be registered with access to CodeReady Builder. Use
+`--no-deps` instead to use dependencies provided by your administrator.
+Arch should already be up to date: the installer uses `pacman -S --needed`,
+following Arch's [guidance against partial upgrades](https://wiki.archlinux.org/title/System_maintenance#Partial_upgrades_are_unsupported).
+It does not refresh Arch's database or force a complete system upgrade.
 
-```bash
-emcx-migrate-config --hotlist-only
-emcx-migrate-config --hotlist-only --apply
+Preview the installation or choose build options:
+
+```sh
+sh emcx-install.sh --dry-run
+sh emcx-install.sh --jobs 2
+sh emcx-install.sh --prefix /opt/emcx
+sh install.sh --source-dir "$PWD" --no-deps
 ```
 
-They can also be run directly from the checkout as
-`python3 nix/migrate-config.py` with the same options, without rebuilding C.
-To copy the entire original profile instead, use the full-profile migration
-above before the first emcx invocation.
+The default `/usr/local` prefix provides the system-wide command. A custom
+prefix needs its `bin` directory added to the user's and root's PATH as needed.
+`--project-ref` and `--upstream-ref` can pin source revisions; both default to
+the current branches. The build reports the exact upstream commit and a version
+containing its date/hash and our patch hash. A patch conflict stops the build.
+Failed builds are retained for inspection; `--keep-build` also retains successes.
+
+Compilation and manual-page finalization happen in a temporary directory before
+installation. The staged payload uses emcx names, preserves existing MC manuals,
+and is installed with root ownership. Existing user/root profiles and hotlists
+are retained. Import bookmarks separately with
+`emcx-migrate-config --hotlist-only` and then `--hotlist-only --apply`, as
+[described above](#commands-and-configuration).
+
+If sudo's `secure_path` omits the installation's `bin` directory (as on RHEL
+defaults), the installer adds it through `/etc/sudoers.d/emcx-source-path`.
+The drop-in preserves existing entries and is checked with `visudo` before and
+after installation. Hosts that already include the directory need no change.
+New sudo-path entries must have root-owned ancestors without group/other write
+access; a private or shared writable build prefix is not suitable for this.
 
 For Bash directory tracking, add this to your `~/.bashrc`:
 
@@ -167,18 +203,6 @@ MC/emcx sessions and run `sudo emcx-migrate-config --hotlist-only` followed by
 `sudo emcx-migrate-config --hotlist-only --apply`. Run migration without sudo for
 your own bookmarks. The installer does not copy one user's profile to another.
 
-For an optional private installation, configure with
-`--prefix="$HOME/.local/opt/emcx"`, run `make install` without sudo, and use that
-prefix for the two Python/helper installation steps. Add its `bin` directory to
-your PATH and source its `libexec/emcx/emcx.sh`. This variant is scoped to your
-account; use the system installation above for `sudo emcx`.
-
-The finalization step renames the installed upstream manuals for emcx.
-Installing libzip after compilation does not enable ZIP streaming: configure
-and rebuild with the library present. The Nix package includes it automatically.
-Native builds use Git version information; Nix builds report the locked upstream
-commit date/hash and a hash of the custom patches, with no manual version file.
-
 ## Development and validation
 
 ```bash
@@ -186,6 +210,8 @@ nix build .#emcx
 nix run .#emcx-tests
 nix build .#checks.x86_64-linux.coexistence
 nix flake check --all-systems --no-build --no-update-lock-file
+python3 nix/tests/installer.py
+python3 nix/tests/sudo_path.py
 ```
 
 Tests use disposable profiles and files, their own tmux servers, and user
@@ -193,18 +219,19 @@ namespaces for root-mode checks. They do not access a NAS or the real desktop
 clipboard. The coexistence check installs emcx and upstream MC into one Nix
 environment, including both sets of manual pages.
 
-To check the native Debian installation in a disposable container (including
-the normal user, root, `sudo emcx`, the shell wrapper and separate hotlists):
+To check the source installer in a disposable container (including the normal
+user, root, `sudo emcx`, the shell wrapper and preservation of MC files/profiles):
 
 ```bash
-docker run --rm --platform linux/arm64 \
+docker run --rm --platform linux/amd64 \
   --mount type=bind,src="$PWD",dst=/source,readonly \
-  debian:bookworm bash /source/nix/tests/debian-install.sh
+  debian:bookworm sh /source/nix/tests/source-install.sh
 ```
 
-An ARM64 run on an x86 host requires an already configured binfmt emulator.
-Use `--platform linux/amd64` to test x86 Debian instead. The script installs
-dependencies and changes sudo rules only inside the disposable container.
+The same test supports `ubuntu:24.04`, `fedora:latest`, `archlinux:base`,
+`opensuse/tumbleweed:latest`, `alpine:latest`, and `rockylinux:9`. It installs dependencies and
+changes sudo rules only inside the disposable container. ARM builds can be
+tested natively on ARM; no cross-compilation is required by the installer.
 
 When updating the maintained native source tree:
 

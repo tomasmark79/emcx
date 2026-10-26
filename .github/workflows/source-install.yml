@@ -1,0 +1,50 @@
+name: Source installer
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - install.sh
+      - nix/patches/**
+      - nix/finalize-install.py
+      - nix/migrate-config.py
+      - nix/configure-sudo-path.py
+      - nix/tests/installer.py
+      - nix/tests/sudo_path.py
+      - nix/tests/source-install.sh
+      - .github/workflows/source-install.yml
+
+permissions:
+  contents: read
+
+jobs:
+  planning:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: python3 nix/tests/installer.py
+      - run: python3 nix/tests/sudo_path.py
+
+  install:
+    needs: planning
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - debian:bookworm
+          - ubuntu:24.04
+          - fedora:latest
+          - archlinux:base
+          - opensuse/tumbleweed:latest
+          - alpine:latest
+          - rockylinux:9
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build and install as an unprivileged user, then check sudo and profiles
+        run: >-
+          docker run --rm --platform linux/amd64
+          --mount type=bind,src="$GITHUB_WORKSPACE",dst=/source,readonly
+          '${{ matrix.image }}' sh /source/nix/tests/source-install.sh

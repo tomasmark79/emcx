@@ -50,7 +50,7 @@ class IdentityTests(unittest.TestCase):
 
     def test_shell_wrapper_launches_emcx(self):
         wrapper = self.prefix / "libexec/emcx/emcx-wrapper.sh"
-        result = subprocess.run(["bash", "--noprofile", "--norc", "-c",
+        result = subprocess.run(["bash", "--noprofile", "--norc", "-eu", "-c",
                                  '. "$1" --version', "test", str(wrapper)],
                                 env=self.env, capture_output=True, text=True, check=True)
         self.assertTrue(result.stdout.startswith("Extended Commander "))

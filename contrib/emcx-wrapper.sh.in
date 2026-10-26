@@ -1,6 +1,6 @@
-if test -n "$EMCX_TMPDIR"; then
+if test -n "${EMCX_TMPDIR-}"; then
 	EMCX_PWD_FILE="`mktemp "${EMCX_TMPDIR}/emcx.pwd.XXXXXX"`"
-elif test -n "$TMPDIR"; then
+elif test -n "${TMPDIR-}"; then
 	EMCX_PWD_FILE="`mktemp "${TMPDIR}/emcx.pwd.XXXXXX"`"
 else
 	EMCX_PWD_FILE="`mktemp "/tmp/emcx.pwd.XXXXXX"`"
